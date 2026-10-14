@@ -5,542 +5,271 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Lodestar GPS</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<meta name="description" content="Lodestar GPS: real-time fleet telematics with dual-frequency GNSS trackers, CAN-bus vehicle data and a live operations console.">
+<meta name="description" content="Lodestar puts your whole fleet on one live map, accurate to 1.5 metres.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,500..800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&display=swap">
 <style>
-/* Layout: an engineering datasheet. A left label column runs down every section (12-col grid, 4/8 split);
-   the product itself, the operations console, is framed like a real application window. */
+/* Layout: an Apple-style product page. Centred statements over generous white space, alternating
+   white / light-grey / black bands, with the live map shown inside a studio display.
+   Deliberately a single light look with one black band, so colours are set explicitly. */
 :root {
-  --bg: #F2F4F6;
-  --surface: #FFFFFF;
-  --surface-2: #E9EDF1;
-  --ink: #0B1722;
-  --ink-2: #26394A;
-  --muted: #5A6875;
-  --line: #D5DBE1;
-  --accent: #D4470E;
-  --accent-soft: rgba(212, 71, 14, .10);
-  --on-accent: #FFFFFF;
-  --chrome-bg: #0F2133;
-  --chrome-2: #15293D;
-  --chrome-ink: #E4ECF2;
-  --chrome-dim: #8EA2B4;
-  --chrome-line: #22384D;
-  --map-bg: #E3E8EB;
-  --map-contour: rgba(11, 23, 34, .07);
-  --map-contour-strong: rgba(11, 23, 34, .14);
-  --map-road: #FFFFFF;
-  --map-road-edge: #BEC8CF;
-  --map-street: rgba(11, 23, 34, .06);
-  --map-label: rgba(11, 23, 34, .42);
-  --water: #BACFD9;
-  --grid: rgba(11, 23, 34, .13);
-  --ok: #1B7F52;
-  --warn: #A86300;
-  --alert: #C22F2F;
-  --info: #2C6299;
-  --sys-gps: #2F6DB5;
-  --sys-gal: #12897F;
-  --sys-glo: #9A4E9A;
-  --sys-bds: #A87C12;
-  --on-sys: #FFFFFF;
-  --term-bg: #0C1822;
-  --term-ink: #CFDDE6;
-  --term-dim: #6B8292;
-  --term-key: #FF8A4C;
-  --term-num: #7CC0EC;
-  --term-str: #9CD9AF;
-  --shadow: 0 1px 2px rgba(11, 23, 34, .05), 0 16px 36px -20px rgba(11, 23, 34, .35);
-
-  --f-display: "Archivo", "Helvetica Neue", Arial, system-ui, sans-serif;
-  --f-body: "IBM Plex Sans", "Segoe UI", "Helvetica Neue", Arial, system-ui, sans-serif;
-  --f-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  --radius: 8px;
+  --white: #FFFFFF;
+  --grey-bg: #F5F5F7;
+  --ink: #1D1D1F;
+  --muted: #6E6E73;
+  --faint: #86868B;
+  --line: #D2D2D7;
+  --blue: #0071E3;
+  --link: #0066CC;
+  --black: #000000;
+  --dark-ink: #F5F5F7;
+  --dark-muted: #A1A1A6;
+  --green: #34C759;
+  --orange: #FF9F0A;
+  --red: #FF3B30;
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter Tight", "Helvetica Neue", Arial, sans-serif;
+  color-scheme: light;
 }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #091017; --surface: #0E171F; --surface-2: #141F29; --ink: #E2E9EE; --ink-2: #C3CFD8; --muted: #8B99A5; --line: #1E2B37;
-    --accent: #F2692C; --accent-soft: rgba(242, 105, 44, .13); --on-accent: #160700;
-    --chrome-bg: #0B1621; --chrome-2: #102030; --chrome-ink: #E2EAF0; --chrome-dim: #7D92A4; --chrome-line: #1C3043;
-    --map-bg: #0B1720; --map-contour: rgba(150, 185, 205, .07); --map-contour-strong: rgba(150, 185, 205, .14);
-    --map-road: #1C3140; --map-road-edge: #0E1F2B; --map-street: rgba(150, 185, 205, .06); --map-label: rgba(200, 220, 232, .38);
-    --water: #0F2C40; --grid: rgba(150, 185, 205, .15);
-    --ok: #3DBE84; --warn: #EDA445; --alert: #F06262; --info: #6FA6E0;
-    --sys-gps: #73A9F0; --sys-gal: #43C9B8; --sys-glo: #CD8DD2; --sys-bds: #DDB75C; --on-sys: #091017;
-    --term-bg: #060C12;
-    --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 16px 36px -20px rgba(0, 0, 0, .8);
-    color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --bg: #091017; --surface: #0E171F; --surface-2: #141F29; --ink: #E2E9EE; --ink-2: #C3CFD8; --muted: #8B99A5; --line: #1E2B37;
-  --accent: #F2692C; --accent-soft: rgba(242, 105, 44, .13); --on-accent: #160700;
-  --chrome-bg: #0B1621; --chrome-2: #102030; --chrome-ink: #E2EAF0; --chrome-dim: #7D92A4; --chrome-line: #1C3043;
-  --map-bg: #0B1720; --map-contour: rgba(150, 185, 205, .07); --map-contour-strong: rgba(150, 185, 205, .14);
-  --map-road: #1C3140; --map-road-edge: #0E1F2B; --map-street: rgba(150, 185, 205, .06); --map-label: rgba(200, 220, 232, .38);
-  --water: #0F2C40; --grid: rgba(150, 185, 205, .15);
-  --ok: #3DBE84; --warn: #EDA445; --alert: #F06262; --info: #6FA6E0;
-  --sys-gps: #73A9F0; --sys-gal: #43C9B8; --sys-glo: #CD8DD2; --sys-bds: #DDB75C; --on-sys: #091017;
-  --term-bg: #060C12;
-  --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 16px 36px -20px rgba(0, 0, 0, .8);
-  color-scheme: dark;
-}
-
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 body {
   margin: 0;
-  background: var(--bg);
+  background: var(--white);
   color: var(--ink);
-  font: 400 16px/1.6 var(--f-body);
+  font: 400 17px/1.47 var(--font);
+  letter-spacing: -.012em;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
 }
-a { color: inherit; }
-.mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
-.vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-.wrap {
-  max-width: 1280px;
-  margin-inline: auto;
-  padding-left: max(clamp(16px, 4vw, 40px), env(safe-area-inset-left, 0px));
-  padding-right: max(clamp(16px, 4vw, 40px), env(safe-area-inset-right, 0px));
-}
-:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
-h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; font-variation-settings: "wdth" 106; }
-h2 { font-size: clamp(1.75rem, 3vw, 2.45rem); line-height: 1.1; letter-spacing: -.018em; font-weight: 700; }
-h3 { font-weight: 650; letter-spacing: -.005em; }
+a { color: var(--link); text-decoration: none; }
+a:hover { text-decoration: underline; }
+:focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; border-radius: 6px; }
+h1, h2, h3 { margin: 0; text-wrap: balance; font-weight: 700; }
 p { margin: 0; }
-.eyebrow {
-  font: 500 .72rem/1 var(--f-mono);
-  letter-spacing: .12em;
-  text-transform: uppercase;
-  color: var(--muted);
-  display: inline-flex; align-items: center; gap: .6rem;
+.wrap {
+  max-width: 1120px;
+  margin-inline: auto;
+  padding-left: max(22px, env(safe-area-inset-left, 0px));
+  padding-right: max(22px, env(safe-area-inset-right, 0px));
 }
-.eyebrow::before { content: ""; width: 7px; height: 7px; background: var(--accent); }
-.lede { color: var(--muted); font-size: 1.06rem; max-width: 62ch; }
-
-/* Section heads: label column + content, like a datasheet */
-.section { padding-block: clamp(3.5rem, 7vw, 6rem); border-top: 1px solid var(--line); }
-.sec-head { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 8fr); gap: 1rem clamp(1.5rem, 4vw, 4rem); margin-bottom: clamp(2rem, 4vw, 3rem); align-items: start; }
-.sec-head .eyebrow { padding-top: .55rem; }
-.sec-head h2 + .lede { margin-top: 1rem; }
-@media (max-width: 860px) { .sec-head { grid-template-columns: 1fr; } .sec-head .eyebrow { padding-top: 0; } }
-
-.btn {
-  display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
-  padding: .78rem 1.15rem; border-radius: 6px; border: 1px solid transparent;
-  font: 600 .93rem/1 var(--f-body); text-decoration: none; cursor: pointer;
-  transition: background .15s ease, border-color .15s ease;
-}
-.btn-primary { background: var(--accent); color: var(--on-accent); }
-.btn-primary:hover { background: color-mix(in srgb, var(--accent) 86%, var(--ink)); }
-.btn-ghost { border-color: var(--line); color: var(--ink); background: var(--surface); }
-.btn-ghost:hover { border-color: var(--ink-2); }
-.btn-sm { padding: .58rem .9rem; font-size: .86rem; }
-.btn svg { width: 15px; height: 15px; }
+.center { text-align: center; }
+.band { padding-block: clamp(5rem, 11vw, 8.5rem); }
+.band.grey { background: var(--grey-bg); }
+.eyebrow { font-size: clamp(1.05rem, 1.6vw, 1.3rem); font-weight: 600; color: var(--muted); margin-bottom: .6rem; letter-spacing: -.01em; }
+.h-xl { font-size: clamp(3rem, 8.4vw, 6rem); line-height: 1.02; letter-spacing: -.045em; }
+.h-lg { font-size: clamp(2.4rem, 5.6vw, 4rem); line-height: 1.05; letter-spacing: -.04em; }
+.h-md { font-size: clamp(1.6rem, 3vw, 2.1rem); line-height: 1.12; letter-spacing: -.028em; }
+.sub { font-size: clamp(1.15rem, 2vw, 1.5rem); line-height: 1.38; color: var(--muted); font-weight: 500; letter-spacing: -.02em; max-width: 34em; }
+.center .sub { margin-inline: auto; }
+.links { display: flex; justify-content: center; flex-wrap: wrap; gap: 1rem 2.2rem; margin-top: 1.6rem; font-size: clamp(1.05rem, 1.6vw, 1.2rem); }
+.links a::after { content: " ›"; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: .4rem; border: 0; border-radius: 980px; padding: .75rem 1.4rem; font: 500 1.02rem/1 var(--font); letter-spacing: -.01em; cursor: pointer; text-decoration: none !important; }
+.btn-blue { background: var(--blue); color: #fff; }
+.btn-blue:hover { background: #0077ED; }
 
 /* ---------- Nav ---------- */
 .nav {
-  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 30;
-  background: color-mix(in srgb, var(--bg) 88%, transparent);
-  backdrop-filter: saturate(1.3) blur(12px);
-  -webkit-backdrop-filter: saturate(1.3) blur(12px);
-  border-bottom: 1px solid var(--line);
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 50;
+  background: rgba(255, 255, 255, .78);
+  backdrop-filter: saturate(1.8) blur(20px);
+  -webkit-backdrop-filter: saturate(1.8) blur(20px);
+  border-bottom: 1px solid rgba(0, 0, 0, .08);
 }
-.nav .wrap { display: flex; align-items: center; gap: 1.5rem; padding-block: .8rem; }
-.brand { display: inline-flex; align-items: center; gap: .6rem; text-decoration: none; font: 700 1.1rem/1 var(--f-display); font-variation-settings: "wdth" 112; letter-spacing: -.01em; color: var(--ink); }
-.brand svg { width: 26px; height: 26px; }
-.brand small { font: 500 .64rem/1 var(--f-mono); letter-spacing: .14em; color: var(--muted); }
-.nav-links { display: flex; gap: 1.5rem; margin-left: auto; }
-.nav-links a { text-decoration: none; color: var(--muted); font-size: .9rem; font-weight: 500; }
-.nav-links a:hover { color: var(--ink); }
-.nav-actions { display: flex; gap: .5rem; align-items: center; }
-.theme-btn { width: 36px; height: 36px; padding: 0; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; display: inline-grid; place-items: center; }
-.theme-btn:hover { border-color: var(--ink-2); }
-.theme-btn svg { width: 17px; height: 17px; }
-.theme-btn .moon { display: none; }
-.is-dark .theme-btn .sun { display: none; }
-.is-dark .theme-btn .moon { display: block; }
-@media (max-width: 920px) { .nav-links { display: none; } .nav-actions { margin-left: auto; } }
+.nav .wrap { display: flex; align-items: center; gap: 2rem; height: 52px; }
+.logo { display: inline-flex; align-items: center; gap: .5rem; color: var(--ink); font-weight: 600; font-size: 1.05rem; letter-spacing: -.02em; text-decoration: none !important; }
+.logo svg { width: 22px; height: 22px; }
+.nav-links { display: flex; gap: 1.9rem; margin-left: auto; font-size: .82rem; }
+.nav-links a { color: var(--ink); opacity: .82; }
+.nav-links a:hover { opacity: 1; text-decoration: none; }
+.nav .btn { padding: .45rem .95rem; font-size: .82rem; }
+@media (max-width: 760px) { .nav-links { display: none; } .nav .btn { margin-left: auto; } }
 
 /* ---------- Hero ---------- */
-.hero { padding-block: clamp(2.75rem, 6vw, 4.75rem) clamp(1.75rem, 3vw, 2.5rem); }
-.hero-grid { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: clamp(1.75rem, 4vw, 4.5rem); align-items: end; }
-.hero h1 {
-  font-size: clamp(2.1rem, 4.1vw, 3.3rem);
-  line-height: 1.05;
-  letter-spacing: -.025em;
-  font-weight: 700;
-  font-variation-settings: "wdth" 104;
-  margin-top: 1.1rem;
+.hero { padding-block: clamp(3.5rem, 8vw, 6rem) clamp(4rem, 8vw, 6rem); }
+.hero .sub { margin-top: 1.2rem; }
+
+.display { max-width: 1080px; margin: clamp(2.75rem, 6vw, 4.5rem) auto 0; }
+.bezel { background: #1D1D1F; border-radius: 24px; padding: clamp(7px, 1.1vw, 13px); box-shadow: 0 50px 90px -40px rgba(0, 0, 0, .45), inset 0 0 0 1px #3A3A3C; }
+.screen { position: relative; aspect-ratio: 16 / 10; border-radius: 12px; overflow: hidden; background: #F2F0EB; isolation: isolate; }
+.screen canvas { position: absolute; inset: 0; display: block; cursor: default; }
+.stand { width: 24%; height: clamp(34px, 6vw, 70px); margin: 0 auto; background: linear-gradient(180deg, #BDBDC2, #D9D9DE 40%, #C7C7CC); clip-path: polygon(8% 0, 92% 0, 100% 100%, 0 100%); }
+.foot { width: 32%; height: 7px; margin: 0 auto; border-radius: 0 0 6px 6px; background: linear-gradient(180deg, #C7C7CC, #A9A9AE); }
+
+.glass {
+  background: rgba(255, 255, 255, .74);
+  backdrop-filter: blur(22px) saturate(1.8);
+  -webkit-backdrop-filter: blur(22px) saturate(1.8);
+  border: 1px solid rgba(0, 0, 0, .06);
+  border-radius: 14px;
+  box-shadow: 0 8px 28px -10px rgba(0, 0, 0, .25);
 }
-.hero h1 em { font-style: normal; color: var(--muted); }
-.hero .lede { margin-top: 1.25rem; }
-.cta-row { display: flex; flex-wrap: wrap; gap: .65rem; margin-top: 1.75rem; }
-.glance { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
-.glance-head { display: flex; justify-content: space-between; padding: .75rem 1rem; border-bottom: 1px solid var(--line); font: 500 .7rem/1 var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
-.glance dl { display: grid; grid-template-columns: 1fr 1fr; margin: 0; }
-.glance dl div { padding: .95rem 1rem; border-bottom: 1px solid var(--line); min-width: 0; }
-.glance dl div:nth-child(odd) { border-right: 1px solid var(--line); }
-.glance dl div:nth-last-child(-n+2) { border-bottom: 0; }
-.glance dt { font: 600 1.35rem/1.1 var(--f-mono); letter-spacing: -.01em; font-variant-numeric: tabular-nums; }
-.glance dd { margin: .3rem 0 0; font-size: .8rem; line-height: 1.35; color: var(--muted); }
-.creds { display: flex; flex-wrap: wrap; gap: .5rem 0; margin-top: clamp(2rem, 4vw, 2.75rem); padding-top: 1.1rem; border-top: 1px solid var(--line); font: 500 .74rem/1 var(--f-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
-.creds span { padding-right: 1.1rem; margin-right: 1.1rem; border-right: 1px solid var(--line); }
-.creds span:last-child { border-right: 0; }
-@media (max-width: 900px) { .hero-grid { grid-template-columns: 1fr; align-items: start; } }
+.side { position: absolute; top: 14px; left: 14px; bottom: 14px; width: 262px; display: flex; flex-direction: column; padding: 14px 10px 10px; text-align: left; }
+.side-head { padding: 0 6px 10px; }
+.side-head strong { display: block; font-size: 1.15rem; letter-spacing: -.025em; }
+.side-head span { font-size: .78rem; color: var(--muted); }
+.seg { display: grid; grid-template-columns: repeat(3, 1fr); background: rgba(118, 118, 128, .14); border-radius: 9px; padding: 2px; margin: 0 4px 10px; }
+.seg button { border: 0; background: transparent; border-radius: 7px; padding: .32rem 0; font: 500 .74rem/1.2 var(--font); color: var(--ink); cursor: pointer; }
+.seg button[aria-pressed="true"] { background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, .14); font-weight: 600; }
+.vlist { list-style: none; margin: 0; padding: 0; overflow-y: auto; display: grid; gap: 2px; align-content: start; }
+.vlist button { width: 100%; display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; gap: .65rem; align-items: center; border: 0; background: transparent; border-radius: 9px; padding: .45rem .5rem; text-align: left; font: inherit; color: var(--ink); cursor: pointer; }
+.vlist button:hover { background: rgba(0, 0, 0, .04); }
+.vlist button[aria-current="true"] { background: rgba(0, 113, 227, .12); }
+.vicon { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; color: #fff; background: var(--blue); }
+.vicon.stopped { background: var(--orange); }
+.vicon svg { width: 17px; height: 17px; }
+.vname { font-size: .86rem; font-weight: 600; letter-spacing: -.015em; display: block; }
+.vsub { font-size: .74rem; color: var(--muted); display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vmeta { font-size: .74rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.vempty { font-size: .8rem; color: var(--muted); padding: .5rem; }
 
-/* ---------- Operations console ---------- */
-.app { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--surface); box-shadow: var(--shadow); }
-.app-bar { display: flex; align-items: center; gap: .7rem 1.2rem; padding: .6rem .9rem; background: var(--chrome-bg); color: var(--chrome-ink); flex-wrap: wrap; }
-.app-bar .crumb { display: flex; align-items: center; gap: .5rem; font-size: .86rem; font-weight: 500; }
-.app-bar .crumb svg { width: 18px; height: 18px; }
-.app-bar .crumb span { color: var(--chrome-dim); }
-.app-search { position: relative; flex: 1 1 220px; max-width: 360px; margin-left: auto; }
-.app-search svg { position: absolute; left: .6rem; top: 50%; width: 14px; height: 14px; transform: translateY(-50%); color: var(--chrome-dim); pointer-events: none; }
-.app-search input { width: 100%; padding: .48rem .7rem .48rem 1.95rem; border-radius: 6px; border: 1px solid var(--chrome-line); background: var(--chrome-2); color: var(--chrome-ink); font: inherit; font-size: .84rem; }
-.app-search input::placeholder { color: var(--chrome-dim); }
-.app-meta { display: flex; align-items: center; gap: .9rem; font: 500 .74rem/1 var(--f-mono); color: var(--chrome-dim); font-variant-numeric: tabular-nums; }
-.live { display: inline-flex; align-items: center; gap: .4rem; color: var(--chrome-ink); letter-spacing: .1em; text-transform: uppercase; font-weight: 600; }
-.live i { width: 7px; height: 7px; border-radius: 50%; background: #3DBE84; animation: blink 1.8s ease-out infinite; }
-@keyframes blink { 0% { box-shadow: 0 0 0 0 rgba(61, 190, 132, .6); } 100% { box-shadow: 0 0 0 7px rgba(61, 190, 132, 0); } }
+.vcard { position: absolute; right: 14px; bottom: 14px; width: 300px; padding: 16px 18px; text-align: left; }
+.vcard-top { display: flex; align-items: center; gap: .7rem; }
+.vcard-top .vicon { width: 38px; height: 38px; }
+.vcard-name { font-size: 1.08rem; font-weight: 700; letter-spacing: -.025em; line-height: 1.2; }
+.vcard-status { font-size: .8rem; color: var(--muted); }
+.vstats { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; margin-top: .9rem; padding-top: .8rem; border-top: 1px solid rgba(0, 0, 0, .08); }
+.vstats dt { font-size: .68rem; color: var(--muted); font-weight: 500; }
+.vstats dd { margin: .1rem 0 0; font-size: 1.02rem; font-weight: 600; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.vstats dd small { font-size: .72rem; font-weight: 500; color: var(--muted); }
+.live-pill { position: absolute; top: 14px; right: 14px; display: inline-flex; align-items: center; gap: .45rem; padding: .4rem .75rem; border-radius: 980px; font-size: .74rem; font-weight: 600; }
+.live-pill i { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 3px rgba(52, 199, 89, .25); }
+.display-note { margin-top: 1.2rem; font-size: .8rem; color: var(--faint); }
 
-.kpis { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); border-bottom: 1px solid var(--line); margin: 0; }
-.kpis div { padding: .7rem 1rem; border-right: 1px solid var(--line); min-width: 0; }
-.kpis div:last-child { border-right: 0; }
-.kpis dt { font-size: .68rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.kpis dd { margin: .15rem 0 0; font: 600 1.2rem/1.2 var(--f-mono); font-variant-numeric: tabular-nums; display: flex; align-items: baseline; gap: .4rem; }
-.kpis dd small { font-size: .74rem; font-weight: 500; color: var(--muted); }
-.kpis .k-dot { width: 8px; height: 8px; border-radius: 50%; align-self: center; }
-
-.app-body { display: grid; grid-template-columns: minmax(0, 1fr) 350px; grid-template-rows: clamp(420px, 42vw, 560px) auto; }
-.map-wrap { position: relative; min-width: 0; background: var(--map-bg); grid-row: 1; grid-column: 1; overflow: hidden; }
-.map-wrap canvas { position: absolute; inset: 0; display: block; touch-action: pan-y; }
-.map-wrap canvas.dragging { cursor: grabbing !important; }
-.map-wrap.zoomed canvas { touch-action: none; }
-.hud { position: absolute; display: flex; gap: .4rem; align-items: center; flex-wrap: wrap; pointer-events: none; }
-.hud > * { pointer-events: auto; }
-.hud-tl { top: 10px; left: 10px; right: 60px; }
-.hud-bl { bottom: 10px; left: 10px; right: 60px; }
-.hud-br { bottom: 10px; right: 10px; flex-direction: column; gap: 0; }
-.tag {
-  display: inline-flex; align-items: center; gap: .45rem;
-  padding: .38rem .58rem; border-radius: 5px;
-  background: color-mix(in srgb, var(--surface) 92%, transparent);
-  border: 1px solid var(--line);
-  font: 500 .71rem/1 var(--f-mono); color: var(--ink); font-variant-numeric: tabular-nums;
-  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
-}
-.tag.dim { color: var(--muted); }
-.chip { cursor: pointer; }
-.chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
-.zoom button { width: 32px; height: 32px; display: grid; place-items: center; background: var(--surface); border: 1px solid var(--line); color: var(--ink); cursor: pointer; font: 500 1rem/1 var(--f-mono); }
-.zoom button + button { border-top: 0; }
-.zoom button:first-child { border-radius: 5px 5px 0 0; }
-.zoom button:last-child { border-radius: 0 0 5px 5px; }
-.zoom button:hover { background: var(--surface-2); }
-.zoom button svg { width: 14px; height: 14px; }
-.scale { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
-.scale-bar { height: 6px; border: 1.5px solid var(--ink); border-top: 0; width: 80px; }
-.legend { gap: .8rem; }
-.legend span { display: inline-flex; align-items: center; gap: .35rem; }
-.legend b { width: 10px; height: 10px; border-radius: 50%; border: 1.5px dashed var(--accent); background: var(--accent-soft); }
-.legend b.school { border-color: var(--alert); background: transparent; }
-
-.side { grid-row: 1 / span 2; grid-column: 2; display: flex; flex-direction: column; border-left: 1px solid var(--line); min-width: 0; overflow-y: auto; }
-.side section { padding: .95rem 1.05rem; border-bottom: 1px solid var(--line); }
-.side section:last-child { border-bottom: 0; flex: 1; }
-.panel-title { font: 500 .68rem/1 var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: .75rem; display: flex; justify-content: space-between; gap: .5rem; }
-.unit-head { display: flex; align-items: flex-start; justify-content: space-between; gap: .5rem; }
-.unit-id { display: flex; align-items: center; gap: .55rem; font: 700 1.4rem/1 var(--f-display); font-variation-settings: "wdth" 104; letter-spacing: -.01em; }
-.plate { font: 600 .7rem/1 var(--f-mono); letter-spacing: .06em; padding: .28rem .4rem; border: 1.5px solid var(--ink); border-radius: 3px; }
-.unit-sub { color: var(--muted); font-size: .85rem; margin-top: .4rem; }
-.pill { display: inline-flex; align-items: center; gap: .35rem; padding: .3rem .5rem; border-radius: 4px; font: 600 .68rem/1 var(--f-mono); letter-spacing: .05em; text-transform: uppercase; white-space: nowrap; }
-.pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-.pill.ok { color: var(--ok); background: color-mix(in srgb, var(--ok) 12%, transparent); }
-.pill.warn { color: var(--warn); background: color-mix(in srgb, var(--warn) 13%, transparent); }
-.pill.alert { color: var(--alert); background: color-mix(in srgb, var(--alert) 12%, transparent); }
-.pill.info { color: var(--info); background: color-mix(in srgb, var(--info) 12%, transparent); }
-.tele { display: grid; grid-template-columns: 1fr 1fr; gap: .7rem 1rem; margin: 1rem 0 0; }
-.tele div { min-width: 0; }
-.tele dt { font-size: .68rem; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
-.tele dd { margin: .12rem 0 0; font: 500 .86rem/1.25 var(--f-mono); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.bar { height: 4px; background: var(--surface-2); border-radius: 2px; margin-top: .3rem; overflow: hidden; }
-.bar i { display: block; height: 100%; background: var(--ink-2); }
-
-.fleet { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; }
-.fleet button {
-  width: 100%; display: grid; grid-template-columns: 8px auto minmax(0, 1fr) auto; align-items: center; gap: .65rem;
-  padding: .45rem .5rem; border: 0; border-radius: 5px; background: transparent; color: var(--ink);
-  font: inherit; font-size: .84rem; text-align: left; cursor: pointer;
-}
-.fleet button:hover { background: var(--surface-2); }
-.fleet button[aria-current="true"] { background: var(--accent-soft); box-shadow: inset 2px 0 0 var(--accent); }
-.fleet .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
-.fleet .dot.warn { background: var(--warn); }
-.fleet .dot.alert { background: var(--alert); }
-.f-main { display: grid; gap: .15rem; }
-.f-main b { font: 600 .8rem/1.1 var(--f-mono); }
-.f-main small { font: 400 .68rem/1 var(--f-mono); color: var(--muted); }
-.fdrv { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.fspd { font: 500 .76rem/1 var(--f-mono); color: var(--ink-2); font-variant-numeric: tabular-nums; }
-.fleet-empty { color: var(--muted); font-size: .84rem; padding: .4rem .5rem; }
-
-.log { grid-row: 2; grid-column: 1; border-top: 1px solid var(--line); min-width: 0; }
-.log-head { display: flex; justify-content: space-between; align-items: center; padding: .6rem 1rem; border-bottom: 1px solid var(--line); }
-.log-head .panel-title { margin: 0; }
-.log-scroll { overflow-x: auto; }
-.log table { width: 100%; border-collapse: collapse; font-size: .82rem; min-width: 560px; }
-.log th { text-align: left; font: 500 .66rem/1 var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); padding: .55rem 1rem; border-bottom: 1px solid var(--line); }
-.log td { padding: .5rem 1rem; border-bottom: 1px solid var(--line); white-space: nowrap; }
-.log tr:last-child td { border-bottom: 0; }
-.log td.t { font: 500 .76rem/1 var(--f-mono); color: var(--muted); font-variant-numeric: tabular-nums; }
-.log td.u { font: 600 .78rem/1 var(--f-mono); }
-.log td.l { color: var(--muted); }
-.log tbody tr:first-child { animation: rowin .6s ease-out; }
-@keyframes rowin { from { background: var(--accent-soft); } to { background: transparent; } }
-.console-note { margin-top: .8rem; color: var(--muted); font-size: .8rem; }
-
-@media (max-width: 1000px) { .kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } .kpis div:nth-child(3) { border-right: 0; } .kpis div:nth-child(-n+3) { border-bottom: 1px solid var(--line); } }
-@media (max-width: 900px) {
-  .app-body { grid-template-columns: 1fr; grid-template-rows: auto; }
-  .map-wrap { grid-row: auto; grid-column: auto; height: min(115vw, 500px); }
-  .side { grid-row: auto; grid-column: auto; border-left: 0; border-top: 1px solid var(--line); overflow: visible; }
-  .log { grid-row: auto; grid-column: auto; }
-  .app-search { max-width: none; order: 3; flex-basis: 100%; }
-}
-@media (max-width: 560px) {
-  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .kpis div { border-bottom: 1px solid var(--line); }
-  .kpis div:nth-child(odd) { border-right: 1px solid var(--line); }
-  .kpis div:nth-child(even) { border-right: 0; }
-  .kpis div:last-child { grid-column: 1 / -1; border-bottom: 0; border-right: 0; }
-  .legend { display: none; }
+@media (max-width: 760px) {
+  .screen { aspect-ratio: 4 / 5; }
+  .side { display: none; }
+  .vcard { left: 10px; right: 10px; bottom: 10px; width: auto; padding: 14px; }
+  .live-pill { top: 10px; right: 10px; }
+  .bezel { border-radius: 18px; }
 }
 
-/* ---------- Industries ---------- */
-.industries { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); overflow: hidden; }
-.ind { padding: 1.5rem; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); display: grid; gap: .7rem; align-content: start; min-width: 0; }
-.ind:nth-child(3n) { border-right: 0; }
-.ind:nth-last-child(-n+3) { border-bottom: 0; }
-.ind svg { width: 30px; height: 30px; color: var(--ink-2); }
-.ind h3 { font-size: 1.12rem; }
-.ind p { color: var(--muted); font-size: .92rem; }
-.ind ul { list-style: none; margin: .3rem 0 0; padding: .8rem 0 0; border-top: 1px dashed var(--line); display: grid; gap: .35rem; font: 500 .76rem/1.35 var(--f-mono); color: var(--ink-2); }
-.ind li::before { content: "› "; color: var(--accent); }
-@media (max-width: 960px) {
-  .industries { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .ind:nth-child(3n) { border-right: 1px solid var(--line); }
-  .ind:nth-child(2n) { border-right: 0; }
-  .ind:nth-last-child(-n+3) { border-bottom: 1px solid var(--line); }
-  .ind:nth-last-child(-n+2) { border-bottom: 0; }
-}
-@media (max-width: 620px) {
-  .industries { grid-template-columns: 1fr; }
-  .ind { border-right: 0 !important; border-bottom: 1px solid var(--line) !important; }
-  .ind:last-child { border-bottom: 0 !important; }
-}
+/* ---------- Numbers ---------- */
+.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2rem; margin-top: clamp(3rem, 6vw, 4.5rem); }
+.stat-num { font-size: clamp(3.4rem, 8vw, 6.2rem); font-weight: 700; letter-spacing: -.05em; line-height: 1; font-variant-numeric: tabular-nums;
+  background: linear-gradient(180deg, #1D1D1F 30%, #5B5B60); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.stat-num small { font-size: .42em; letter-spacing: -.02em; }
+.stat-cap { margin-top: .7rem; color: var(--muted); font-size: 1.02rem; max-width: 18em; margin-inline: auto; }
+@media (max-width: 680px) { .stats { grid-template-columns: 1fr; gap: 2.6rem; } }
 
-/* ---------- Platform modules ---------- */
-.modules { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2.25rem clamp(1.5rem, 3vw, 2.75rem); }
-.module { display: grid; gap: .55rem; align-content: start; padding-top: 1.1rem; border-top: 2px solid var(--ink); }
-.module .num { font: 500 .7rem/1 var(--f-mono); color: var(--muted); letter-spacing: .1em; text-transform: uppercase; }
-.module h3 { font-size: 1.15rem; }
-.module p { color: var(--muted); font-size: .93rem; }
-.module .fact { font: 500 .76rem/1.4 var(--f-mono); color: var(--ink-2); }
-@media (max-width: 900px) { .modules { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 600px) { .modules { grid-template-columns: 1fr; } }
+/* ---------- Bento ---------- */
+.bento { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; margin-top: clamp(3rem, 6vw, 4.5rem); text-align: left; }
+.tile { background: var(--white); border-radius: 28px; padding: clamp(1.6rem, 3vw, 2.3rem); display: flex; flex-direction: column; gap: 1.4rem; min-width: 0; overflow: hidden; }
+.tile.span2 { grid-column: span 2; }
+.tile.span3 { grid-column: 1 / -1; }
+.tile h3 { font-size: clamp(1.45rem, 2.4vw, 1.8rem); letter-spacing: -.03em; line-height: 1.12; }
+.tile h3 span { color: var(--muted); }
+.tile .vis { margin-top: auto; }
+.tile svg.art { width: 100%; height: auto; display: block; }
+.notes { display: grid; gap: 10px; }
+.note { display: grid; grid-template-columns: 34px 1fr; gap: .7rem; background: rgba(245, 245, 247, .9); border-radius: 16px; padding: .75rem .85rem; }
+.note-icon { width: 34px; height: 34px; border-radius: 9px; background: #1D1D1F; display: grid; place-items: center; }
+.note-icon svg { width: 20px; height: 20px; }
+.note-top { display: flex; justify-content: space-between; font-size: .68rem; color: var(--faint); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+.note-title { font-size: .86rem; font-weight: 600; letter-spacing: -.015em; margin-top: .1rem; }
+.note-body { font-size: .8rem; color: var(--muted); }
+.note:nth-child(2) { transform: scale(.97); opacity: .9; }
+.note:nth-child(3) { transform: scale(.94); opacity: .75; }
+.rings { display: grid; grid-template-columns: 150px 1fr; gap: 1.2rem; align-items: center; }
+.rings svg { width: 150px; height: 150px; }
+.ring-legend { list-style: none; margin: 0; padding: 0; display: grid; gap: .55rem; font-size: .84rem; }
+.ring-legend li { display: grid; gap: .05rem; }
+.ring-legend b { font-size: 1.15rem; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.ring-legend span { color: var(--muted); }
+.bars { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; align-items: end; height: 160px; }
+.bars div { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 6px; height: 100%; }
+.bars i { display: block; width: 100%; max-width: 26px; border-radius: 6px 6px 3px 3px; background: #C9DDF5; }
+.bars div:last-child i { background: var(--blue); }
+.bars b { font-size: .7rem; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
+.bars span { font-size: .7rem; color: var(--faint); }
+.bar-cap { font-size: .76rem; color: var(--faint); margin-top: .6rem; }
+.pills { display: flex; flex-wrap: wrap; gap: 10px; }
+.pills span { padding: .6rem 1rem; border-radius: 980px; background: var(--grey-bg); font-size: .9rem; font-weight: 500; }
+.tile-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 2rem; align-items: center; }
+@media (max-width: 900px) { .bento { grid-template-columns: 1fr 1fr; } .tile.span2 { grid-column: 1 / -1; } }
+@media (max-width: 640px) { .bento { grid-template-columns: 1fr; } .tile-row { grid-template-columns: 1fr; } .rings { grid-template-columns: 120px 1fr; } .rings svg { width: 120px; height: 120px; } }
 
-/* ---------- Replay ---------- */
-.replay-grid { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: clamp(1.25rem, 3vw, 2.5rem); align-items: start; }
-.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; box-shadow: var(--shadow); min-width: 0; }
-.replay-map { position: relative; height: clamp(320px, 33vw, 430px); background: var(--map-bg); }
-.replay-map canvas { position: absolute; inset: 0; display: block; }
-.replay-chart { position: relative; height: 176px; border-top: 1px solid var(--line); cursor: ew-resize; touch-action: none; }
-.replay-chart canvas { position: absolute; inset: 0; display: block; }
-.replay-controls { display: flex; align-items: center; gap: .8rem; padding: .75rem 1rem; border-top: 1px solid var(--line); flex-wrap: wrap; }
-.replay-controls input[type="range"] { flex: 1 1 200px; min-width: 0; accent-color: var(--accent); }
-.play { min-width: 92px; }
-.rate { display: flex; gap: .3rem; }
-.replay-side { display: grid; gap: 1.5rem; min-width: 0; }
-.datagrid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; margin: 0; }
-.datagrid div { background: var(--surface); padding: .75rem .9rem; min-width: 0; }
-.datagrid dt { font-size: .68rem; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
-.datagrid dd { margin: .2rem 0 0; font: 600 1.12rem/1.15 var(--f-mono); font-variant-numeric: tabular-nums; }
-.datagrid dd small { font-size: .75rem; color: var(--muted); font-weight: 500; }
-.stops, .flags { list-style: none; margin: 0; padding: 0; display: grid; gap: .2rem; }
-.stops button, .flags button { width: 100%; display: grid; grid-template-columns: 22px 1fr auto; gap: .6rem; align-items: center; text-align: left; border: 0; background: transparent; color: var(--ink); font: inherit; font-size: .86rem; padding: .42rem .45rem; border-radius: 5px; cursor: pointer; }
-.stops button:hover, .flags button:hover { background: var(--surface-2); }
-.stops .n { width: 22px; height: 22px; border-radius: 50%; background: var(--ink); color: var(--bg); display: grid; place-items: center; font: 600 .7rem/1 var(--f-mono); }
-.stops time, .flags time { font: 500 .74rem/1 var(--f-mono); color: var(--muted); font-variant-numeric: tabular-nums; }
-.flags .ic { width: 22px; height: 22px; display: grid; place-items: center; }
-.flags .ic svg { width: 16px; height: 16px; }
-.flags .warn { color: var(--warn); }
-.flags .alert { color: var(--alert); }
-.score-row { display: flex; align-items: baseline; justify-content: space-between; gap: .5rem; }
-.score-row strong { font: 700 2.1rem/1 var(--f-mono); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
-.score-row span { color: var(--muted); font-size: .82rem; }
-.meter { height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; margin-top: .5rem; }
-.meter i { display: block; height: 100%; background: var(--ink-2); }
-@media (max-width: 980px) { .replay-grid { grid-template-columns: 1fr; } .replay-side { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); } }
+/* ---------- Dark product band ---------- */
+.dark { background: var(--black); color: var(--dark-ink); }
+.dark .eyebrow { color: #FF9F45; }
+.dark .sub { color: var(--dark-muted); }
+.device { max-width: 640px; margin: clamp(2.5rem, 6vw, 4rem) auto 0; }
+.device svg { width: 100%; height: auto; display: block; }
+.led { animation: led 2.4s ease-in-out infinite; transform-origin: 462px 104px; }
+@keyframes led { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
+.specs { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 2rem 1.5rem; margin-top: clamp(2.5rem, 6vw, 4rem); padding-top: 2.4rem; border-top: 1px solid #2C2C2E; }
+.specs div { min-width: 0; }
+.specs dt { font-size: clamp(1.25rem, 2.2vw, 1.7rem); font-weight: 700; letter-spacing: -.03em; color: var(--dark-ink); font-variant-numeric: tabular-nums; }
+.specs dd { margin: .35rem 0 0; font-size: .86rem; color: var(--dark-muted); }
+@media (max-width: 900px) { .specs { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 480px) { .specs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
-/* ---------- Hardware ---------- */
-.hw-grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(1.5rem, 4vw, 3.5rem); align-items: start; }
-.drawing { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 1rem; margin: 0; }
-.drawing svg { width: 100%; height: auto; display: block; }
-.drawing .dw-line { fill: none; stroke: var(--ink); stroke-width: 1.4; }
-.drawing .dw-fill { fill: var(--surface-2); stroke: var(--ink); stroke-width: 1.4; }
-.drawing .dw-dim { fill: none; stroke: var(--muted); stroke-width: 1; }
-.drawing .dw-txt { fill: var(--muted); font: 500 10px var(--f-mono); }
-.drawing .dw-label { fill: var(--ink); font: 600 10px var(--f-mono); letter-spacing: .08em; }
-.drawing .dw-acc { fill: var(--accent); }
-.drawing .dw-ok { fill: var(--ok); }
-.drawing .dw-info { fill: var(--info); }
-.drawing-cap { display: flex; justify-content: space-between; gap: .5rem; flex-wrap: wrap; margin-top: .6rem; padding-top: .6rem; border-top: 1px solid var(--line); font: 500 .72rem/1.3 var(--f-mono); color: var(--muted); }
-.hw-copy { margin-top: 1.25rem; color: var(--muted); font-size: .95rem; }
-.spec-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
-.spec { width: 100%; border-collapse: collapse; font-size: .88rem; min-width: 460px; }
-.spec th, .spec td { text-align: left; padding: .62rem 1rem; border-bottom: 1px solid var(--line); vertical-align: top; }
-.spec tbody tr:last-child td, .spec tbody tr:last-child th { border-bottom: 0; }
-.spec th[scope="row"] { font-weight: 500; color: var(--muted); width: 36%; }
-.spec td { font-family: var(--f-mono); font-size: .82rem; font-variant-numeric: tabular-nums; }
-.spec .grp th { background: var(--surface-2); font: 600 .68rem/1 var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-2); padding-block: .55rem; }
-@media (max-width: 980px) { .hw-grid { grid-template-columns: 1fr; } }
+/* ---------- Phone ---------- */
+.app-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: clamp(2rem, 6vw, 6rem); align-items: center; }
+.app-row .sub { margin-top: 1.2rem; }
+.checks { list-style: none; margin: 2rem 0 0; padding: 0; display: grid; gap: .9rem; font-size: 1.02rem; }
+.checks li { display: grid; grid-template-columns: 24px 1fr; gap: .7rem; }
+.checks svg { width: 22px; height: 22px; color: var(--blue); margin-top: .1rem; }
+.phone { width: 300px; max-width: 100%; background: #1D1D1F; border-radius: 52px; padding: 11px; box-shadow: 0 50px 90px -40px rgba(0, 0, 0, .45), inset 0 0 0 1px #3A3A3C; }
+.phone-screen { position: relative; aspect-ratio: 9 / 19.2; background: #F2F2F7; border-radius: 42px; overflow: hidden; padding: 14px 16px 0; text-align: left; }
+.island { position: absolute; top: 10px; left: 50%; width: 92px; height: 27px; margin-left: -46px; background: #000; border-radius: 20px; }
+.statusbar { display: flex; justify-content: space-between; align-items: center; height: 26px; padding: 0 10px; font-size: .8rem; font-weight: 600; }
+.statusbar svg { width: 44px; height: 12px; }
+.app-title { font-size: 1.9rem; font-weight: 700; letter-spacing: -.035em; margin: 18px 4px 10px; }
+.phone .seg { margin: 0 0 12px; }
+.ios-list { list-style: none; margin: 0; padding: 0; background: #fff; border-radius: 12px; overflow: hidden; }
+.ios-list li { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; gap: .6rem; align-items: center; padding: .55rem .7rem; position: relative; }
+.ios-list li + li::before { content: ""; position: absolute; top: 0; left: 50px; right: 0; height: 1px; background: #E5E5EA; }
+.ios-list .vicon { width: 30px; height: 30px; }
+.ios-list .vicon svg { width: 16px; height: 16px; }
+.ios-list .vname { font-size: .82rem; }
+.ios-list .vsub { font-size: .7rem; }
+.ios-list .vmeta { font-size: .7rem; }
+.ios-foot { margin: 12px 4px 0; font-size: .7rem; color: var(--faint); }
+@media (max-width: 820px) { .app-row { grid-template-columns: 1fr; justify-items: center; text-align: center; } .app-row .sub { margin-inline: auto; } .checks { justify-items: start; text-align: left; max-width: 26em; margin-inline: auto; } }
 
-/* ---------- GNSS ---------- */
-.gnss-grid { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 8fr); gap: clamp(1.5rem, 4vw, 4rem); align-items: start; }
-.gnss-copy { display: grid; gap: 1.4rem; }
-.sys-legend { display: flex; flex-wrap: wrap; gap: .5rem 1.2rem; font-size: .86rem; }
-.sys-legend span { display: inline-flex; align-items: center; gap: .45rem; }
-.sys-legend i { width: 10px; height: 10px; border-radius: 50%; }
-.sys-legend em { font-style: normal; color: var(--muted); font-family: var(--f-mono); font-size: .76rem; }
-.plate-card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: clamp(1rem, 2.5vw, 1.5rem); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1.5rem; }
-.plate-cell { min-width: 0; display: grid; gap: .8rem; align-content: start; }
-#skyplot { width: 100%; max-width: 100%; height: auto; display: block; }
-#skyplot .ring { fill: none; stroke: var(--grid); }
-#skyplot .axis { stroke: var(--grid); }
-#skyplot .lbl { fill: var(--muted); font: 500 10px var(--f-mono); }
-#skyplot .card { fill: var(--ink); font: 600 11px var(--f-mono); }
-#skyplot .sat { transition: transform 1s linear; }
-#skyplot .sat text { font: 600 7.5px var(--f-mono); text-anchor: middle; dominant-baseline: central; }
-.snr { position: relative; display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 6px; }
-.snr-axis { position: relative; height: 200px; }
-.snr-axis span { position: absolute; right: 0; transform: translateY(50%); font: 500 .64rem/1 var(--f-mono); color: var(--muted); }
-.snr-plot { position: relative; height: 200px; display: flex; align-items: flex-end; gap: 3px; border-bottom: 1px solid var(--muted); background: repeating-linear-gradient(to top, var(--grid) 0 1px, transparent 1px 20%); }
-.snr-plot .b { flex: 1; min-width: 0; border-radius: 2px 2px 0 0; transition: height .9s ease; }
-.snr-plot .b.unused { opacity: .35; }
-.snr-labels { display: flex; gap: 3px; margin-left: 28px; }
-.snr-labels span { flex: 1; min-width: 0; font: 500 .6rem/1 var(--f-mono); color: var(--muted); writing-mode: vertical-rl; transform: rotate(180deg); text-align: right; height: 2.4em; display: flex; align-items: center; }
-.axis-note { font-size: .78rem; color: var(--muted); }
-@media (max-width: 1000px) { .gnss-grid { grid-template-columns: 1fr; } }
-@media (max-width: 620px) { .plate-card { grid-template-columns: 1fr; } }
-
-/* ---------- Developers ---------- */
-.dev { background: var(--surface-2); }
-.dev-grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(1.5rem, 4vw, 3.5rem); align-items: start; }
-.endpoints { list-style: none; margin: 1.6rem 0 0; padding: 0; display: grid; gap: .5rem; }
-.endpoints li { display: flex; flex-wrap: wrap; gap: .3rem .7rem; align-items: baseline; font-size: .88rem; color: var(--muted); }
-.endpoints code { font: 500 .8rem/1.4 var(--f-mono); color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: .15rem .45rem; }
-.protocols { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: 1.4rem; }
-.protocols span { font: 500 .74rem/1 var(--f-mono); padding: .45rem .6rem; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); color: var(--ink-2); }
-.term { background: var(--term-bg); color: var(--term-ink); border-radius: 10px; overflow: hidden; box-shadow: var(--shadow); min-width: 0; }
-.term-bar { display: flex; align-items: center; gap: .4rem; padding: .55rem .7rem; border-bottom: 1px solid rgba(255,255,255,.08); flex-wrap: wrap; }
-.term-bar .tab { background: transparent; border: 0; color: var(--term-dim); font: 500 .74rem/1 var(--f-mono); padding: .5rem .65rem; border-radius: 4px; cursor: pointer; }
-.term-bar .tab[aria-selected="true"] { color: var(--term-ink); background: rgba(255,255,255,.08); }
-.term-bar .src { margin-left: auto; font: 500 .7rem/1 var(--f-mono); color: var(--term-dim); padding-right: .3rem; }
-.term-bar .src b { color: var(--term-key); font-weight: 600; }
-.term pre { margin: 0; padding: 1rem 1.1rem 1.2rem; height: 360px; overflow: auto; font: 400 .76rem/1.65 var(--f-mono); white-space: pre; }
-.t-talker { color: var(--term-key); }
-.t-cs { color: var(--term-dim); }
-.j-key { color: var(--term-key); }
-.j-str { color: var(--term-str); }
-.j-num { color: var(--term-num); }
-@media (max-width: 900px) { .dev-grid { grid-template-columns: 1fr; } }
-
-/* ---------- Security ---------- */
-.sec-items { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.5rem clamp(1.25rem, 3vw, 2.5rem); }
-.sec-item { display: grid; gap: .55rem; align-content: start; }
-.sec-item svg { width: 26px; height: 26px; color: var(--ink-2); }
-.sec-item h3 { font-size: 1.05rem; }
-.sec-item p { color: var(--muted); font-size: .9rem; }
-.sec-item .fact { font: 500 .74rem/1.4 var(--f-mono); color: var(--ink-2); }
-@media (max-width: 1000px) { .sec-items { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 560px) { .sec-items { grid-template-columns: 1fr; } }
-
-/* ---------- ROI ---------- */
-.roi { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); border: 1px solid var(--line); border-radius: 10px; background: var(--surface); overflow: hidden; }
-.roi-in { padding: clamp(1.1rem, 2.5vw, 1.75rem); display: grid; gap: 1.15rem; border-right: 1px solid var(--line); min-width: 0; }
-.field { display: grid; gap: .45rem; }
-.field-top { display: flex; justify-content: space-between; align-items: baseline; gap: .75rem; }
-.field label { font-size: .88rem; font-weight: 500; }
-.field output { font: 600 .9rem/1 var(--f-mono); font-variant-numeric: tabular-nums; }
-.field input[type="range"] { width: 100%; accent-color: var(--accent); }
-.assume { font-size: .78rem; color: var(--muted); padding-top: .9rem; border-top: 1px dashed var(--line); }
-.roi-out { padding: clamp(1.1rem, 2.5vw, 1.75rem); display: grid; gap: 1.3rem; align-content: start; background: color-mix(in srgb, var(--surface-2) 45%, var(--surface)); min-width: 0; }
-.roi-head { font: 500 .68rem/1 var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: .5rem; }
-.roi-big { font: 700 clamp(2.1rem, 4.5vw, 3rem)/1 var(--f-mono); letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
-.roi-big small { font-size: .9rem; color: var(--muted); font-weight: 500; letter-spacing: 0; }
-.cmp { display: grid; gap: .7rem; }
-.cmp-row { display: grid; grid-template-columns: 150px minmax(0, 1fr) auto; gap: .75rem; align-items: center; font-size: .84rem; }
-.cmp-row .track { height: 14px; background: var(--surface-2); border-radius: 2px; overflow: hidden; }
-.cmp-row .track i { display: block; height: 100%; border-radius: 0 2px 2px 0; transition: width .35s ease; }
-.cmp-row .v { font: 500 .8rem/1 var(--f-mono); font-variant-numeric: tabular-nums; min-width: 6.5em; text-align: right; }
-.roi-note { font-size: .76rem; color: var(--muted); }
-@media (max-width: 900px) { .roi { grid-template-columns: 1fr; } .roi-in { border-right: 0; border-bottom: 1px solid var(--line); } }
-@media (max-width: 480px) { .cmp-row { grid-template-columns: 1fr auto; } .cmp-row .track { grid-column: 1 / -1; grid-row: 2; } }
+/* ---------- Steps ---------- */
+.steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; margin-top: clamp(3rem, 6vw, 4.5rem); text-align: left; }
+.step { background: var(--white); border-radius: 28px; padding: clamp(1.6rem, 3vw, 2.2rem); }
+.step-n { font-size: 3.4rem; font-weight: 700; letter-spacing: -.05em; line-height: 1; color: #D2D2D7; }
+.step h3 { font-size: 1.4rem; letter-spacing: -.03em; margin-top: 1.6rem; }
+.step p { color: var(--muted); margin-top: .5rem; }
+@media (max-width: 800px) { .steps { grid-template-columns: 1fr; } }
 
 /* ---------- Pricing ---------- */
-.tiers { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--surface); }
-.tier { display: flex; flex-direction: column; gap: 1.1rem; padding: 1.6rem; border-right: 1px solid var(--line); min-width: 0; }
-.tier:last-child { border-right: 0; }
-.tier.featured { background: color-mix(in srgb, var(--accent) 4%, var(--surface)); box-shadow: inset 0 3px 0 var(--accent); }
-.tier-top { display: flex; justify-content: space-between; align-items: center; gap: .5rem; }
-.tier h3 { font-size: 1.2rem; }
-.tier .badge { font: 600 .64rem/1 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); border: 1px solid currentColor; padding: .3rem .45rem; border-radius: 3px; }
-.tier .for { font-size: .86rem; color: var(--muted); margin-top: -.5rem; }
-.price { display: flex; align-items: baseline; gap: .4rem; }
-.price strong { font: 700 2.4rem/1 var(--f-mono); letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
-.price span { color: var(--muted); font-size: .84rem; }
-.tier ul { list-style: none; margin: 0; padding: 0; display: grid; gap: .5rem; font-size: .9rem; flex: 1; }
-.tier li { display: grid; grid-template-columns: 16px 1fr; gap: .55rem; }
-.tier li svg { width: 16px; height: 16px; margin-top: .2rem; color: var(--ok); }
-.hw-note { margin-top: 1rem; font-size: .84rem; color: var(--muted); }
-@media (max-width: 880px) { .tiers { grid-template-columns: 1fr; } .tier { border-right: 0; border-bottom: 1px solid var(--line); } .tier:last-child { border-bottom: 0; } }
+.plans { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; max-width: 860px; margin: clamp(3rem, 6vw, 4.5rem) auto 0; text-align: left; }
+.plan { border: 1px solid var(--line); border-radius: 28px; padding: clamp(1.75rem, 3vw, 2.5rem); display: flex; flex-direction: column; gap: 1.2rem; }
+.plan h3 { font-size: 1.5rem; letter-spacing: -.03em; }
+.plan .price { font-size: 3rem; font-weight: 700; letter-spacing: -.05em; line-height: 1; }
+.plan .price small { font-size: .95rem; font-weight: 500; letter-spacing: -.01em; color: var(--muted); }
+.plan ul { list-style: none; margin: 0; padding: 1.2rem 0 0; border-top: 1px solid var(--line); display: grid; gap: .7rem; flex: 1; }
+.plan li { display: grid; grid-template-columns: 20px 1fr; gap: .6rem; font-size: .98rem; }
+.plan li svg { width: 18px; height: 18px; color: var(--blue); margin-top: .2rem; }
+.plan .btn { align-self: flex-start; }
+.btn-line { background: transparent; color: var(--blue); box-shadow: inset 0 0 0 1px var(--blue); }
+.btn-line:hover { background: rgba(0, 113, 227, .06); }
+.plan-note { margin-top: 1.6rem; font-size: .9rem; color: var(--muted); }
+@media (max-width: 720px) { .plans { grid-template-columns: 1fr; } }
 
-/* ---------- Contact ---------- */
-.contact { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(1.5rem, 4vw, 4rem); align-items: start; }
-.contact-list { list-style: none; margin: 1.5rem 0 0; padding: 0; display: grid; gap: .7rem; font-size: .92rem; color: var(--muted); }
-.contact-list li { display: grid; grid-template-columns: 20px 1fr; gap: .6rem; }
-.contact-list svg { width: 18px; height: 18px; margin-top: .2rem; color: var(--ink-2); }
-form.demo { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; padding: clamp(1.1rem, 2.5vw, 1.75rem); border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
-form.demo .full { grid-column: 1 / -1; }
-form.demo label { display: grid; gap: .4rem; font-size: .84rem; font-weight: 500; min-width: 0; }
-form.demo input, form.demo select, form.demo textarea {
-  width: 100%; min-width: 0; padding: .7rem .8rem; border-radius: 6px; border: 1px solid var(--line);
-  background: var(--bg); color: var(--ink); font: inherit; font-size: .93rem; font-weight: 400;
-}
-form.demo textarea { resize: vertical; min-height: 88px; }
-.form-foot { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
-.form-msg { font-size: .86rem; color: var(--muted); }
-.form-msg.ok { color: var(--ok); }
-.form-msg.err { color: var(--alert); }
-@media (max-width: 900px) { .contact { grid-template-columns: 1fr; } }
-@media (max-width: 560px) { form.demo { grid-template-columns: 1fr; } }
+/* ---------- CTA ---------- */
+.cta-form { display: flex; gap: 10px; max-width: 520px; margin: 2.2rem auto 0; }
+.cta-form input { flex: 1; min-width: 0; padding: .85rem 1.2rem; border-radius: 980px; border: 1px solid var(--line); background: #fff; color: var(--ink); font: inherit; font-size: 1rem; }
+.cta-form input:focus { border-color: var(--blue); outline: none; box-shadow: 0 0 0 4px rgba(0, 113, 227, .18); }
+.cta-msg { min-height: 1.5em; margin-top: 1rem; font-size: .92rem; color: var(--muted); }
+.cta-msg.ok { color: #1E8E3E; }
+.cta-msg.err { color: #D70015; }
+@media (max-width: 520px) { .cta-form { flex-direction: column; } }
 
 /* ---------- Footer ---------- */
-footer { border-top: 1px solid var(--line); background: var(--surface); padding-block: clamp(2.5rem, 5vw, 3.5rem) 1.5rem; font-size: .88rem; color: var(--muted); }
-.foot-grid { display: grid; grid-template-columns: minmax(0, 2fr) repeat(4, minmax(0, 1fr)); gap: 2rem; }
-.foot-grid h4 { margin: 0 0 .8rem; font: 500 .68rem/1 var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-2); }
-.foot-grid ul { list-style: none; margin: 0; padding: 0; display: grid; gap: .45rem; }
-.foot-grid a { text-decoration: none; }
-.foot-grid ul a:hover { color: var(--ink); text-decoration: underline; }
-.foot-brand p { margin-top: .9rem; max-width: 34ch; }
-.foot-base { display: flex; flex-wrap: wrap; gap: .5rem 1.5rem; margin-top: 2.5rem; padding-top: 1.2rem; border-top: 1px solid var(--line); font-size: .8rem; }
-.foot-base .coords { margin-left: auto; font-family: var(--f-mono); }
-@media (max-width: 860px) { .foot-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .foot-brand { grid-column: 1 / -1; } }
+footer { background: var(--grey-bg); border-top: 1px solid var(--line); padding-block: 2.2rem 2.6rem; font-size: .76rem; color: var(--muted); }
+.foot-cols { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.5rem; padding-bottom: 1.6rem; border-bottom: 1px solid var(--line); }
+.foot-cols h4 { margin: 0 0 .6rem; font-size: .76rem; font-weight: 600; color: var(--ink); }
+.foot-cols ul { list-style: none; margin: 0; padding: 0; display: grid; gap: .45rem; }
+.foot-cols a { color: var(--muted); }
+.foot-cols a:hover { color: var(--ink); }
+.foot-base { display: flex; flex-wrap: wrap; gap: .5rem 1.5rem; padding-top: 1.2rem; }
+.foot-base span:last-child { margin-left: auto; }
+@media (max-width: 700px) { .foot-cols { grid-template-columns: 1fr 1fr; } .foot-base span:last-child { margin-left: 0; } }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
@@ -552,605 +281,328 @@ footer { border-top: 1px solid var(--line); background: var(--surface); padding-
 
 <header class="nav">
   <div class="wrap">
-    <a class="brand" href="#top" aria-label="Lodestar GPS home">
-      <svg viewBox="0 0 32 32" aria-hidden="true">
-        <rect x="2" y="2" width="28" height="28" rx="5" fill="var(--ink)"/>
-        <circle cx="16" cy="16" r="8.5" fill="none" stroke="var(--bg)" stroke-width="1.6"/>
-        <path d="M16 5.5v4M16 22.5v4M5.5 16h4M22.5 16h4" stroke="var(--bg)" stroke-width="1.6" stroke-linecap="round"/>
-        <circle cx="16" cy="16" r="2.6" fill="var(--accent)"/>
-      </svg>
-      Lodestar <small>GPS</small>
+    <a class="logo" href="#top" aria-label="Lodestar home">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10.5" fill="#1D1D1F"/><circle cx="12" cy="12" r="5.6" fill="none" stroke="#fff" stroke-width="1.4"/><path d="M12 3.6v3M12 17.4v3M3.6 12h3M17.4 12h3" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/><circle cx="12" cy="12" r="1.9" fill="#FF9F0A"/></svg>
+      Lodestar
     </a>
     <nav class="nav-links" aria-label="Main">
-      <a href="#live">Platform</a>
-      <a href="#industries">Industries</a>
-      <a href="#hardware">Hardware</a>
-      <a href="#developers">Developers</a>
-      <a href="#security">Security</a>
+      <a href="#features">Features</a>
+      <a href="#tracker">Tracker</a>
+      <a href="#app">App</a>
+      <a href="#how">How it works</a>
       <a href="#pricing">Pricing</a>
     </nav>
-    <div class="nav-actions">
-      <button class="theme-btn" id="theme-btn" type="button" aria-label="Switch to dark theme">
-        <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
-        <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>
-      </button>
-      <a class="btn btn-primary btn-sm" href="#contact">Request a demo</a>
-    </div>
+    <a class="btn btn-blue" href="#demo">Book a demo</a>
   </div>
 </header>
 
 <main id="top">
-  <section class="hero">
+  <section class="hero center">
     <div class="wrap">
-      <div class="hero-grid">
-        <div>
-          <span class="eyebrow">Fleet telematics · GNSS · CAN bus</span>
-          <h1>Real-time visibility for the fleets that keep cities running. <em>Every vehicle, every second, to within 1.5&nbsp;metres.</em></h1>
-          <p class="lede">Lodestar combines a dual-frequency GNSS tracker, vehicle data from the CAN bus and a live operations console. Dispatch, compliance and maintenance teams work from the same position record.</p>
-          <div class="cta-row">
-            <a class="btn btn-primary" href="#contact">Request a demo</a>
-            <a class="btn btn-ghost" href="#hardware">View tracker specifications</a>
-          </div>
-        </div>
-        <aside class="glance" aria-label="Lodestar T4 key figures">
-          <div class="glance-head"><span>Lodestar T4 tracker</span><span>Rev. C</span></div>
-          <dl>
-            <div><dt>1.5 m</dt><dd>horizontal accuracy, CEP50, open sky</dd></div>
-            <div><dt>1 Hz</dt><dd>position reporting, configurable to 10 Hz</dd></div>
-            <div><dt>L1 + L5</dt><dd>dual-frequency, four constellations</dd></div>
-            <div><dt>IP67</dt><dd>−40 to +85 °C, E-mark ECE R10</dd></div>
-          </dl>
-        </aside>
-      </div>
-      <div class="creds" aria-label="Standards and compliance">
-        <span>ISO/IEC 27001</span><span>GDPR · EU data residency</span><span>rFMS 4.0</span><span>EU 561/2006 driving hours</span><span>GTFS-Realtime</span>
-      </div>
-    </div>
-  </section>
+      <p class="eyebrow">Lodestar Fleet</p>
+      <h1 class="h-xl">Every vehicle.<br>Every second.</h1>
+      <p class="sub">Your whole fleet on one live map, accurate to a metre and a half. Set up in an afternoon.</p>
+      <div class="links"><a href="#demo">Book a demo</a><a href="#how">See how it works</a></div>
 
-  <section id="live" class="wrap" aria-label="Operations console">
-    <div class="app">
-      <div class="app-bar">
-        <div class="crumb">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/></svg>
-          Operations <span>/ Prishtina depot / Live map</span>
-        </div>
-        <div class="app-search">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5L14 14"/></svg>
-          <label for="fleet-search" class="vh">Search vehicles</label>
-          <input id="fleet-search" type="search" placeholder="Search unit, plate or driver" autocomplete="off">
-        </div>
-        <div class="app-meta">
-          <span class="live"><i></i>Live</span>
-          <span id="clock">00:00:00 UTC</span>
-          <span>Simulated data</span>
-        </div>
-      </div>
-      <dl class="kpis">
-        <div><dt>Reporting</dt><dd>6<small>/ 6</small></dd></div>
-        <div><dt>Driving</dt><dd><span class="k-dot" style="background:var(--ok)"></span><span id="k-mov">–</span></dd></div>
-        <div><dt>Stopped · idling</dt><dd><span class="k-dot" style="background:var(--warn)"></span><span id="k-stop">–</span></dd></div>
-        <div><dt>Distance today</dt><dd id="k-dist">–</dd></div>
-        <div><dt>Alerts today</dt><dd><span class="k-dot" style="background:var(--alert)"></span><span id="k-alert">0</span></dd></div>
-      </dl>
-      <div class="app-body">
-        <div class="map-wrap" id="map-wrap">
-          <canvas id="map" role="img" aria-label="Simulated live map of six vehicles moving around Prishtina, with a depot and a school zone marked."></canvas>
-          <div class="hud hud-tl">
-            <button class="tag chip" id="btn-trails" type="button" aria-pressed="true">Trails</button>
-            <button class="tag chip" id="btn-zones" type="button" aria-pressed="true">Geofences</button>
-            <button class="tag chip" id="btn-labels" type="button" aria-pressed="true">Labels</button>
-          </div>
-          <div class="hud hud-bl">
-            <div class="tag scale"><div class="scale-bar" id="scale-bar"></div><span id="scale-label">1 km</span></div>
-            <div class="tag legend"><span><b></b>Depot</span><span><b class="school"></b>School · 30 km/h</span></div>
-          </div>
-          <div class="hud hud-br zoom" role="group" aria-label="Map zoom">
-            <button type="button" id="zoom-in" aria-label="Zoom in">+</button>
-            <button type="button" id="zoom-out" aria-label="Zoom out">−</button>
-            <button type="button" id="zoom-fit" aria-label="Reset view"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/></svg></button>
-          </div>
-        </div>
-        <aside class="side" aria-label="Selected vehicle and fleet">
-          <section>
-            <div class="unit-head">
-              <div>
-                <div class="unit-id"><span id="t-id">LS-204</span><span class="plate" id="t-plate">01-482-AF</span></div>
-                <div class="unit-sub" id="t-sub">Van</div>
+      <div class="display">
+        <div class="bezel">
+          <div class="screen" id="screen">
+            <canvas id="map" role="img" aria-label="Live map of six vehicles moving around Prishtina"></canvas>
+            <div class="side glass" aria-label="Fleet list">
+              <div class="side-head"><strong>Fleet</strong><span id="side-count">6 vehicles</span></div>
+              <div class="seg" role="group" aria-label="Filter vehicles">
+                <button type="button" data-f="all" aria-pressed="true">All</button>
+                <button type="button" data-f="moving" aria-pressed="false">Moving</button>
+                <button type="button" data-f="stopped" aria-pressed="false">Stopped</button>
               </div>
-              <span class="pill ok" id="t-status">Driving</span>
+              <ul class="vlist" id="vlist"></ul>
+              <p class="vempty" id="vempty" hidden>No vehicles in this view.</p>
             </div>
-            <dl class="tele">
-              <div><dt>Speed</dt><dd id="t-spd">–</dd></div>
-              <div><dt>Heading</dt><dd id="t-hdg">–</dd></div>
-              <div><dt>Latitude</dt><dd id="t-lat">–</dd></div>
-              <div><dt>Longitude</dt><dd id="t-lon">–</dd></div>
-              <div><dt>GNSS</dt><dd id="t-sat">–</dd></div>
-              <div><dt>Altitude</dt><dd id="t-alt">–</dd></div>
-              <div><dt>Fuel</dt><dd id="t-fuel">–</dd><div class="bar"><i id="t-fuel-bar"></i></div></div>
-              <div><dt>Driving today</dt><dd id="t-drive">–</dd><div class="bar"><i id="t-drive-bar"></i></div></div>
-              <div><dt>Odometer</dt><dd id="t-odo">–</dd></div>
-              <div><dt>Location</dt><dd id="t-loc">–</dd></div>
-            </dl>
-          </section>
-          <section>
-            <div class="panel-title"><span>Fleet</span><span id="fleet-count">6 units</span></div>
-            <ul class="fleet" id="fleet"></ul>
-            <p class="fleet-empty" id="fleet-empty" hidden>No vehicles match that search.</p>
-          </section>
-        </aside>
-        <div class="log">
-          <div class="log-head"><div class="panel-title"><span>Event log</span></div><span class="tag dim">UTC</span></div>
-          <div class="log-scroll">
-            <table>
-              <thead><tr><th scope="col">Time</th><th scope="col">Unit</th><th scope="col">Event</th><th scope="col">Location</th><th scope="col">Severity</th></tr></thead>
-              <tbody id="events"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-    <p class="console-note">Select a vehicle on the map or in the fleet list. Zoom in, then drag to pan. Positions, vehicle data and events are simulated for this demonstration.</p>
-  </section>
-
-  <section id="industries" class="section" style="margin-top:clamp(3rem,6vw,5rem)">
-    <div class="wrap">
-      <div class="sec-head">
-        <span class="eyebrow">Industries</span>
-        <div>
-          <h2>Configured for the way your operation actually runs.</h2>
-          <p class="lede">The same tracker and console, with inputs, reports and alert rules set up for each sector during onboarding.</p>
-        </div>
-      </div>
-      <div class="industries">
-        <article class="ind">
-          <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M3 9h15v13H3zM18 13h6l4 5v4h-10z"/><circle cx="8" cy="23.5" r="2.5" fill="var(--surface)"/><circle cx="23" cy="23.5" r="2.5" fill="var(--surface)"/></svg>
-          <h3>Logistics and distribution</h3>
-          <p>Proof of delivery from geofenced arrival times, with live ETAs shared with customers.</p>
-          <ul><li>ETA recalculated every 30 s</li><li>rFMS 4.0 data from truck OEMs</li></ul>
-        </article>
-        <article class="ind">
-          <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4 24h14v-6H8l-4 3z"/><path d="M13 18l5-11 9 6-3 3"/><path d="M24 16v5h-3"/><path d="M3 27h16"/></svg>
-          <h3>Construction and plant</h3>
-          <p>Excavators, generators and trailers on one map, powered or unpowered, with theft alerts out of hours.</p>
-          <ul><li>Servicing by engine hours</li><li>Battery asset tags, 5-year life</li></ul>
-        </article>
-        <article class="ind">
-          <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M16 4v18"/><circle cx="16" cy="24" r="4"/><path d="M16 8h4M16 12h3M16 16h4"/><path d="M8 6l-3 3 3 3M5 9h6"/></svg>
-          <h3>Cold chain</h3>
-          <p>Temperature probes logged with every position, so an excursion is tied to a place and a time.</p>
-          <ul><li>Probe reading every 60 s</li><li>Alarm on ±2 °C deviation</li></ul>
-        </article>
-        <article class="ind">
-          <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="5" y="4" width="22" height="19" rx="3"/><path d="M5 15h22M9 23v4M23 23v4"/><circle cx="10" cy="19" r="1.2" fill="currentColor"/><circle cx="22" cy="19" r="1.2" fill="currentColor"/></svg>
-          <h3>Public transport</h3>
-          <p>Headway and punctuality measured against the published timetable, stop by stop.</p>
-          <ul><li>GTFS-Realtime feed out</li><li>Stop arrivals within ±10 s</li></ul>
-        </article>
-        <article class="ind">
-          <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M17 3L8 18h7l-2 11 11-16h-7z"/></svg>
-          <h3>Utilities and field service</h3>
-          <p>Dispatch the nearest qualified crew to an outage, and know when a lone worker stops responding.</p>
-          <ul><li>Lone-worker check-in alerts</li><li>Job time from site geofence</li></ul>
-        </article>
-        <article class="ind">
-          <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M7 9h18l-2 18H9z"/><path d="M5 9h22M12 9V5h8v4M13 14v8M19 14v8"/></svg>
-          <h3>Waste and municipal</h3>
-          <p>Route completion and bin lifts recorded street by street, ready for council reporting.</p>
-          <ul><li>PTO and lift-arm inputs</li><li>Street coverage reports</li></ul>
-        </article>
-      </div>
-    </div>
-  </section>
-
-  <section id="platform" class="section">
-    <div class="wrap">
-      <div class="sec-head">
-        <span class="eyebrow">Platform</span>
-        <div>
-          <h2>Six modules on one position record.</h2>
-          <p class="lede">Every module reads the same 1 Hz track, so a delivery time, a speeding alert and a service reminder never disagree about where a vehicle was.</p>
-        </div>
-      </div>
-      <div class="modules">
-        <article class="module"><span class="num">Module 01</span><h3>Live map and dispatch</h3><p>Fleet status, search and nearest-vehicle lookup, refreshed every second.</p><p class="fact">Up to 10,000 units per account</p></article>
-        <article class="module"><span class="num">Module 02</span><h3>Route replay</h3><p>Scrub through any trip at one-second resolution, with stops, speeds and flags on a timeline.</p><p class="fact">12 months of history on Fleet plans</p></article>
-        <article class="module"><span class="num">Module 03</span><h3>Geofences and alerts</h3><p>Entry, exit, dwell and speed rules per zone, delivered by email, SMS or webhook.</p><p class="fact">Circle or polygon · 5,000 zones</p></article>
-        <article class="module"><span class="num">Module 04</span><h3>Driver behaviour</h3><p>Harsh braking, cornering, speeding and idling, scored per driver and per trip.</p><p class="fact">Accelerometer events above 0.35 g</p></article>
-        <article class="module"><span class="num">Module 05</span><h3>Maintenance</h3><p>Service schedules from odometer and engine hours, plus engine fault codes read from the CAN bus.</p><p class="fact">J1939 DTCs with SPN / FMI detail</p></article>
-        <article class="module"><span class="num">Module 06</span><h3>Compliance</h3><p>Remote tachograph download and driving-time tracking against EU rules, with infringement reports.</p><p class="fact">EU 561/2006 · 165/2014</p></article>
-      </div>
-    </div>
-  </section>
-
-  <section id="replay" class="section">
-    <div class="wrap">
-      <div class="sec-head">
-        <span class="eyebrow">Route replay</span>
-        <div>
-          <h2>Any trip, second by second.</h2>
-          <p class="lede">Truck LS-118 on Tuesday 13 October 2026: three deliveries and back to the depot. Play it, drag the timeline, or select a stop or flag to jump to it.</p>
-        </div>
-      </div>
-      <div class="replay-grid">
-        <div class="card">
-          <div class="replay-map">
-            <canvas id="replay-map" role="img" aria-label="Map of LS-118's recorded route with numbered delivery stops"></canvas>
-            <div class="hud hud-tl">
-              <span class="tag" id="rp-clock">07:40:00</span>
-              <span class="tag" id="rp-speed">0 km/h</span>
-              <span class="tag dim" id="rp-state">At depot</span>
-            </div>
-          </div>
-          <div class="replay-chart" id="rp-chart-wrap">
-            <canvas id="replay-chart" role="img" aria-label="Speed over time for the trip, in km/h"></canvas>
-          </div>
-          <div class="replay-controls">
-            <button class="btn btn-primary btn-sm play" id="rp-play" type="button">
-              <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path id="rp-play-icon" d="M4 2.5v11l9-5.5z"/></svg>
-              <span id="rp-play-label">Play</span>
-            </button>
-            <input type="range" id="rp-scrub" min="0" max="100" step="5" value="0" aria-label="Replay position">
-            <div class="rate" role="group" aria-label="Playback speed">
-              <button class="tag chip" type="button" data-rate="30" aria-pressed="false">30×</button>
-              <button class="tag chip" type="button" data-rate="60" aria-pressed="true">60×</button>
-              <button class="tag chip" type="button" data-rate="120" aria-pressed="false">120×</button>
+            <div class="live-pill glass"><i></i><span id="clock">Live</span></div>
+            <div class="vcard glass" aria-live="polite">
+              <div class="vcard-top">
+                <span class="vicon" id="c-icon"></span>
+                <div><div class="vcard-name" id="c-name">Van 204</div><div class="vcard-status" id="c-status">Driving</div></div>
+              </div>
+              <dl class="vstats">
+                <div><dt>Speed</dt><dd id="c-speed">–</dd></div>
+                <div><dt>Today</dt><dd id="c-today">–</dd></div>
+                <div><dt>Fuel</dt><dd id="c-fuel">–</dd></div>
+              </dl>
             </div>
           </div>
         </div>
-        <aside class="replay-side" aria-label="Trip summary">
-          <div>
-            <div class="panel-title"><span>Trip · LS-118 · 01-117-KT</span></div>
-            <dl class="datagrid">
-              <div><dt>Distance</dt><dd id="rp-dist">–</dd></div>
-              <div><dt>Duration</dt><dd id="rp-dur">–</dd></div>
-              <div><dt>Driving</dt><dd id="rp-drive">–</dd></div>
-              <div><dt>Top speed</dt><dd id="rp-max">–</dd></div>
-            </dl>
-          </div>
-          <div>
-            <div class="panel-title"><span>Stops</span><span>Arrival</span></div>
-            <ol class="stops" id="rp-stops"></ol>
-          </div>
-          <div>
-            <div class="panel-title"><span>Flags</span><span>Time</span></div>
-            <ul class="flags" id="rp-flags"></ul>
-          </div>
-          <div>
-            <div class="panel-title"><span>Trip score · Blerim H.</span></div>
-            <div class="score-row"><strong id="rp-score">–</strong><span>out of 100</span></div>
-            <div class="meter"><i id="rp-meter" style="width:0"></i></div>
-          </div>
-        </aside>
+        <div class="stand"></div>
+        <div class="foot"></div>
+      </div>
+      <p class="display-note">Live demonstration with simulated vehicles. Select any vehicle to follow it.</p>
+    </div>
+  </section>
+
+  <section class="band center" style="padding-top:clamp(2rem,5vw,3.5rem)">
+    <div class="wrap">
+      <h2 class="h-lg">Precise to the metre.<br>Current to the second.</h2>
+      <div class="stats">
+        <div><div class="stat-num">1.5<small> m</small></div><p class="stat-cap">Typical accuracy, using two satellite frequencies at once.</p></div>
+        <div><div class="stat-num">1<small> sec</small></div><p class="stat-cap">Between position updates, all day and all night.</p></div>
+        <div><div class="stat-num">72<small> h</small></div><p class="stat-cap">Of driving stored on the device when there's no signal.</p></div>
       </div>
     </div>
   </section>
 
-  <section id="hardware" class="section">
+  <section id="features" class="band grey center">
     <div class="wrap">
-      <div class="sec-head">
-        <span class="eyebrow">Hardware</span>
-        <div>
-          <h2>Lodestar T4. Built for the vehicle, not the dashboard.</h2>
-          <p class="lede">A sealed unit that installs behind the dash or on the chassis in under 40 minutes. It reads vehicle data from the CAN bus and keeps recording when the network drops out.</p>
-        </div>
-      </div>
-      <div class="hw-grid">
-        <div>
-          <figure class="drawing">
-            <svg viewBox="0 0 440 280" role="img" aria-label="Dimension drawing of the T4 tracker: 98 by 62 by 24 millimetres">
-              <text class="dw-label" x="40" y="22">FRONT</text>
-              <text class="dw-label" x="318" y="22">SIDE</text>
-              <path class="dw-line" d="M28 74h12M28 151h12M244 74h12M244 151h12"/>
-              <circle class="dw-line" cx="34" cy="74" r="4"/><circle class="dw-line" cx="34" cy="151" r="4"/>
-              <circle class="dw-line" cx="250" cy="74" r="4"/><circle class="dw-line" cx="250" cy="151" r="4"/>
-              <rect class="dw-fill" x="40" y="48" width="204" height="129" rx="10"/>
-              <rect class="dw-line" x="58" y="64" width="168" height="97" rx="5" stroke-dasharray="3 3"/>
-              <text class="dw-label" x="72" y="96">LODESTAR T4</text>
-              <text class="dw-txt" x="72" y="113">GNSS L1/L5 · LTE-M</text>
-              <text class="dw-txt" x="72" y="128">9–36 V DC · IP67</text>
-              <circle class="dw-ok" cx="78" cy="146" r="4"/><circle class="dw-info" cx="96" cy="146" r="4"/><circle class="dw-acc" cx="114" cy="146" r="4"/>
-              <text class="dw-txt" x="126" y="149">PWR NET GNSS</text>
-              <rect class="dw-fill" x="244" y="96" width="16" height="34" rx="2"/>
-              <rect class="dw-fill" x="318" y="48" width="49" height="129" rx="6"/>
-              <path class="dw-line" d="M318 96h49M318 130h49" stroke-dasharray="3 3"/>
-              <rect class="dw-fill" x="367" y="96" width="12" height="34" rx="2"/>
-              <path class="dw-dim" d="M40 186v40M244 186v40M40 218h204"/>
-              <path class="dw-dim" d="M46 214l-6 4 6 4M238 214l6 4-6 4"/>
-              <text class="dw-txt" x="142" y="240" text-anchor="middle">98 mm</text>
-              <path class="dw-dim" d="M6 48h28M6 177h28M14 48v129"/>
-              <path class="dw-dim" d="M10 54l4-6 4 6M10 171l4 6 4-6"/>
-              <text class="dw-txt" transform="translate(9 112) rotate(-90)" text-anchor="middle">62 mm</text>
-              <path class="dw-dim" d="M318 186v40M367 186v40M318 218h49"/>
-              <path class="dw-dim" d="M324 214l-6 4 6 4M361 214l6 4-6 4"/>
-              <text class="dw-txt" x="342" y="240" text-anchor="middle">24 mm</text>
-              <text class="dw-txt" x="28" y="270">Ø 4.5 mm mounting holes · M12 8-pin connector</text>
+      <h2 class="h-lg">Everything you need.<br>Nothing you don't.</h2>
+
+      <div class="bento">
+        <article class="tile span2">
+          <h3>Route replay. <span>Rewind any day and watch exactly where each vehicle went, and how fast.</span></h3>
+          <div class="vis">
+            <svg class="art" viewBox="0 0 640 260" role="img" aria-label="Illustration of a replayed route with three numbered stops and a speed line">
+              <defs>
+                <linearGradient id="rg" x1="0" x2="1"><stop offset="0" stop-color="#5AC8FA"/><stop offset="1" stop-color="#0071E3"/></linearGradient>
+                <linearGradient id="sg" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#0071E3" stop-opacity=".22"/><stop offset="1" stop-color="#0071E3" stop-opacity="0"/></linearGradient>
+              </defs>
+              <rect x="0" y="0" width="640" height="170" rx="18" fill="#F2F0EB"/>
+              <path d="M-10 120 C 120 90, 200 150, 330 110 S 520 40, 650 70" stroke="#A7D0F0" stroke-width="16" fill="none"/>
+              <path d="M40 60 H600 M40 140 H600 M160 10 V160 M420 10 V160" stroke="#fff" stroke-width="7" fill="none"/>
+              <path d="M60 140 C 120 140, 140 60, 220 60 S 330 140, 420 120 S 540 40, 590 60" stroke="url(#rg)" stroke-width="6" stroke-linecap="round" fill="none"/>
+              <circle cx="60" cy="140" r="8" fill="#34C759" stroke="#fff" stroke-width="3"/>
+              <g font-family="-apple-system, Inter Tight, sans-serif" font-size="12" font-weight="700" text-anchor="middle">
+                <circle cx="220" cy="60" r="12" fill="#1D1D1F"/><text x="220" y="64" fill="#fff">1</text>
+                <circle cx="420" cy="120" r="12" fill="#1D1D1F"/><text x="420" y="124" fill="#fff">2</text>
+                <circle cx="590" cy="60" r="12" fill="#1D1D1F"/><text x="590" y="64" fill="#fff">3</text>
+              </g>
+              <path d="M0 250 L40 250 L60 214 L120 206 L150 230 L170 250 L230 250 L250 210 L320 200 L360 222 L380 250 L440 250 L460 208 L540 196 L570 230 L590 250 L640 250 Z" fill="url(#sg)"/>
+              <path d="M0 250 L40 250 L60 214 L120 206 L150 230 L170 250 L230 250 L250 210 L320 200 L360 222 L380 250 L440 250 L460 208 L540 196 L570 230 L590 250 L640 250" stroke="#0071E3" stroke-width="2" fill="none" stroke-linejoin="round"/>
+              <line x1="300" y1="186" x2="300" y2="252" stroke="#1D1D1F" stroke-width="1.5"/>
+              <circle cx="300" cy="201" r="4.5" fill="#1D1D1F" stroke="#fff" stroke-width="2"/>
             </svg>
-            <figcaption class="drawing-cap"><span>DWG T4-100 · Rev. C</span><span>140 g · ASA housing</span><span>Dimensions in mm</span></figcaption>
-          </figure>
-          <p class="hw-copy">Each unit ships pre-provisioned with an eSIM that roams across EU networks. Installation is done by certified partners, or by your own workshop with our fitting guide.</p>
-        </div>
-        <div class="spec-scroll">
-          <table class="spec">
-            <caption class="vh">Lodestar T4 technical specifications</caption>
-            <tbody>
-              <tr class="grp"><th colspan="2" scope="colgroup">Positioning</th></tr>
-              <tr><th scope="row">Constellations</th><td>GPS, Galileo, GLONASS, BeiDou</td></tr>
-              <tr><th scope="row">Frequency bands</th><td>L1 / E1 / B1 + L5 / E5a</td></tr>
-              <tr><th scope="row">Horizontal accuracy</th><td>1.5 m CEP50, open sky</td></tr>
-              <tr><th scope="row">Time to first fix</th><td>Cold &lt; 26 s · Hot &lt; 1 s</td></tr>
-              <tr><th scope="row">Update rate</th><td>1 Hz default, up to 10 Hz</td></tr>
-              <tr class="grp"><th colspan="2" scope="colgroup">Connectivity</th></tr>
-              <tr><th scope="row">Cellular</th><td>LTE Cat-M1 / NB-IoT, 2G fallback</td></tr>
-              <tr><th scope="row">Short range</th><td>Bluetooth 5.2 LE for sensors and driver ID</td></tr>
-              <tr><th scope="row">SIM</th><td>eSIM, multi-network, EU roaming</td></tr>
-              <tr class="grp"><th colspan="2" scope="colgroup">Vehicle interface</th></tr>
-              <tr><th scope="row">CAN bus</th><td>2 × CAN, J1939 / FMS, OBD-II</td></tr>
-              <tr><th scope="row">I/O</th><td>3 digital in · 1 analogue in · 1 relay out</td></tr>
-              <tr><th scope="row">Driver ID</th><td>1-Wire iButton, RFID or Bluetooth</td></tr>
-              <tr class="grp"><th colspan="2" scope="colgroup">Power and environment</th></tr>
-              <tr><th scope="row">Supply</th><td>9–36 V DC · sleep draw &lt; 2 mA</td></tr>
-              <tr><th scope="row">Backup battery</th><td>Li-ion, 8 h of 1 Hz tracking</td></tr>
-              <tr><th scope="row">On-board storage</th><td>259,200 fixes (72 h at 1 Hz)</td></tr>
-              <tr><th scope="row">Operating range</th><td>−40 to +85 °C · IP67</td></tr>
-              <tr><th scope="row">Certification</th><td>CE · E-mark ECE R10 · RoHS</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section id="gnss" class="section">
-    <div class="wrap gnss-grid">
-      <div class="gnss-copy">
-        <span class="eyebrow">GNSS performance</span>
-        <h2>More satellites overhead, a tighter fix on the ground.</h2>
-        <p class="lede">The T4 tracks four constellations on two frequency bands. The L5 signal resists the reflections that make single-band receivers drift between tall buildings.</p>
-        <dl class="datagrid">
-          <div><dt>Used in fix</dt><dd id="d-used">–</dd></div>
-          <div><dt>HDOP</dt><dd id="d-hdop">–</dd></div>
-          <div><dt>PDOP</dt><dd id="d-pdop">–</dd></div>
-          <div><dt>Mean C/N₀</dt><dd id="d-cn0">–</dd></div>
-        </dl>
-        <div class="sys-legend" id="sys-legend"></div>
-      </div>
-      <div class="plate-card">
-        <div class="plate-cell">
-          <div class="panel-title"><span>Sky plot · LS-204 receiver</span></div>
-          <svg id="skyplot" viewBox="0 0 320 320" role="img" aria-label="Sky plot of satellites by azimuth and elevation"></svg>
-          <p class="axis-note">Centre is the zenith. Rings mark 30° and 60° elevation. Hollow markers are tracked but not used in the solution.</p>
-        </div>
-        <div class="plate-cell">
-          <div class="panel-title"><span>Signal strength, dB-Hz</span></div>
-          <div class="snr">
-            <div class="snr-axis" id="snr-axis"></div>
-            <div class="snr-plot" id="snr-plot"></div>
           </div>
-          <div class="snr-labels" id="snr-labels"></div>
-          <p class="axis-note">Carrier-to-noise density per satellite. Signals under 28 dB-Hz or below 10° elevation are excluded from the fix.</p>
-        </div>
+        </article>
+
+        <article class="tile">
+          <h3>Alerts. <span>Only the ones that matter, the moment they happen.</span></h3>
+          <div class="vis notes" aria-label="Example notifications">
+            <div class="note">
+              <span class="note-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="6.5" fill="none" stroke="#fff" stroke-width="1.6"/><circle cx="12" cy="12" r="2" fill="#FF9F0A"/></svg></span>
+              <div><div class="note-top"><span>Lodestar</span><span>now</span></div><div class="note-title">Van 311 is speeding</div><div class="note-body">37 km/h in a 30 km/h school zone.</div></div>
+            </div>
+            <div class="note">
+              <span class="note-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="6.5" fill="none" stroke="#fff" stroke-width="1.6"/><circle cx="12" cy="12" r="2" fill="#FF9F0A"/></svg></span>
+              <div><div class="note-top"><span>Lodestar</span><span>4m ago</span></div><div class="note-title">Truck 118 arrived at Depot</div><div class="note-body">On schedule, 2 minutes early.</div></div>
+            </div>
+            <div class="note">
+              <span class="note-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="6.5" fill="none" stroke="#fff" stroke-width="1.6"/><circle cx="12" cy="12" r="2" fill="#FF9F0A"/></svg></span>
+              <div><div class="note-top"><span>Lodestar</span><span>12m ago</span></div><div class="note-title">Car 452 has been idling</div><div class="note-body">Engine running for 10 minutes.</div></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="tile">
+          <h3>Geofences. <span>Draw a zone around any site. Know who arrives, leaves or lingers.</span></h3>
+          <div class="vis">
+            <svg class="art" viewBox="0 0 300 200" role="img" aria-label="Illustration of a circular zone with a vehicle entering it">
+              <rect width="300" height="200" rx="18" fill="#F2F0EB"/>
+              <path d="M0 130 H300 M190 0 V200" stroke="#fff" stroke-width="10"/>
+              <circle cx="190" cy="100" r="62" fill="rgba(0,113,227,.10)" stroke="#0071E3" stroke-width="2" stroke-dasharray="6 6"/>
+              <path d="M190 72 c-11 0 -19 8 -19 18 c0 14 19 32 19 32 s19 -18 19 -32 c0 -10 -8 -18 -19 -18z" fill="#0071E3"/>
+              <circle cx="190" cy="90" r="6" fill="#fff"/>
+              <circle cx="96" cy="130" r="10" fill="#0071E3" stroke="#fff" stroke-width="3"/>
+              <path d="M112 130 h18" stroke="#0071E3" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="2 5"/>
+            </svg>
+          </div>
+        </article>
+
+        <article class="tile">
+          <h3>Driver scores. <span>Fair, clear feedback every week.</span></h3>
+          <div class="vis rings">
+            <svg viewBox="0 0 150 150" role="img" aria-label="Rings showing 92% smooth braking, 88% within speed limits and 76% low idling">
+              <g fill="none" stroke-width="13" stroke-linecap="round" transform="rotate(-90 75 75)">
+                <circle cx="75" cy="75" r="64" stroke="#E8F7EC"/>
+                <circle cx="75" cy="75" r="64" stroke="#34C759" stroke-dasharray="370 402"/>
+                <circle cx="75" cy="75" r="47" stroke="#E5F0FC"/>
+                <circle cx="75" cy="75" r="47" stroke="#0071E3" stroke-dasharray="260 295"/>
+                <circle cx="75" cy="75" r="30" stroke="#FFF1DE"/>
+                <circle cx="75" cy="75" r="30" stroke="#FF9F0A" stroke-dasharray="143 189"/>
+              </g>
+            </svg>
+            <ul class="ring-legend">
+              <li><b>92%</b><span>Smooth braking</span></li>
+              <li><b>88%</b><span>Within speed limits</span></li>
+              <li><b>76%</b><span>Low idling</span></li>
+            </ul>
+          </div>
+        </article>
+
+        <article class="tile">
+          <h3>Idle time. <span>See it drop once drivers can see it too.</span></h3>
+          <div class="vis">
+            <div class="bars" role="img" aria-label="Idle minutes per vehicle per day, Monday 42 down to Sunday 9">
+              <div><b>42</b><i style="height:84%"></i><span>M</span></div>
+              <div><b>38</b><i style="height:76%"></i><span>T</span></div>
+              <div><b>33</b><i style="height:66%"></i><span>W</span></div>
+              <div><b>29</b><i style="height:58%"></i><span>T</span></div>
+              <div><b>24</b><i style="height:48%"></i><span>F</span></div>
+              <div><b>14</b><i style="height:28%"></i><span>S</span></div>
+              <div><b>9</b><i style="height:18%"></i><span>S</span></div>
+            </div>
+            <p class="bar-cap">Idle minutes per vehicle per day. Example data.</p>
+          </div>
+        </article>
+
+        <article class="tile span3">
+          <div class="tile-row">
+            <h3>Works with what you already use. <span>Send trips, stops and alerts to your systems, or pull them in yourself.</span></h3>
+            <div class="pills" aria-label="Integrations">
+              <span>REST API</span><span>Webhooks</span><span>Excel export</span><span>CSV</span><span>SFTP</span><span>MQTT</span><span>NMEA 0183</span><span>Email reports</span>
+            </div>
+          </div>
+        </article>
       </div>
     </div>
   </section>
 
-  <section id="developers" class="section dev">
-    <div class="wrap dev-grid">
+  <section id="tracker" class="band dark center">
+    <div class="wrap">
+      <p class="eyebrow">Lodestar T4</p>
+      <h2 class="h-lg">Small enough to hide.<br>Tough enough to forget.</h2>
+      <p class="sub" style="margin-top:1.2rem">A sealed tracker that fits behind the dashboard, reads the vehicle's own data, and keeps working in heat, cold, dust and rain.</p>
+      <div class="device">
+        <svg viewBox="0 0 600 380" role="img" aria-label="The Lodestar T4 tracker, a small dark rounded box with a status light and a cable">
+          <defs>
+            <linearGradient id="body" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4A4A4F"/><stop offset=".55" stop-color="#2A2A2D"/><stop offset="1" stop-color="#1A1A1C"/></linearGradient>
+            <linearGradient id="side" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#232326"/><stop offset="1" stop-color="#0B0B0C"/></linearGradient>
+            <linearGradient id="gloss" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".16"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+            <radialGradient id="glow"><stop offset="0" stop-color="#34C759" stop-opacity=".9"/><stop offset="1" stop-color="#34C759" stop-opacity="0"/></radialGradient>
+            <filter id="blur" x="-20%" y="-200%" width="140%" height="500%"><feGaussianBlur stdDeviation="14"/></filter>
+          </defs>
+          <ellipse cx="300" cy="332" rx="230" ry="16" fill="#1C1C1E" filter="url(#blur)"/>
+          <path d="M531 196 C 570 196, 560 290, 610 300" stroke="#1C1C1E" stroke-width="11" fill="none" stroke-linecap="round"/>
+          <path d="M531 196 C 570 196, 560 290, 610 300" stroke="#3A3A3C" stroke-width="2" fill="none" stroke-linecap="round" transform="translate(0 -3)"/>
+          <rect x="88" y="92" width="424" height="226" rx="42" fill="url(#side)"/>
+          <rect x="88" y="74" width="424" height="226" rx="42" fill="url(#body)"/>
+          <rect x="89" y="75" width="422" height="224" rx="41" fill="none" stroke="#fff" stroke-opacity=".12"/>
+          <rect x="88" y="74" width="424" height="110" rx="42" fill="url(#gloss)"/>
+          <rect x="512" y="164" width="22" height="60" rx="7" fill="#2C2C2E" stroke="#48484A"/>
+          <g transform="translate(300 178)">
+            <circle r="34" fill="none" stroke="#8E8E93" stroke-width="2"/>
+            <path d="M0 -50v12M0 38v12M-50 0h12M38 0h12" stroke="#8E8E93" stroke-width="2" stroke-linecap="round"/>
+            <circle r="6" fill="#FF9F0A"/>
+          </g>
+          <text x="300" y="262" text-anchor="middle" fill="#8E8E93" font-family="-apple-system, Inter Tight, sans-serif" font-size="13" font-weight="600" letter-spacing="5">LODESTAR</text>
+          <g class="led"><circle cx="462" cy="104" r="16" fill="url(#glow)"/><circle cx="462" cy="104" r="4" fill="#34C759"/></g>
+        </svg>
+      </div>
+      <dl class="specs">
+        <div><dt>98 × 62 mm</dt><dd>and 24 mm deep</dd></div>
+        <div><dt>140 g</dt><dd>lighter than a phone</dd></div>
+        <div><dt>IP67</dt><dd>dust-tight, waterproof to 1 m</dd></div>
+        <div><dt>−40 to 85 °C</dt><dd>operating range</dd></div>
+        <div><dt>L1 + L5</dt><dd>dual-band GPS, Galileo, GLONASS, BeiDou</dd></div>
+        <div><dt>4G LTE-M</dt><dd>with automatic 2G fallback</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section id="app" class="band">
+    <div class="wrap app-row">
       <div>
-        <span class="eyebrow">Developers and integrations</span>
-        <h2 style="margin-top:1.1rem">Raw NMEA or clean JSON. Same fix, your systems.</h2>
-        <p class="lede" style="margin-top:1rem">Point an existing dispatch system at the NMEA 0183 feed, or call the REST API and receive JSON with geofence membership already resolved. The stream follows the vehicle selected in the console.</p>
-        <ul class="endpoints">
-          <li><code>GET /v1/units/{id}/fix</code> latest position</li>
-          <li><code>GET /v1/units/{id}/track</code> history by time range</li>
-          <li><code>POST /v1/geofences</code> create a zone</li>
-          <li><code>zone.entered · zone.left · speed.exceeded</code> webhooks</li>
-        </ul>
-        <div class="protocols" aria-label="Supported protocols">
-          <span>REST · OpenAPI 3.1</span><span>Webhooks</span><span>MQTT</span><span>NMEA 0183</span><span>rFMS 4.0</span><span>GTFS-RT</span><span>SFTP / CSV export</span>
-        </div>
-      </div>
-      <div class="term">
-        <div class="term-bar" role="tablist" aria-label="Output format">
-          <button class="tab" role="tab" id="tab-nmea" aria-selected="true" type="button">NMEA 0183</button>
-          <button class="tab" role="tab" id="tab-json" aria-selected="false" type="button">REST · JSON</button>
-          <span class="src">streaming <b id="term-unit">LS-204</b> · 1 Hz</span>
-        </div>
-        <pre id="term" aria-live="off"></pre>
-      </div>
-    </div>
-  </section>
-
-  <section id="security" class="section">
-    <div class="wrap">
-      <div class="sec-head">
-        <span class="eyebrow">Security and privacy</span>
-        <div>
-          <h2>Location data is personal data. We treat it that way.</h2>
-          <p class="lede">Lodestar is built to pass works-council review. What is collected, who can see it and how long it is kept are set per account and recorded in the audit log.</p>
-        </div>
-      </div>
-      <div class="sec-items">
-        <article class="sec-item">
-          <svg viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="13" cy="13" r="10"/><path d="M3 13h20M13 3c3 3 4 6.5 4 10s-1 7-4 10c-3-3-4-6.5-4-10s1-7 4-10z"/></svg>
-          <h3>EU data residency</h3>
-          <p>Position and vehicle data are stored and processed in EU data centres only.</p>
-          <p class="fact">Frankfurt primary · Amsterdam replica</p>
-        </article>
-        <article class="sec-item">
-          <svg viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="5" y="11" width="16" height="12" rx="2"/><path d="M8.5 11V8a4.5 4.5 0 0 1 9 0v3"/><circle cx="13" cy="17" r="1.6" fill="currentColor"/></svg>
-          <h3>Encryption</h3>
-          <p>Traffic from device to cloud and from cloud to browser is encrypted, as is everything at rest.</p>
-          <p class="fact">TLS 1.3 · AES-256 at rest</p>
-        </article>
-        <article class="sec-item">
-          <svg viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="13" cy="9" r="4"/><path d="M5 23c0-4.4 3.6-8 8-8s8 3.6 8 8"/><path d="M3 3l20 20"/></svg>
-          <h3>Driver privacy mode</h3>
-          <p>Private trips outside working hours are recorded as distance only, without location.</p>
-          <p class="fact">Retention from 30 days to 7 years</p>
-        </article>
-        <article class="sec-item">
-          <svg viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M13 3l8 3v6c0 5-3.5 9-8 11-4.5-2-8-6-8-11V6z"/><path d="M9 13l3 3 5-6"/></svg>
-          <h3>Access control</h3>
-          <p>Single sign-on, role-based permissions per depot, and an audit log of every view and export.</p>
-          <p class="fact">SAML 2.0 · OIDC · SCIM</p>
-        </article>
-      </div>
-    </div>
-  </section>
-
-  <section id="roi" class="section">
-    <div class="wrap">
-      <div class="sec-head">
-        <span class="eyebrow">Savings estimate</span>
-        <div>
-          <h2>What telematics is worth to your fleet.</h2>
-          <p class="lede">Adjust the figures to match your operation. The estimate covers fuel only and leaves out insurance, overtime and maintenance savings.</p>
-        </div>
-      </div>
-      <div class="roi">
-        <div class="roi-in">
-          <div class="field"><div class="field-top"><label for="r-veh">Vehicles</label><output id="o-veh" for="r-veh"></output></div><input type="range" id="r-veh" min="5" max="500" step="5" value="40"></div>
-          <div class="field"><div class="field-top"><label for="r-km">Distance per vehicle per day</label><output id="o-km" for="r-km"></output></div><input type="range" id="r-km" min="40" max="600" step="10" value="180"></div>
-          <div class="field"><div class="field-top"><label for="r-cons">Fuel consumption</label><output id="o-cons" for="r-cons"></output></div><input type="range" id="r-cons" min="6" max="40" step="1" value="14"></div>
-          <div class="field"><div class="field-top"><label for="r-idle">Idling per vehicle per day</label><output id="o-idle" for="r-idle"></output></div><input type="range" id="r-idle" min="0" max="120" step="5" value="35"></div>
-          <div class="field"><div class="field-top"><label for="r-price">Diesel price</label><output id="o-price" for="r-price"></output></div><input type="range" id="r-price" min="1" max="2.2" step="0.01" value="1.45"></div>
-          <p class="assume">Assumes 250 working days, a 5% distance reduction from better routing and less unauthorised use, a 40% cut in idling at 1.8 L/h, the Fleet plan at €9 per vehicle per month and T4 hardware at €89 per vehicle.</p>
-        </div>
-        <div class="roi-out" aria-live="polite">
-          <div>
-            <div class="roi-head">Estimated net saving per year</div>
-            <div class="roi-big" id="roi-net">–</div>
-          </div>
-          <div class="cmp">
-            <div class="cmp-row"><span>Fuel cost saved</span><div class="track"><i id="b-save" style="background:var(--ok)"></i></div><span class="v" id="v-save">–</span></div>
-            <div class="cmp-row"><span>Lodestar subscription</span><div class="track"><i id="b-cost" style="background:var(--ink-2)"></i></div><span class="v" id="v-cost">–</span></div>
-          </div>
-          <dl class="datagrid">
-            <div><dt>Fuel saved</dt><dd id="roi-litres">–</dd></div>
-            <div><dt>Hardware payback</dt><dd id="roi-payback">–</dd></div>
-          </dl>
-          <p class="roi-note">An estimate from the assumptions shown, not a quotation. Results depend on routes, vehicles and driver habits.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section id="pricing" class="section">
-    <div class="wrap">
-      <div class="sec-head">
-        <span class="eyebrow">Pricing</span>
-        <div>
-          <h2>Per vehicle, per month. No setup fees.</h2>
-          <p class="lede">All plans include the operations console, mobile apps and support from our team in Prishtina. Prices exclude VAT.</p>
-        </div>
-      </div>
-      <div class="tiers">
-        <article class="tier">
-          <div class="tier-top"><h3>Essential</h3></div>
-          <p class="for">For small fleets that need live location and history.</p>
-          <div class="price"><strong>€5</strong><span>per vehicle / month</span></div>
-          <ul>
-            <li><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 8.5l3 3 7-7"/></svg>Live map, 10-second updates</li>
-            <li><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 8.5l3 3 7-7"/></svg>90 days of history</li>
-            <li><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 8.5l3 3 7-7"/></svg>Geofence and speed alerts by email</li>
-            <li><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 8.5l3 3 7-7"/></svg>Up to 25 vehicles</li>
-          </ul>
-          <a class="btn btn-ghost" href="#contact">Talk to us</a>
-        </article>
-        <article class="tier featured">
-          <div class="tier-top"><h3>Fleet</h3><span class="badge">Most deployed</span></div>
-          <p class="for">For operations teams running dispatch and compliance.</p>
-          <div class="price"><strong>€9</strong><span>per vehicle / month</span></div>
-          <ul>
-            <li><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 8.5l3 3 7-7"/></svg>1-second updates and route replay</li>
-            <li><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 8.5l3 3 7-7"/></svg>12 months of history</li>
-            <li><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 8.5l3 3 7-7"/></svg>Driver behaviour and maintenance</li>
-            <li><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 8.5l3 3 7-7"/></svg>REST API, NMEA feed and webhooks</li>
-          </ul>
-          <a class="btn btn-primary" href="#contact">Request a demo</a>
-        </article>
-        <article class="tier">
-          <div class="tier-top"><h3>Enterprise</h3></div>
-          <p class="for">For multi-depot fleets with security and integration needs.</p>
-          <div class="price"><strong>Custom</strong></div>
-          <ul>
-            <li><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 8.5l3 3 7-7"/></svg>Compliance module and tachograph download</li>
-            <li><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 8.5l3 3 7-7"/></svg>SSO, SCIM and full audit log</li>
-            <li><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 8.5l3 3 7-7"/></svg>99.95% uptime SLA</li>
-            <li><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 8.5l3 3 7-7"/></svg>Named account engineer</li>
-          </ul>
-          <a class="btn btn-ghost" href="#contact">Contact sales</a>
-        </article>
-      </div>
-      <p class="hw-note">T4 tracker: €89 per vehicle one-off, or included on 36-month agreements. Installation by certified partners from €45 per vehicle.</p>
-    </div>
-  </section>
-
-  <section id="contact" class="section">
-    <div class="wrap contact">
-      <div>
-        <span class="eyebrow">Request a demo</span>
-        <h2 style="margin-top:1.1rem">See your own routes in the console.</h2>
-        <p class="lede" style="margin-top:1rem">A solutions engineer will walk you through the console with data from a pilot vehicle, then size hardware and plans for your fleet.</p>
-        <ul class="contact-list">
-          <li><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="10" cy="10" r="7.5"/><path d="M10 5.5V10l3 2"/></svg>Reply within one business day</li>
-          <li><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M3 6l7-3 7 3v8l-7 3-7-3z"/><path d="M3 6l7 3 7-3M10 9v8"/></svg>Pilot kit of 3 trackers, free for 30 days</li>
-          <li><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M10 2.5c-3 0-5.5 2.4-5.5 5.4 0 4 5.5 9.6 5.5 9.6s5.5-5.6 5.5-9.6c0-3-2.5-5.4-5.5-5.4z"/><circle cx="10" cy="8" r="2"/></svg>Support team based in Prishtina</li>
+        <p class="eyebrow">Lodestar for iPhone and Android</p>
+        <h2 class="h-lg">Your fleet.<br>In your pocket.</h2>
+        <p class="sub">Everything on the big screen, made for the small one. The list here is live: it shows the same six vehicles as the map above.</p>
+        <ul class="checks">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M7.5 12.5l3 3 6-6.5"/></svg>Push alerts for speeding, arrivals and idling</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M7.5 12.5l3 3 6-6.5"/></svg>Share a live ETA link with a customer</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M7.5 12.5l3 3 6-6.5"/></svg>Drivers check in with a tap, no hardware keys</li>
         </ul>
       </div>
-      <form class="demo" id="demo-form" novalidate>
-        <label for="f-name">Full name<input id="f-name" name="name" type="text" autocomplete="name" required></label>
-        <label for="f-company">Company<input id="f-company" name="company" type="text" autocomplete="organization" required></label>
-        <label class="full" for="f-email">Work email<input id="f-email" name="email" type="email" autocomplete="email" required></label>
-        <label for="f-size">Fleet size
-          <select id="f-size" name="size">
-            <option>1–25 vehicles</option>
-            <option selected>26–100 vehicles</option>
-            <option>101–500 vehicles</option>
-            <option>500+ vehicles</option>
-          </select>
-        </label>
-        <label for="f-industry">Industry
-          <select id="f-industry" name="industry">
-            <option>Logistics and distribution</option>
-            <option>Construction and plant</option>
-            <option>Cold chain</option>
-            <option>Public transport</option>
-            <option>Utilities and field service</option>
-            <option>Waste and municipal</option>
-            <option>Other</option>
-          </select>
-        </label>
-        <label class="full" for="f-notes">What would you like to see? (optional)<textarea id="f-notes" name="notes" rows="3"></textarea></label>
-        <div class="form-foot full">
-          <button class="btn btn-primary" type="submit">Request a demo</button>
-          <p class="form-msg" id="form-msg" role="status"></p>
+      <div class="phone" aria-label="Phone app showing the live fleet list">
+        <div class="phone-screen">
+          <div class="island"></div>
+          <div class="statusbar"><span id="p-time">9:41</span><svg viewBox="0 0 44 12" aria-hidden="true"><rect x="0" y="7" width="3" height="5" rx="1" fill="#1D1D1F"/><rect x="5" y="5" width="3" height="7" rx="1" fill="#1D1D1F"/><rect x="10" y="3" width="3" height="9" rx="1" fill="#1D1D1F"/><rect x="15" y="1" width="3" height="11" rx="1" fill="#1D1D1F"/><rect x="23" y="1" width="18" height="10" rx="3" fill="none" stroke="#1D1D1F" stroke-opacity=".4"/><rect x="25" y="3" width="12" height="6" rx="1.5" fill="#1D1D1F"/><rect x="42" y="4.5" width="1.6" height="3" rx=".8" fill="#1D1D1F" fill-opacity=".4"/></svg></div>
+          <div class="app-title">Fleet</div>
+          <div class="seg" role="group" aria-label="Filter vehicles in app">
+            <button type="button" data-f="all" aria-pressed="true">All</button>
+            <button type="button" data-f="moving" aria-pressed="false">Moving</button>
+            <button type="button" data-f="stopped" aria-pressed="false">Stopped</button>
+          </div>
+          <ul class="ios-list" id="plist"></ul>
+          <p class="ios-foot" id="p-foot">Updated just now</p>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="how" class="band grey center">
+    <div class="wrap">
+      <h2 class="h-lg">Up and running<br>by this afternoon.</h2>
+      <div class="steps">
+        <article class="step"><div class="step-n">1</div><h3>Plug it in.</h3><p>The tracker fits behind the dashboard and connects to the vehicle's power and data. About 30 minutes per vehicle.</p></article>
+        <article class="step"><div class="step-n">2</div><h3>Switch it on.</h3><p>It finds satellites in seconds and starts reporting over the built-in mobile connection. No SIM cards to buy.</p></article>
+        <article class="step"><div class="step-n">3</div><h3>Open the map.</h3><p>Sign in on any browser or phone. Your vehicles are already there, moving.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <section id="pricing" class="band center">
+    <div class="wrap">
+      <h2 class="h-lg">Simple pricing.</h2>
+      <p class="sub" style="margin-top:1rem">One price per vehicle. No setup fees, no long contracts.</p>
+      <div class="plans">
+        <article class="plan">
+          <h3>Fleet</h3>
+          <div class="price">€9<small> per vehicle / month</small></div>
+          <ul>
+            <li><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5l4 4 8-9"/></svg>Live map with 1-second updates</li>
+            <li><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5l4 4 8-9"/></svg>12 months of route replay</li>
+            <li><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5l4 4 8-9"/></svg>Geofences, alerts and driver scores</li>
+            <li><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5l4 4 8-9"/></svg>iPhone and Android apps</li>
+          </ul>
+          <a class="btn btn-blue" href="#demo">Book a demo</a>
+        </article>
+        <article class="plan">
+          <h3>Enterprise</h3>
+          <div class="price">Let's talk</div>
+          <ul>
+            <li><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5l4 4 8-9"/></svg>Everything in Fleet</li>
+            <li><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5l4 4 8-9"/></svg>API, webhooks and data export</li>
+            <li><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5l4 4 8-9"/></svg>Single sign-on and user roles</li>
+            <li><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5l4 4 8-9"/></svg>A dedicated account manager</li>
+          </ul>
+          <a class="btn btn-line" href="#demo">Contact sales</a>
+        </article>
+      </div>
+      <p class="plan-note">Tracker €89 per vehicle, or included free on a 3-year plan. Prices exclude VAT.</p>
+    </div>
+  </section>
+
+  <section id="demo" class="band grey center">
+    <div class="wrap">
+      <h2 class="h-lg">See it with<br>your own fleet.</h2>
+      <p class="sub" style="margin-top:1rem">Leave your email and we'll set up a free 30-day trial with three trackers.</p>
+      <form class="cta-form" id="cta-form" novalidate>
+        <label for="cta-email" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Work email</label>
+        <input id="cta-email" type="email" placeholder="Work email" autocomplete="email" required>
+        <button class="btn btn-blue" type="submit">Book a demo</button>
       </form>
+      <p class="cta-msg" id="cta-msg" role="status"></p>
     </div>
   </section>
 </main>
 
 <footer>
   <div class="wrap">
-    <div class="foot-grid">
-      <div class="foot-brand">
-        <a class="brand" href="#top" aria-label="Lodestar GPS home">
-          <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="2" width="28" height="28" rx="5" fill="var(--ink)"/><circle cx="16" cy="16" r="8.5" fill="none" stroke="var(--bg)" stroke-width="1.6"/><path d="M16 5.5v4M16 22.5v4M5.5 16h4M22.5 16h4" stroke="var(--bg)" stroke-width="1.6" stroke-linecap="round"/><circle cx="16" cy="16" r="2.6" fill="var(--accent)"/></svg>
-          Lodestar <small>GPS</small>
-        </a>
-        <p>Fleet telematics for logistics, construction and public services across the Western Balkans and the EU.</p>
-      </div>
-      <div><h4>Product</h4><ul><li><a href="#live">Operations console</a></li><li><a href="#replay">Route replay</a></li><li><a href="#hardware">T4 tracker</a></li><li><a href="#pricing">Pricing</a></li></ul></div>
-      <div><h4>Industries</h4><ul><li><a href="#industries">Logistics</a></li><li><a href="#industries">Construction</a></li><li><a href="#industries">Public transport</a></li><li><a href="#industries">Utilities</a></li></ul></div>
-      <div><h4>Developers</h4><ul><li><a href="#developers">REST API</a></li><li><a href="#developers">NMEA feed</a></li><li><a href="#developers">Webhooks</a></li></ul></div>
-      <div><h4>Company</h4><ul><li><a href="#security">Security</a></li><li><a href="#roi">Savings estimate</a></li><li><a href="#contact">Contact</a></li></ul></div>
+    <div class="foot-cols">
+      <div><h4>Product</h4><ul><li><a href="#features">Features</a></li><li><a href="#tracker">Tracker</a></li><li><a href="#app">Mobile app</a></li></ul></div>
+      <div><h4>Get started</h4><ul><li><a href="#how">How it works</a></li><li><a href="#pricing">Pricing</a></li><li><a href="#demo">Book a demo</a></li></ul></div>
+      <div><h4>Company</h4><ul><li><a href="#top">About Lodestar</a></li><li><a href="#demo">Contact</a></li></ul></div>
+      <div><h4>Office</h4><ul><li>Prishtina, Kosovo</li><li>Mon–Fri, 08:00–17:00</li></ul></div>
     </div>
     <div class="foot-base">
-      <span>© 2026 Lodestar GPS</span>
-      <span>Lodestar GPS is a fictional product. This site is a design demonstration and all data on it is simulated.</span>
-      <span class="coords">42°39′46″N 21°09′56″E</span>
+      <span>© 2026 Lodestar GPS.</span>
+      <span>Lodestar is a fictional company. This page is a design demonstration and all vehicles and data on it are simulated.</span>
+      <span>Prishtina 42°39′N 21°10′E</span>
     </div>
   </div>
 </footer>
@@ -1162,50 +614,33 @@ footer { border-top: 1px solid var(--line); background: var(--surface); padding-
   const TAU = Math.PI * 2;
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  /* ---------- World: a 6.5 × 5.5 km window over Prishtina ---------- */
-  const ORIGIN = { lat: 42.6629, lon: 21.1655 };
-  const SPAN = { lat: 0.05, lon: 0.08 };
-  const KM_W = SPAN.lon * 111.32 * Math.cos(ORIGIN.lat * Math.PI / 180);
-  const KM_H = SPAN.lat * 110.57;
-  const TIME_SCALE = 10; // the live simulation runs at 10× real time so movement is visible
-  const toLatLon = (x, y) => ({ lat: ORIGIN.lat + (0.5 - y) * SPAN.lat, lon: ORIGIN.lon + (x - 0.5) * SPAN.lon });
-  const kmBetween = (ax, ay, bx, by) => Math.hypot((ax - bx) * KM_W, (ay - by) * KM_H);
-  const DISTRICTS = [
-    ['Qendra', 0.47, 0.45], ['Ulpiana', 0.63, 0.73], ['Dardania', 0.29, 0.71], ['Arbëria', 0.68, 0.27],
-    ['Kodra e Diellit', 0.8, 0.6], ['Mati 1', 0.27, 0.36], ['Bregu i Diellit', 0.86, 0.2], ['Lakrishte', 0.38, 0.86], ['Velania', 0.6, 0.12],
-  ];
-  const districtAt = (x, y) => {
-    let best = DISTRICTS[0][0], bd = Infinity;
-    for (const [n, dx, dy] of DISTRICTS) { const d = kmBetween(x, y, dx, dy); if (d < bd) { bd = d; best = n; } }
-    return best;
+  /* ---------- Map palette (Apple Maps-like, single light look) ---------- */
+  const COL = {
+    land: '#F2F0EB', park: '#D3E9C6', parkLabel: '#4F8A3F', water: '#A9D2F2', minor: '#FFFFFF', minorEdge: '#E0DCD3',
+    major: '#FFFFFF', majorEdge: '#D7D2C7', ring: '#FDE49B', ringEdge: '#EBC567', label: '#8E8E93',
+    blue: '#0071E3', orange: '#FF9F0A', ink: '#1D1D1F', white: '#FFFFFF',
   };
 
-  /* ---------- Terrain noise for contour lines ---------- */
-  function hash(i, j) {
-    let h = (Math.imul(i, 374761393) + Math.imul(j, 668265263)) | 0;
-    h = Math.imul(h ^ (h >>> 13), 1274126177);
-    h ^= h >>> 16;
-    return (h >>> 0) / 4294967296;
-  }
-  function vnoise(x, y) {
-    const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi;
-    const u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
-    const a = hash(xi, yi), b = hash(xi + 1, yi), c = hash(xi, yi + 1), d = hash(xi + 1, yi + 1);
-    return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
-  }
-  function terrain(x, y) {
-    const kx = x * KM_W * 0.42, ky = y * KM_H * 0.42;
-    return vnoise(kx, ky) * 0.58 + vnoise(kx * 2.1 + 7.3, ky * 2.1 + 3.1) * 0.29 + vnoise(kx * 4.3 + 1.7, ky * 4.3 + 9.2) * 0.13;
-  }
+  /* ---------- World: a 6.5 × 5.5 km window over Prishtina ---------- */
+  const KM_W = 0.08 * 111.32 * Math.cos(42.6629 * Math.PI / 180);
+  const KM_H = 0.05 * 110.57;
+  const TIME_SCALE = 10; // the demo runs 10× faster than real time
+  const km = (ax, ay, bx, by) => Math.hypot((ax - bx) * KM_W, (ay - by) * KM_H);
+  const DISTRICTS = [['Qendra', 0.47, 0.45], ['Ulpiana', 0.63, 0.73], ['Dardania', 0.29, 0.71], ['Arbëria', 0.66, 0.29],
+    ['Kodra e Diellit', 0.8, 0.6], ['Mati 1', 0.24, 0.5], ['Lakrishte', 0.4, 0.87], ['Velania', 0.6, 0.12]];
+  const districtAt = (x, y) => DISTRICTS.reduce((b, d) => (km(x, y, d[1], d[2]) < b[1] ? [d[0], km(x, y, d[1], d[2])] : b), ['', Infinity])[0];
+  const PARKS = [
+    { x: 0.9, y: 0.13, rx: 0.12, ry: 0.11, name: 'Gërmia Park' },
+    { x: 0.32, y: 0.31, rx: 0.05, ry: 0.045, name: 'City Park' },
+    { x: 0.71, y: 0.84, rx: 0.065, ry: 0.05, name: '' },
+    { x: 0.12, y: 0.86, rx: 0.07, ry: 0.06, name: '' },
+  ];
 
-  /* ---------- Roads and routes ---------- */
   function smooth(pts, closed, n = 10) {
-    const P = closed ? pts.slice(0, -1) : pts;
-    const M = P.length;
-    const get = (i) => closed ? P[((i % M) + M) % M] : P[Math.max(0, Math.min(M - 1, i))];
+    const P = closed ? pts.slice(0, -1) : pts, M = P.length;
+    const get = (i) => (closed ? P[((i % M) + M) % M] : P[Math.max(0, Math.min(M - 1, i))]);
     const out = [];
-    const segs = closed ? M : M - 1;
-    for (let i = 0; i < segs; i++) {
+    for (let i = 0; i < (closed ? M : M - 1); i++) {
       const p0 = get(i - 1), p1 = get(i), p2 = get(i + 1), p3 = get(i + 2);
       for (let k = 0; k < n; k++) {
         const t = k / n, t2 = t * t, t3 = t2 * t;
@@ -1215,10 +650,10 @@ footer { border-top: 1px solid var(--line); background: var(--surface); padding-
     out.push(closed ? out[0].slice() : P[M - 1].slice());
     return out;
   }
-  function makeRoute(pts, closed, major) {
+  function route(pts, closed, kind, name) {
     const cum = [0];
-    for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + kmBetween(pts[i][0], pts[i][1], pts[i - 1][0], pts[i - 1][1]));
-    return { pts, cum, len: cum[cum.length - 1], closed, major };
+    for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + km(pts[i][0], pts[i][1], pts[i - 1][0], pts[i - 1][1]));
+    return { pts, cum, len: cum[cum.length - 1], closed, kind, name };
   }
   const ringPts = [];
   for (let i = 0; i <= 64; i++) {
@@ -1227,983 +662,275 @@ footer { border-top: 1px solid var(--line); background: var(--surface); padding-
   }
   ringPts[64] = ringPts[0].slice();
   const ROUTES = {
-    ring: makeRoute(ringPts, true, true),
-    ew: makeRoute(smooth([[-0.04, 0.67], [0.14, 0.63], [0.3, 0.57], [0.5, 0.5], [0.66, 0.44], [0.8, 0.41], [1.04, 0.35]], false), false, true),
-    ns: makeRoute(smooth([[0.39, -0.04], [0.43, 0.18], [0.47, 0.36], [0.5, 0.5], [0.53, 0.66], [0.55, 0.82], [0.6, 1.04]], false), false, true),
-    ne: makeRoute(smooth([[0.62, 0.2], [0.78, 0.17], [0.84, 0.3], [0.8, 0.41], [0.66, 0.44], [0.6, 0.32], [0.62, 0.2]], true), true, false),
-    sw: makeRoute(smooth([[0.18, 0.74], [0.3, 0.57], [0.42, 0.63], [0.37, 0.82], [0.18, 0.74]], true), true, false),
+    ring: route(ringPts, true, 'ring', 'Ring Road'),
+    ew: route(smooth([[-0.04, 0.67], [0.14, 0.63], [0.3, 0.57], [0.5, 0.5], [0.66, 0.44], [0.8, 0.41], [1.04, 0.35]], false), false, 'major', 'the Boulevard'),
+    ns: route(smooth([[0.39, -0.04], [0.43, 0.18], [0.47, 0.36], [0.5, 0.5], [0.53, 0.66], [0.55, 0.82], [0.6, 1.04]], false), false, 'major', 'North Avenue'),
+    ne: route(smooth([[0.62, 0.2], [0.78, 0.17], [0.84, 0.3], [0.8, 0.41], [0.66, 0.44], [0.6, 0.32], [0.62, 0.2]], true), true, 'minor', 'Arbëria streets'),
+    sw: route(smooth([[0.18, 0.74], [0.3, 0.57], [0.42, 0.63], [0.37, 0.82], [0.18, 0.74]], true), true, 'minor', 'Dardania streets'),
   };
   const RIVER = smooth([[-0.06, 0.24], [0.14, 0.3], [0.3, 0.41], [0.43, 0.46], [0.56, 0.58], [0.7, 0.63], [0.86, 0.76], [1.06, 0.8]], false, 12);
-  const ZONES = [
-    { id: 'depot', name: 'Depot', x: 0.8, y: 0.41, r: 0.34, limit: null, key: 'accent' },
-    { id: 'school', name: 'School zone', x: 0.47, y: 0.36, r: 0.3, limit: 30, key: 'alert' },
-  ];
-
-  function pointAt(route, d) {
-    if (route.closed) d = ((d % route.len) + route.len) % route.len;
-    else d = Math.max(0, Math.min(route.len, d));
-    const c = route.cum;
-    let lo = 0, hi = c.length - 1;
-    while (hi - lo > 1) { const m = (lo + hi) >> 1; if (c[m] <= d) lo = m; else hi = m; }
-    const a = route.pts[lo], b = route.pts[hi];
-    const seg = c[hi] - c[lo] || 1e-9, t = (d - c[lo]) / seg;
+  function pointAt(r, d) {
+    d = r.closed ? ((d % r.len) + r.len) % r.len : Math.max(0, Math.min(r.len, d));
+    let lo = 0, hi = r.cum.length - 1;
+    while (hi - lo > 1) { const m = (lo + hi) >> 1; if (r.cum[m] <= d) lo = m; else hi = m; }
+    const a = r.pts[lo], b = r.pts[hi], t = (d - r.cum[lo]) / ((r.cum[hi] - r.cum[lo]) || 1e-9);
     return { x: a[0] + (b[0] - a[0]) * t, y: a[1] + (b[1] - a[1]) * t, dx: b[0] - a[0], dy: b[1] - a[1] };
   }
 
-  /* ---------- Fleet (demo data) ---------- */
+  /* ---------- Fleet (simulated) ---------- */
   const rand = (a, b) => a + Math.random() * (b - a);
-  const FUEL_PER_KM = { Truck: 0.08, Van: 0.16, Car: 0.13 }; // % of tank per km
+  const ICONS = {
+    Van: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M2 7.5A1.5 1.5 0 0 1 3.5 6h11A1.5 1.5 0 0 1 16 7.5V9h2.6a1.5 1.5 0 0 1 1.2.6l2 2.7c.13.17.2.38.2.6V16a1 1 0 0 1-1 1h-1.1a2.5 2.5 0 0 1-4.8 0H9.9a2.5 2.5 0 0 1-4.8 0H3a1 1 0 0 1-1-1z"/></svg>',
+    Truck: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M1.5 5.5A1.5 1.5 0 0 1 3 4h10a1.5 1.5 0 0 1 1.5 1.5V8h3.3a1.5 1.5 0 0 1 1.3.75l2.2 3.8c.13.23.2.49.2.75V16a1 1 0 0 1-1 1h-1a2.5 2.5 0 0 1-5 0H9a2.5 2.5 0 0 1-5 0H2.5a1 1 0 0 1-1-1z"/></svg>',
+    Car: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5.6 6.6A2 2 0 0 1 7.5 5.3h9a2 2 0 0 1 1.9 1.3l1.4 3.9A2 2 0 0 1 21 12.3V16a1 1 0 0 1-1 1h-.6a2.4 2.4 0 0 1-4.8 0H9.4a2.4 2.4 0 0 1-4.8 0H4a1 1 0 0 1-1-1v-3.7a2 2 0 0 1 1.2-1.8z"/></svg>',
+  };
   const FLEET = [
-    { id: 'LS-204', plate: '01-482-AF', kind: 'Van', model: 'Mercedes Sprinter', driver: 'Arta K.', route: 'ring', dir: 1, cruise: 46 },
-    { id: 'LS-118', plate: '01-117-KT', kind: 'Truck', model: 'Volvo FL 18 t', driver: 'Blerim H.', route: 'ew', dir: 1, cruise: 42 },
-    { id: 'LS-311', plate: '01-905-BD', kind: 'Van', model: 'Ford Transit', driver: 'Drita B.', route: 'ns', dir: 1, cruise: 44, reckless: true },
-    { id: 'LS-452', plate: '01-266-LE', kind: 'Car', model: 'Škoda Octavia', driver: 'Ilir G.', route: 'ne', dir: 1, cruise: 38 },
-    { id: 'LS-097', plate: '01-731-TR', kind: 'Truck', model: 'MAN TGL 12 t', driver: 'Valon M.', route: 'ring', dir: -1, cruise: 40 },
-    { id: 'LS-560', plate: '01-348-PK', kind: 'Car', model: 'VW Caddy', driver: 'Era S.', route: 'sw', dir: -1, cruise: 36 },
-  ].map((v, i) => {
-    const r = ROUTES[v.route];
-    return Object.assign(v, {
-      d: r.len * ((i * 0.23 + 0.1) % 1), speed: v.cruise * 0.8, state: 'moving',
-      nextStop: rand(15, 40), stopTimer: 0, trail: [], trailT: 0,
-      x: 0.5, y: 0.5, heading: 0, zones: new Set(), flagged: new Set(), speeding: false, obey: true, wobble: rand(0, 100),
-      fuel: rand(38, 92), odo: Math.round(rand(48000, 212000)), today: rand(35, 95), drive: rand(1.6, 4.2) * 3600,
-    });
-  });
-  let selected = FLEET[0];
-  let query = '';
-  const matches = (v) => !query || `${v.id} ${v.plate} ${v.driver} ${v.kind}`.toLowerCase().includes(query);
-
-  /* ---------- Satellites (shared fix quality) ---------- */
-  const SYS = {
-    gps: { name: 'GPS', color: '--sys-gps', prns: ['G02', 'G05', 'G07', 'G13', 'G15', 'G20', 'G29', 'G30'] },
-    gal: { name: 'Galileo', color: '--sys-gal', prns: ['E04', 'E09', 'E11', 'E19', 'E36'] },
-    glo: { name: 'GLONASS', color: '--sys-glo', prns: ['R03', 'R14', 'R15', 'R22'] },
-    bds: { name: 'BeiDou', color: '--sys-bds', prns: ['C19', 'C23', 'C32', 'C37'] },
-  };
-  const SATS = [];
-  Object.entries(SYS).forEach(([sys, s]) => s.prns.forEach((prn) => {
-    SATS.push({ prn, sys, az: rand(0, 360), el0: rand(6, 84), phase: rand(0, TAU), rate: rand(0.08, 0.22), el: 0, snr: 0, used: false, noise: rand(-4, 4) });
+    { id: 'Van 204', kind: 'Van', driver: 'Arta', route: 'ring', dir: 1, cruise: 46 },
+    { id: 'Truck 118', kind: 'Truck', driver: 'Blerim', route: 'ew', dir: 1, cruise: 42 },
+    { id: 'Van 311', kind: 'Van', driver: 'Drita', route: 'ns', dir: 1, cruise: 44 },
+    { id: 'Car 452', kind: 'Car', driver: 'Ilir', route: 'ne', dir: 1, cruise: 38 },
+    { id: 'Truck 097', kind: 'Truck', driver: 'Valon', route: 'ring', dir: -1, cruise: 40 },
+    { id: 'Car 560', kind: 'Car', driver: 'Era', route: 'sw', dir: -1, cruise: 36 },
+  ].map((v, i) => Object.assign(v, {
+    d: ROUTES[v.route].len * ((i * 0.23 + 0.1) % 1), speed: v.cruise * 0.8, state: 'moving', nextStop: rand(12, 40), stopTimer: 0, stoppedFor: 0,
+    x: 0.5, y: 0.5, heading: 0, wobble: rand(0, 100), trail: [], trailT: 0,
+    today: rand(38, 96), fuel: rand(45, 92), fuelRate: v.kind === 'Truck' ? 0.08 : 0.14,
   }));
-  const fix = { used: 0, view: 0, hdop: 0.8, pdop: 1.3, cn0: 40 };
-  let skyT = 0;
-  function stepSky(dt) {
-    skyT += dt;
-    let used = 0, cn = 0;
-    for (const s of SATS) {
-      s.az = (s.az + s.rate * dt) % 360;
-      s.el = Math.max(2, Math.min(88, s.el0 + 5 * Math.sin(skyT * 0.03 + s.phase)));
-      s.snr = Math.max(14, Math.min(50, 21 + s.el * 0.3 + s.noise + 1.6 * Math.sin(skyT * 0.4 + s.phase)));
-      s.used = s.snr >= 28 && s.el >= 10;
-      if (s.used) { used++; cn += s.snr; }
-    }
-    fix.used = used; fix.view = SATS.length;
-    fix.cn0 = used ? cn / used : 0;
-    fix.hdop = Math.max(0.5, 3.1 / Math.sqrt(used || 1));
-    fix.pdop = fix.hdop * 1.62;
-  }
-  stepSky(0);
+  let selected = FLEET[0];
+  let filter = 'all';
+  const visible = (v) => filter === 'all' || (filter === 'moving' ? v.state === 'moving' : v.state === 'stopped');
 
-  /* ---------- Colors from theme tokens ---------- */
-  const C = {};
-  function readColors() {
-    const s = getComputedStyle(document.documentElement);
-    ['bg', 'surface', 'surface-2', 'ink', 'ink-2', 'muted', 'line', 'accent', 'accent-soft', 'on-accent', 'map-bg', 'map-contour', 'map-contour-strong',
-      'map-road', 'map-road-edge', 'map-street', 'map-label', 'water', 'grid', 'ok', 'warn', 'alert', 'info', 'on-sys'].forEach((k) => { C[k] = s.getPropertyValue('--' + k).trim(); });
-  }
-
-  /* ---------- Map views (the live map and the replay share one renderer) ---------- */
-  function makeView(cv) {
-    const v = { canvas: cv, ctx: cv.getContext('2d'), base: document.createElement('canvas'), W: 1, H: 1, DPR: 1, S: 1, cover: 1, z: 1, cx: 0.5, cy: 0.5, ox: 0, oy: 0, labels: true };
-    v.bctx = v.base.getContext('2d');
-    v.P = (x, y) => [v.W / 2 + (x - v.cx) * KM_W * v.S + v.ox, v.H / 2 + (y - v.cy) * KM_H * v.S + v.oy];
-    v.inv = (px, py) => [(px - v.ox - v.W / 2) / (KM_W * v.S) + v.cx, (py - v.oy - v.H / 2) / (KM_H * v.S) + v.cy];
-    v.clampCenter = (cx, cy) => {
-      const hw = v.W / (2 * KM_W * v.S), hh = v.H / (2 * KM_H * v.S);
-      return [hw >= 0.5 ? 0.5 : Math.max(hw, Math.min(1 - hw, cx)), hh >= 0.5 ? 0.5 : Math.max(hh, Math.min(1 - hh, cy))];
-    };
-    v.fit = () => {
-      const r = cv.parentElement.getBoundingClientRect();
-      v.W = Math.max(1, r.width); v.H = Math.max(1, r.height);
-      v.DPR = Math.min(2, window.devicePixelRatio || 1);
-      for (const c of [cv, v.base]) { c.width = Math.round(v.W * v.DPR); c.height = Math.round(v.H * v.DPR); }
-      cv.style.width = v.W + 'px'; cv.style.height = v.H + 'px';
-      v.cover = Math.max(v.W / KM_W, v.H / KM_H);
-      v.S = v.cover * v.z;
-      [v.cx, v.cy] = v.clampCenter(v.cx, v.cy);
-      buildBase(v);
-    };
-    v.setZoom = (z, fx = v.W / 2, fy = v.H / 2) => {
-      z = Math.max(1, Math.min(4, z));
-      const [wx, wy] = v.inv(fx, fy);
-      v.z = z; v.S = v.cover * z;
-      // keep the focus point under the same pixel
-      const cx = wx - (fx - v.W / 2) / (KM_W * v.S), cy = wy - (fy - v.H / 2) / (KM_H * v.S);
-      [v.cx, v.cy] = v.clampCenter(cx, cy);
-      buildBase(v);
-    };
-    return v;
-  }
-
-  const MS = { 1: [[3, 2]], 2: [[2, 1]], 3: [[3, 1]], 4: [[0, 1]], 5: [[0, 1], [3, 2]], 6: [[0, 2]], 7: [[0, 3]],
-    8: [[0, 3]], 9: [[0, 2]], 10: [[0, 3], [2, 1]], 11: [[0, 1]], 12: [[3, 1]], 13: [[2, 1]], 14: [[3, 2]] };
-
-  function path(g, pts, P) {
-    g.beginPath();
-    pts.forEach((p, i) => { const [px, py] = P(p[0], p[1]); i ? g.lineTo(px, py) : g.moveTo(px, py); });
-  }
-  const fmtDM = (v, pos, neg) => {
-    const a = Math.abs(v), d = Math.floor(a + 1e-9), m = Math.round((a - d) * 60);
-    return `${d}°${String(m).padStart(2, '0')}′${v >= 0 ? pos : neg}`;
-  };
-
-  function buildBase(view) {
-    readColors();
-    const ox = view.ox, oy = view.oy;
-    view.ox = 0; view.oy = 0;
-    const { bctx: g, W, H, DPR, P, inv, S } = view;
-    g.setTransform(DPR, 0, 0, DPR, 0, 0);
-    g.fillStyle = C['map-bg'];
-    g.fillRect(0, 0, W, H);
-
-    // Contours (marching squares); every fifth line is an index contour, as on a topographic sheet.
-    const step = 8, cols = Math.ceil(W / step) + 1, rows = Math.ceil(H / step) + 1;
-    const val = new Float32Array(cols * rows);
-    for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) { const [x, y] = inv(i * step, j * step); val[j * cols + i] = terrain(x, y); }
-    for (let L = 0; L < 18; L++) {
-      const lv = 0.16 + L * 0.04;
-      const index = L % 5 === 0;
-      g.strokeStyle = index ? C['map-contour-strong'] : C['map-contour'];
-      g.lineWidth = index ? 1.1 : 0.8;
-      g.beginPath();
-      for (let j = 0; j < rows - 1; j++) for (let i = 0; i < cols - 1; i++) {
-        const a = val[j * cols + i], b = val[j * cols + i + 1], c = val[(j + 1) * cols + i + 1], d = val[(j + 1) * cols + i];
-        const idx = (a > lv ? 8 : 0) | (b > lv ? 4 : 0) | (c > lv ? 2 : 0) | (d > lv ? 1 : 0);
-        if (idx === 0 || idx === 15) continue;
-        const x0 = i * step, y0 = j * step;
-        const E = (e) => e === 0 ? [x0 + step * (lv - a) / (b - a), y0]
-          : e === 1 ? [x0 + step, y0 + step * (lv - b) / (c - b)]
-          : e === 2 ? [x0 + step * (lv - d) / (c - d), y0 + step]
-          : [x0, y0 + step * (lv - a) / (d - a)];
-        for (const [e1, e2] of MS[idx]) { const p = E(e1), q = E(e2); g.moveTo(p[0], p[1]); g.lineTo(q[0], q[1]); }
-      }
-      g.stroke();
-    }
-
-    g.lineCap = 'round'; g.lineJoin = 'round';
-    path(g, RIVER, P); g.strokeStyle = C.water; g.lineWidth = Math.max(9, 0.11 * S); g.stroke();
-
-    // Street grid in the centre
-    g.save();
-    const [cx, cy] = P(0.5, 0.5);
-    g.beginPath(); g.ellipse(cx, cy, 0.24 * KM_W * S, 0.26 * KM_H * S, 0, 0, TAU); g.clip();
-    g.translate(cx, cy); g.rotate(-0.32);
-    g.strokeStyle = C['map-street']; g.lineWidth = 1;
-    const sp = 0.2 * S, ext = 2.2 * S;
-    g.beginPath();
-    for (let k = -12; k <= 12; k++) { g.moveTo(k * sp, -ext); g.lineTo(k * sp, ext); g.moveTo(-ext, k * sp * 1.3); g.lineTo(ext, k * sp * 1.3); }
-    g.stroke();
-    g.restore();
-
-    // Roads: casing then fill; widths grow a little with zoom
-    const zf = Math.min(1.8, Math.sqrt(view.z));
-    const roads = Object.values(ROUTES);
-    for (const pass of [0, 1]) for (const r of roads) {
-      path(g, r.pts, P);
-      const w = (r.major ? 9 : 6.5) * zf;
-      g.strokeStyle = pass ? C['map-road'] : C['map-road-edge'];
-      g.lineWidth = pass ? w - 3 : w;
-      g.stroke();
-    }
-
-    // District names
-    if (view.labels) {
-      g.font = `600 ${view.z > 1.5 ? 11 : 10}px "IBM Plex Sans", "Segoe UI", sans-serif`;
-      g.fillStyle = C['map-label']; g.textAlign = 'center';
-      if ('letterSpacing' in g) g.letterSpacing = '2px';
-      for (const [n, x, y] of DISTRICTS) { const [px, py] = P(x, y); g.fillText(n.toUpperCase(), px, py); }
-      if ('letterSpacing' in g) g.letterSpacing = '0px';
-      g.textAlign = 'left';
-    }
-
-    // Graticule at whole arc-minutes
-    g.font = '500 10px "IBM Plex Mono", ui-monospace, monospace';
-    g.fillStyle = C.muted; g.strokeStyle = C.grid; g.lineWidth = 1;
-    const [tlx, tly] = inv(0, 0), [brx, bry] = inv(W, H);
-    const nw = toLatLon(tlx, tly), se = toLatLon(brx, bry);
-    g.setLineDash([2, 4]);
-    for (let m = Math.ceil(se.lat * 60); m <= Math.floor(nw.lat * 60); m++) {
-      const y = 0.5 - (m / 60 - ORIGIN.lat) / SPAN.lat, py = P(0, y)[1];
-      g.beginPath(); g.moveTo(0, py); g.lineTo(W, py); g.stroke();
-      g.fillText(fmtDM(m / 60, 'N', 'S'), 8, py - 4);
-    }
-    for (let m = Math.ceil(nw.lon * 60); m <= Math.floor(se.lon * 60); m++) {
-      const x = 0.5 + (m / 60 - ORIGIN.lon) / SPAN.lon, px = P(x, 0)[0];
-      g.beginPath(); g.moveTo(px, 0); g.lineTo(px, H); g.stroke();
-      g.save(); g.translate(px + 4, H - 60); g.rotate(-Math.PI / 2); g.fillText(fmtDM(m / 60, 'E', 'W'), 0, 0); g.restore();
-    }
-    g.setLineDash([]);
-    view.ox = ox; view.oy = oy;
-  }
-
-  function roundRect(g, x, y, w, h, r) {
-    g.beginPath();
-    if (g.roundRect) g.roundRect(x, y, w, h, r); else g.rect(x, y, w, h);
-  }
-  function drawZones(view, g) {
-    const { P, S } = view;
-    for (const z of ZONES) {
-      const [px, py] = P(z.x, z.y), col = C[z.key];
-      g.beginPath(); g.arc(px, py, z.r * S, 0, TAU);
-      if (z.key === 'accent') { g.fillStyle = C['accent-soft']; g.fill(); }
-      g.setLineDash([5, 4]); g.strokeStyle = col; g.lineWidth = 1.5; g.stroke(); g.setLineDash([]);
-      g.font = '600 10px "IBM Plex Mono", ui-monospace, monospace';
-      g.fillStyle = col; g.textAlign = 'center';
-      g.fillText(z.limit ? `${z.name.toUpperCase()} · ${z.limit}` : z.name.toUpperCase(), px, py - z.r * S - 6);
-      g.textAlign = 'left';
-    }
-  }
-  function drawArrow(g, px, py, heading, fill, ring, glyph, r) {
-    g.beginPath(); g.arc(px, py, r, 0, TAU);
-    g.fillStyle = fill; g.fill(); g.lineWidth = 2.5; g.strokeStyle = ring; g.stroke();
-    g.save(); g.translate(px, py); g.rotate(heading * Math.PI / 180);
-    g.beginPath(); g.moveTo(0, -5.8); g.lineTo(4.4, 4.2); g.lineTo(0, 1.8); g.lineTo(-4.4, 4.2); g.closePath();
-    g.fillStyle = glyph; g.fill(); g.restore();
-  }
-
-  /* ---------- Live map ---------- */
-  const live = makeView($('#map'));
-  const canvas = live.canvas;
-  let showTrails = true, showZones = true;
-
-  function updateScale() {
-    const nice = [0.1, 0.2, 0.25, 0.5, 1, 2].filter((k) => k * live.S <= 120).pop() || 0.1;
-    $('#scale-bar').style.width = Math.round(nice * live.S) + 'px';
-    $('#scale-label').textContent = nice >= 1 ? `${nice} km` : `${Math.round(nice * 1000)} m`;
-    $('#map-wrap').classList.toggle('zoomed', live.z > 1.01);
-    $('#zoom-in').disabled = live.z >= 4;
-    $('#zoom-out').disabled = live.z <= 1;
-  }
-  function resize() { live.fit(); updateScale(); draw(performance.now()); }
-
-  function draw(now) {
-    const { ctx, W, H, DPR, P, base, ox, oy } = live;
-    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-    ctx.fillStyle = C['map-bg']; ctx.fillRect(0, 0, W, H);
-    ctx.drawImage(base, ox, oy, W, H);
-    if (showZones) drawZones(live, ctx);
-
-    if (showTrails) for (const v of FLEET) {
-      const tr = v.trail, isSel = v === selected;
-      if (tr.length < 2 || !matches(v)) continue;
-      ctx.lineCap = 'round';
-      for (let i = 1; i < tr.length; i++) {
-        const [ax, ay] = P(tr[i - 1][0], tr[i - 1][1]), [bx, by] = P(tr[i][0], tr[i][1]);
-        ctx.globalAlpha = (i / tr.length) * (isSel ? 0.9 : 0.4);
-        ctx.strokeStyle = isSel ? C.accent : C['ink-2'];
-        ctx.lineWidth = isSel ? 3.5 : 2;
-        ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.stroke();
-      }
-      ctx.globalAlpha = 1;
-    }
-
-    const order = FLEET.filter((v) => v !== selected).concat(selected);
-    for (const v of order) {
-      const [px, py] = P(v.x, v.y), sel = v === selected;
-      if (px < -40 || py < -40 || px > W + 40 || py > H + 40) continue;
-      const status = v.speeding ? C.alert : v.state === 'stopped' ? C.warn : C.ok;
-      const dim = matches(v) ? 1 : 0.2;
-      if (sel) {
-        const t = reduceMotion ? 0.5 : (now % 1800) / 1800;
-        ctx.beginPath(); ctx.arc(px, py, 12 + t * 24, 0, TAU);
-        ctx.globalAlpha = (1 - t) * dim; ctx.strokeStyle = C.accent; ctx.lineWidth = 2; ctx.stroke();
-      }
-      ctx.globalAlpha = dim;
-      drawArrow(ctx, px, py, v.heading, sel ? C.accent : C.surface, status, sel ? C['on-accent'] : C.ink, sel ? 12 : 9.5);
-      ctx.font = `${sel ? 600 : 500} 10.5px "IBM Plex Mono", ui-monospace, monospace`;
-      const label = v.id, tw = ctx.measureText(label).width;
-      const lx = px + 15, ly = py - 9;
-      roundRect(ctx, lx, ly, tw + 10, 18, 3);
-      ctx.fillStyle = sel ? C.ink : C.surface; ctx.fill();
-      if (!sel) { ctx.strokeStyle = C.line; ctx.lineWidth = 1; ctx.stroke(); }
-      ctx.fillStyle = sel ? C.bg : C.ink; ctx.textBaseline = 'middle';
-      ctx.fillText(label, lx + 5, ly + 9.5); ctx.textBaseline = 'alphabetic';
-      ctx.globalAlpha = 1;
-    }
-  }
-
-  /* ---------- Event log ---------- */
-  const events = [];
-  let alertsToday = 0;
-  const utc = (d = new Date()) => d.toISOString().slice(11, 19);
-  const SEV = { info: ['info', 'Info'], warn: ['warn', 'Warning'], alert: ['alert', 'Alert'] };
-  function logEvent(v, text, sev) {
-    events.unshift({ t: utc(), unit: v ? v.id : 'Fleet', text, loc: v ? districtAt(v.x, v.y) : 'Prishtina depot', sev });
-    if (sev === 'alert') { alertsToday++; $('#k-alert').textContent = alertsToday; }
-    events.length = Math.min(events.length, 6);
-    $('#events').innerHTML = events.map((e) => `<tr><td class="t">${e.t}</td><td class="u">${e.unit}</td><td>${e.text}</td><td class="l">${e.loc}</td><td><span class="pill ${SEV[e.sev][0]}">${SEV[e.sev][1]}</span></td></tr>`).join('');
-  }
-
-  /* ---------- Simulation ---------- */
-  function stepVehicle(v, dt) {
+  function step(v, dt) {
     const r = ROUTES[v.route];
-    const school = ZONES[1];
-    const inSchool = v.zones.has('school');
     if (v.state === 'stopped') {
-      v.stopTimer -= dt;
+      v.stopTimer -= dt; v.stoppedFor += dt * TIME_SCALE;
       v.speed += (0 - v.speed) * Math.min(1, dt * 3);
       if (v.stopTimer <= 0) { v.state = 'moving'; v.nextStop = rand(18, 45); }
     } else {
       v.wobble += dt * 0.6;
-      let target = v.cruise * (0.88 + 0.14 * Math.sin(v.wobble) + 0.06 * Math.sin(v.wobble * 2.7));
-      if (inSchool && v.obey) target = Math.min(target, school.limit - 5);
+      const target = v.cruise * (0.88 + 0.14 * Math.sin(v.wobble) + 0.06 * Math.sin(v.wobble * 2.7));
       v.speed += (target - v.speed) * Math.min(1, dt * 1.2);
       v.nextStop -= dt;
-      if (v.nextStop <= 0) {
-        v.state = 'stopped'; v.stopTimer = rand(4, 9);
-        if (v.speed > 30 && Math.random() < 0.18) logEvent(v, `Harsh braking, ${rand(0.36, 0.52).toFixed(2)} g`, 'warn');
-      }
+      if (v.nextStop <= 0) { v.state = 'stopped'; v.stopTimer = rand(5, 11); v.stoppedFor = 0; }
     }
-    const km = v.speed * TIME_SCALE / 3600 * dt;
-    v.d += v.dir * km;
-    v.odo += km; v.today += km; v.fuel = Math.max(6, v.fuel - km * FUEL_PER_KM[v.kind]);
-    if (v.speed > 1) v.drive += dt * TIME_SCALE;
-    if (!r.closed) {
-      if (v.d >= r.len) { v.d = r.len; v.dir = -1; }
-      if (v.d <= 0) { v.d = 0; v.dir = 1; }
-    }
+    const dk = v.speed * TIME_SCALE / 3600 * dt;
+    v.d += v.dir * dk; v.today += dk; v.fuel = Math.max(8, v.fuel - dk * v.fuelRate);
+    if (!r.closed) { if (v.d >= r.len) { v.d = r.len; v.dir = -1; } if (v.d <= 0) { v.d = 0; v.dir = 1; } }
     const p = pointAt(r, v.d);
     v.x = p.x; v.y = p.y;
     const hx = p.dx * KM_W * v.dir, hy = p.dy * KM_H * v.dir;
-    if (hx || hy) v.heading = (Math.atan2(hx, -hy) * 180 / Math.PI + 360) % 360;
-
+    if (hx || hy) v.heading = Math.atan2(hx, -hy);
     v.trailT += dt;
-    if (v.trailT > 0.25) { v.trailT = 0; v.trail.push([v.x, v.y]); if (v.trail.length > 70) v.trail.shift(); }
+    if (v.trailT > 0.3) { v.trailT = 0; v.trail.push([v.x, v.y]); if (v.trail.length > 50) v.trail.shift(); }
+  }
 
-    v.speeding = false;
-    for (const z of ZONES) {
-      const inside = kmBetween(v.x, v.y, z.x, z.y) < z.r;
-      if (inside && !v.zones.has(z.id)) {
-        v.zones.add(z.id);
-        if (z.limit) v.obey = !(v.reckless && Math.random() < 0.6);
-        logEvent(v, `Entered ${z.name.toLowerCase()}`, 'info');
-        if (z.id === 'depot' && Math.random() < 0.5 && v.state === 'moving') { v.state = 'stopped'; v.stopTimer = rand(6, 11); }
-      } else if (!inside && v.zones.has(z.id)) {
-        v.zones.delete(z.id); v.flagged.delete(z.id);
-        logEvent(v, `Left ${z.name.toLowerCase()}`, 'info');
+  /* ---------- Map rendering ---------- */
+  const canvas = $('#map'), ctx = canvas.getContext('2d');
+  const base = document.createElement('canvas'), bctx = base.getContext('2d');
+  let W = 1, H = 1, DPR = 1, S = 1, offX = 0;
+  // Shift the map right on wide screens so the fleet panel doesn't cover the city centre.
+  const P = (x, y) => [W / 2 + offX + (x - 0.5) * KM_W * S, H / 2 + (y - 0.5) * KM_H * S];
+  function line(g, pts) { g.beginPath(); pts.forEach((p, i) => { const [a, b] = P(p[0], p[1]); i ? g.lineTo(a, b) : g.moveTo(a, b); }); }
+  function blob(g, pk) {
+    g.beginPath();
+    for (let i = 0; i <= 40; i++) {
+      const t = i / 40 * TAU, w = 1 + 0.08 * Math.sin(3 * t + pk.x * 9) + 0.05 * Math.cos(5 * t + pk.y * 7);
+      const [a, b] = P(pk.x + pk.rx * w * Math.cos(t), pk.y + pk.ry * w * Math.sin(t));
+      i ? g.lineTo(a, b) : g.moveTo(a, b);
+    }
+    g.closePath();
+  }
+  function buildBase() {
+    const g = bctx;
+    g.setTransform(DPR, 0, 0, DPR, 0, 0);
+    g.fillStyle = COL.land; g.fillRect(0, 0, W, H);
+    g.fillStyle = COL.park; PARKS.forEach((pk) => { blob(g, pk); g.fill(); });
+    g.lineCap = 'round'; g.lineJoin = 'round';
+    line(g, RIVER); g.strokeStyle = COL.water; g.lineWidth = Math.max(10, 0.1 * S); g.stroke();
+    // Minor street grid across the centre
+    g.save();
+    const [cx, cy] = P(0.5, 0.5);
+    g.beginPath(); g.ellipse(cx, cy, 0.3 * KM_W * S, 0.32 * KM_H * S, 0, 0, TAU); g.clip();
+    g.translate(cx, cy); g.rotate(-0.32);
+    const sp = 0.22 * S, ext = 2.5 * S;
+    for (const [col, w] of [[COL.minorEdge, 3.5], [COL.minor, 2]]) {
+      g.strokeStyle = col; g.lineWidth = w; g.beginPath();
+      for (let k = -14; k <= 14; k++) { g.moveTo(k * sp, -ext); g.lineTo(k * sp, ext); g.moveTo(-ext, k * sp * 1.25); g.lineTo(ext, k * sp * 1.25); }
+      g.stroke();
+    }
+    g.restore();
+    // Roads
+    const order = ['minor', 'major', 'ring'];
+    const style = { minor: [COL.minorEdge, COL.minor, 7], major: [COL.majorEdge, COL.major, 11], ring: [COL.ringEdge, COL.ring, 12] };
+    for (const kind of order) for (const r of Object.values(ROUTES)) {
+      if (r.kind !== kind) continue;
+      const [edge, fill, w] = style[kind];
+      line(g, r.pts); g.strokeStyle = edge; g.lineWidth = w; g.stroke();
+      line(g, r.pts); g.strokeStyle = fill; g.lineWidth = w - 3; g.stroke();
+    }
+    // Labels
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.font = '600 10.5px -apple-system, "Inter Tight", sans-serif';
+    if ('letterSpacing' in g) g.letterSpacing = '1.5px';
+    g.fillStyle = COL.label;
+    DISTRICTS.forEach(([n, x, y]) => { const [a, b] = P(x, y); g.fillText(n.toUpperCase(), a, b); });
+    if ('letterSpacing' in g) g.letterSpacing = '0px';
+    g.font = '600 11px -apple-system, "Inter Tight", sans-serif';
+    g.fillStyle = COL.parkLabel;
+    PARKS.forEach((pk) => { if (pk.name) { const [a, b] = P(pk.x - pk.rx * 0.25, pk.y + pk.ry * 0.45); g.fillText(pk.name, a, b); } });
+  }
+  function resize() {
+    const r = canvas.parentElement.getBoundingClientRect();
+    W = Math.max(1, r.width); H = Math.max(1, r.height); DPR = Math.min(2, window.devicePixelRatio || 1);
+    for (const c of [canvas, base]) { c.width = Math.round(W * DPR); c.height = Math.round(H * DPR); }
+    canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+    const sideVisible = W > 700;
+    S = Math.max((W - (sideVisible ? 140 : 0)) / KM_W, H / KM_H);
+    offX = sideVisible ? 130 : 0;
+    buildBase();
+    draw(performance.now());
+  }
+
+  function pill(g, text, x, y, strong) {
+    g.font = `${strong ? 700 : 600} 11px -apple-system, "Inter Tight", sans-serif`;
+    const w = g.measureText(text).width + 14, h = 20;
+    g.save();
+    g.shadowColor = 'rgba(0,0,0,.18)'; g.shadowBlur = 6; g.shadowOffsetY = 1;
+    g.beginPath();
+    if (g.roundRect) g.roundRect(x - w / 2, y, w, h, 10); else g.rect(x - w / 2, y, w, h);
+    g.fillStyle = strong ? COL.ink : COL.white; g.fill();
+    g.restore();
+    g.fillStyle = strong ? COL.white : COL.ink; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText(text, x, y + h / 2 + 0.5);
+  }
+
+  function draw(now) {
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    ctx.drawImage(base, 0, 0, W, H);
+    // Selected vehicle's recent path
+    const tr = selected.trail;
+    if (tr.length > 1) {
+      ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      for (let i = 1; i < tr.length; i++) {
+        const [a, b] = P(tr[i - 1][0], tr[i - 1][1]), [c, d] = P(tr[i][0], tr[i][1]);
+        ctx.globalAlpha = (i / tr.length) * 0.85; ctx.strokeStyle = COL.blue; ctx.lineWidth = 5;
+        ctx.beginPath(); ctx.moveTo(a, b); ctx.lineTo(c, d); ctx.stroke();
       }
-      if (inside && z.limit && v.speed > z.limit + 1) {
-        v.speeding = true;
-        if (!v.flagged.has(z.id) && v.speed > z.limit + 4) {
-          v.flagged.add(z.id);
-          logEvent(v, `${Math.round(v.speed)} km/h in ${z.limit} km/h zone`, 'alert');
-        }
+      ctx.globalAlpha = 1;
+    }
+    const order = FLEET.filter((v) => v !== selected).concat(selected);
+    for (const v of order) {
+      const [x, y] = P(v.x, v.y), sel = v === selected, col = v.state === 'stopped' ? COL.orange : COL.blue;
+      ctx.globalAlpha = visible(v) ? 1 : 0.25;
+      if (sel) {
+        const t = reduceMotion ? 0.4 : (now % 2000) / 2000;
+        ctx.beginPath(); ctx.arc(x, y, 14 + t * 26, 0, TAU);
+        ctx.fillStyle = `rgba(0,113,227,${0.22 * (1 - t)})`; ctx.fill();
       }
+      if (v.state === 'moving') {
+        // heading beam, as on a phone's map
+        const g = ctx.createRadialGradient(x, y, 0, x, y, 34);
+        g.addColorStop(0, 'rgba(0,113,227,.35)'); g.addColorStop(1, 'rgba(0,113,227,0)');
+        ctx.beginPath(); ctx.moveTo(x, y); ctx.arc(x, y, 34, v.heading - Math.PI / 2 - 0.45, v.heading - Math.PI / 2 + 0.45); ctx.closePath();
+        ctx.fillStyle = g; ctx.fill();
+      }
+      ctx.save();
+      ctx.shadowColor = 'rgba(0,0,0,.28)'; ctx.shadowBlur = 6; ctx.shadowOffsetY = 1;
+      ctx.beginPath(); ctx.arc(x, y, sel ? 10 : 8, 0, TAU); ctx.fillStyle = COL.white; ctx.fill();
+      ctx.restore();
+      ctx.beginPath(); ctx.arc(x, y, sel ? 7 : 5.5, 0, TAU); ctx.fillStyle = col; ctx.fill();
+      pill(ctx, v.id, x, y + (sel ? 16 : 13), sel);
+      ctx.globalAlpha = 1;
     }
   }
 
-  /* ---------- Side panel ---------- */
-  const fleetEl = $('#fleet');
-  fleetEl.innerHTML = FLEET.map((v) => `<li><button type="button" data-id="${v.id}"><span class="dot"></span><span class="f-main"><b>${v.id}</b><small>${v.plate}</small></span><span class="fdrv">${v.driver}</span><span class="fspd">0 km/h</span></button></li>`).join('');
-  fleetEl.addEventListener('click', (e) => {
-    const b = e.target.closest('button[data-id]');
-    if (b) select(FLEET.find((v) => v.id === b.dataset.id));
-  });
-  $('#fleet-search').addEventListener('input', (e) => {
-    query = e.target.value.trim().toLowerCase();
-    let n = 0;
-    fleetEl.querySelectorAll('li').forEach((li, i) => { const m = matches(FLEET[i]); li.hidden = !m; if (m) n++; });
-    $('#fleet-empty').hidden = n > 0;
-    $('#fleet-count').textContent = query ? `${n} of ${FLEET.length}` : `${FLEET.length} units`;
-    const first = FLEET.find(matches);
-    if (first && !matches(selected)) select(first);
-    draw(performance.now());
-  });
-  function select(v) {
-    if (!v || v === selected) return;
-    selected = v;
-    $('#term-unit').textContent = v.id;
-    termLines.length = 0;
-    renderPanel();
-    renderTerm();
-    draw(performance.now());
-  }
-  const compass = (h) => ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'][Math.round(h / 45) % 8];
-  const altitudeAt = (x, y) => 590 + terrain(x, y) * 140;
-  const hm = (sec) => `${Math.floor(sec / 3600)} h ${String(Math.floor(sec % 3600 / 60)).padStart(2, '0')}`;
-  function statusOf(v) { return v.speeding ? ['alert', 'Speeding'] : v.state === 'stopped' ? ['warn', v.zones.has('depot') ? 'Loading' : 'Idling'] : ['ok', 'Driving']; }
-
-  function renderPanel() {
-    const v = selected, ll = toLatLon(v.x, v.y), [cls, label] = statusOf(v);
-    $('#t-id').textContent = v.id;
-    $('#t-plate').textContent = v.plate;
-    $('#t-sub').textContent = `${v.model} · ${v.driver}`;
-    const st = $('#t-status'); st.className = 'pill ' + cls; st.textContent = label;
-    $('#t-spd').textContent = `${v.speed < 0.5 ? '0.0' : v.speed.toFixed(1)} km/h`;
-    $('#t-hdg').textContent = `${String(Math.round(v.heading)).padStart(3, '0')}° ${compass(v.heading)}`;
-    $('#t-lat').textContent = `${ll.lat.toFixed(5)}° N`;
-    $('#t-lon').textContent = `${ll.lon.toFixed(5)}° E`;
-    $('#t-sat').textContent = `${fix.used} sats · HDOP ${fix.hdop.toFixed(1)}`;
-    $('#t-alt').textContent = `${altitudeAt(v.x, v.y).toFixed(0)} m`;
-    $('#t-fuel').textContent = `${v.fuel.toFixed(0)} %`;
-    $('#t-fuel-bar').style.width = v.fuel.toFixed(0) + '%';
-    $('#t-drive').textContent = `${hm(v.drive)} of 9 h`;
-    $('#t-drive-bar').style.width = Math.min(100, v.drive / 324).toFixed(1) + '%';
-    $('#t-odo').textContent = `${Math.round(v.odo).toLocaleString('en-US')} km`;
-    $('#t-loc').textContent = districtAt(v.x, v.y);
-    fleetEl.querySelectorAll('button').forEach((b, i) => {
-      const f = FLEET[i], [c] = statusOf(f);
-      b.setAttribute('aria-current', f === selected ? 'true' : 'false');
-      b.querySelector('.dot').className = 'dot ' + (c === 'ok' ? '' : c);
-      b.querySelector('.fspd').textContent = `${Math.round(f.speed < 0.5 ? 0 : f.speed)} km/h`;
-    });
-    const moving = FLEET.filter((f) => f.state === 'moving').length;
-    $('#k-mov').textContent = moving;
-    $('#k-stop').textContent = FLEET.length - moving;
-    $('#k-dist').innerHTML = `${FLEET.reduce((a, f) => a + f.today, 0).toFixed(1)}<small>km</small>`;
-  }
-
-  // Map interaction: click to select, drag to pan when zoomed, buttons to zoom
-  let drag = null;
-  canvas.addEventListener('pointerdown', (e) => {
-    drag = { x: e.clientX, y: e.clientY, cx: live.cx, cy: live.cy, moved: false, id: e.pointerId };
-  });
-  canvas.addEventListener('pointermove', (e) => {
+  canvas.addEventListener('click', (e) => {
     const r = canvas.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
-    if (drag && e.buttons) {
-      const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
-      if (!drag.moved && Math.hypot(dx, dy) > 4 && live.z > 1.01) {
-        drag.moved = true;
-        try { canvas.setPointerCapture(drag.id); } catch (err) { /* pointer already released */ }
-        canvas.classList.add('dragging');
+    let best = null, bd = 28;
+    FLEET.forEach((v) => { const [x, y] = P(v.x, v.y), d = Math.hypot(x - mx, y - my); if (d < bd) { bd = d; best = v; } });
+    if (best) select(best);
+  });
+  canvas.addEventListener('mousemove', (e) => {
+    const r = canvas.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
+    canvas.style.cursor = FLEET.some((v) => { const [x, y] = P(v.x, v.y); return Math.hypot(x - mx, y - my) < 24; }) ? 'pointer' : 'default';
+  });
+
+  /* ---------- Lists: display sidebar, card and phone app ---------- */
+  const status = (v) => (v.state === 'stopped'
+    ? `Stopped in ${districtAt(v.x, v.y)} · ${Math.max(1, Math.round(v.stoppedFor / 60))} min`
+    : `Driving on ${ROUTES[v.route].name}`);
+  const short = (v) => (v.state === 'stopped' ? `Stopped · ${districtAt(v.x, v.y)}` : `${Math.round(v.speed)} km/h · ${districtAt(v.x, v.y)}`);
+  const vlist = $('#vlist'), plist = $('#plist');
+  vlist.innerHTML = FLEET.map((v, i) => `<li><button type="button" data-i="${i}"><span class="vicon">${ICONS[v.kind]}</span><span><span class="vname">${v.id}</span><span class="vsub"></span></span><span class="vmeta"></span></button></li>`).join('');
+  plist.innerHTML = FLEET.map((v) => `<li><span class="vicon">${ICONS[v.kind]}</span><span><span class="vname">${v.id}</span><span class="vsub"></span></span><span class="vmeta"></span></li>`).join('');
+  vlist.addEventListener('click', (e) => { const b = e.target.closest('button[data-i]'); if (b) select(FLEET[+b.dataset.i]); });
+
+  function select(v) { selected = v; renderLists(); draw(performance.now()); }
+
+  function renderLists() {
+    let shown = 0;
+    FLEET.forEach((v, i) => {
+      const ok = visible(v); if (ok) shown++;
+      for (const list of [vlist, plist]) {
+        const li = list.children[i];
+        li.hidden = !ok;
+        li.querySelector('.vicon').classList.toggle('stopped', v.state === 'stopped');
+        li.querySelector('.vsub').textContent = list === vlist ? short(v) : `${v.driver} · ${short(v)}`;
+        li.querySelector('.vmeta').textContent = list === vlist ? '' : `${Math.round(v.today)} km`;
       }
-      if (drag.moved) {
-        const [ncx, ncy] = live.clampCenter(drag.cx - dx / (KM_W * live.S), drag.cy - dy / (KM_H * live.S));
-        live.ox = (drag.cx - ncx) * KM_W * live.S; live.oy = (drag.cy - ncy) * KM_H * live.S;
-        if (reduceMotion) draw(performance.now());
-      }
-      return;
-    }
-    const near = FLEET.some((v) => { const [px, py] = live.P(v.x, v.y); return Math.hypot(px - mx, py - my) < 26; });
-    canvas.style.cursor = near ? 'pointer' : (live.z > 1.01 ? 'grab' : 'default');
-  });
-  const endDrag = (e) => {
-    if (!drag) return;
-    if (drag.moved) {
-      live.cx -= live.ox / (KM_W * live.S); live.cy -= live.oy / (KM_H * live.S);
-      live.ox = 0; live.oy = 0;
-      [live.cx, live.cy] = live.clampCenter(live.cx, live.cy);
-      buildBase(live); canvas.classList.remove('dragging');
-    } else if (e.type === 'pointerup') {
-      const r = canvas.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
-      let best = null, bd = 28;
-      for (const v of FLEET) { const [px, py] = live.P(v.x, v.y), d = Math.hypot(px - mx, py - my); if (d < bd) { bd = d; best = v; } }
-      if (best) select(best);
-    }
-    drag = null;
-    draw(performance.now());
-  };
-  canvas.addEventListener('pointerup', endDrag);
-  canvas.addEventListener('pointercancel', endDrag);
-  $('#zoom-in').addEventListener('click', () => {
-    const [px, py] = live.P(selected.x, selected.y);
-    live.setZoom(live.z * 1.5, px, py);
-    updateScale(); draw(performance.now());
-  });
-  $('#zoom-out').addEventListener('click', () => { live.setZoom(live.z / 1.5); updateScale(); draw(performance.now()); });
-  $('#zoom-fit').addEventListener('click', () => { live.cx = 0.5; live.cy = 0.5; live.setZoom(1); updateScale(); draw(performance.now()); });
-  const toggle = (id, set) => $(id).addEventListener('click', (e) => {
-    const on = e.currentTarget.getAttribute('aria-pressed') !== 'true';
-    e.currentTarget.setAttribute('aria-pressed', String(on)); set(on); draw(performance.now());
-  });
-  toggle('#btn-trails', (on) => { showTrails = on; });
-  toggle('#btn-zones', (on) => { showZones = on; });
-  toggle('#btn-labels', (on) => { live.labels = on; buildBase(live); });
-
-  /* ---------- Sky plot + SNR ---------- */
-  const NS = 'http://www.w3.org/2000/svg';
-  const sky = $('#skyplot');
-  const R = 132, CX = 160, CY = 160;
-  (function buildSky() {
-    let s = '';
-    [0, 30, 60].forEach((el) => { s += `<circle class="ring" cx="${CX}" cy="${CY}" r="${R * (90 - el) / 90}"${el ? ' stroke-dasharray="3 4"' : ''}/>`; });
-    s += `<path class="axis" d="M${CX} ${CY - R}V${CY + R}M${CX - R} ${CY}H${CX + R}"/>`;
-    s += `<text class="lbl" x="${CX + 4}" y="${CY - R * 2 / 3 - 3}">30°</text><text class="lbl" x="${CX + 4}" y="${CY - R / 3 - 3}">60°</text>`;
-    s += `<text class="card" x="${CX}" y="${CY - R - 8}" text-anchor="middle">N</text><text class="card" x="${CX + R + 10}" y="${CY + 4}" text-anchor="middle">E</text>`;
-    s += `<text class="card" x="${CX}" y="${CY + R + 17}" text-anchor="middle">S</text><text class="card" x="${CX - R - 10}" y="${CY + 4}" text-anchor="middle">W</text>`;
-    sky.innerHTML = s;
-    for (const sat of SATS) {
-      const g = document.createElementNS(NS, 'g');
-      g.setAttribute('class', 'sat');
-      g.innerHTML = `<circle r="9.5" stroke-width="1.6"/><text>${sat.prn}</text>`;
-      sky.appendChild(g);
-      sat.g = g;
-    }
-    $('#snr-axis').innerHTML = [0, 10, 20, 30, 40, 50].map((v) => `<span style="bottom:${v * 2}%">${v}</span>`).join('');
-    $('#snr-plot').innerHTML = SATS.map((s) => `<div class="b" style="background:var(${SYS[s.sys].color})"></div>`).join('');
-    $('#snr-labels').innerHTML = SATS.map((s) => `<span>${s.prn}</span>`).join('');
-    SATS.forEach((s, i) => { s.bar = $('#snr-plot').children[i]; });
-  })();
-
-  function renderSky() {
-    for (const s of SATS) {
-      const r = R * (90 - s.el) / 90, a = s.az * Math.PI / 180;
-      const x = CX + r * Math.sin(a), y = CY - r * Math.cos(a);
-      s.g.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
-      const col = `var(${SYS[s.sys].color})`;
-      const c = s.g.firstChild, t = s.g.lastChild;
-      c.style.fill = s.used ? col : 'var(--surface)';
-      c.style.stroke = col;
-      t.style.fill = s.used ? 'var(--on-sys)' : col;
-      s.bar.style.height = (s.snr / 50 * 100).toFixed(1) + '%';
-      s.bar.classList.toggle('unused', !s.used);
-      s.bar.title = `${s.prn}: ${s.snr.toFixed(0)} dB-Hz, elevation ${s.el.toFixed(0)}°`;
-    }
-    $('#d-used').innerHTML = `${fix.used}<small> / ${fix.view}</small>`;
-    $('#d-hdop').textContent = fix.hdop.toFixed(2);
-    $('#d-pdop').textContent = fix.pdop.toFixed(2);
-    $('#d-cn0').innerHTML = `${fix.cn0.toFixed(1)}<small> dB-Hz</small>`;
-    $('#sys-legend').innerHTML = Object.entries(SYS).map(([k, s]) => {
-      const inView = SATS.filter((x) => x.sys === k), used = inView.filter((x) => x.used).length;
-      return `<span><i style="background:var(${s.color})"></i>${s.name} <em>${used}/${inView.length}</em></span>`;
-    }).join('');
+      vlist.children[i].querySelector('button').setAttribute('aria-current', v === selected ? 'true' : 'false');
+    });
+    $('#vempty').hidden = shown > 0;
+    const moving = FLEET.filter((v) => v.state === 'moving').length;
+    $('#side-count').textContent = `${FLEET.length} vehicles · ${moving} moving`;
+    const v = selected;
+    $('#c-icon').innerHTML = ICONS[v.kind];
+    $('#c-icon').classList.toggle('stopped', v.state === 'stopped');
+    $('#c-name').textContent = `${v.id} · ${v.driver}`;
+    $('#c-status').textContent = status(v);
+    $('#c-speed').innerHTML = `${Math.round(v.state === 'stopped' ? 0 : v.speed)}<small> km/h</small>`;
+    $('#c-today').innerHTML = `${v.today.toFixed(1)}<small> km</small>`;
+    $('#c-fuel').innerHTML = `${Math.round(v.fuel)}<small> %</small>`;
   }
-
-  /* ---------- NMEA / JSON terminal ---------- */
-  const term = $('#term');
-  const termLines = [];
-  let termMode = 'nmea';
-  const checksum = (s) => { let c = 0; for (let i = 0; i < s.length; i++) c ^= s.charCodeAt(i); return c.toString(16).toUpperCase().padStart(2, '0'); };
-  const nmeaCoord = (v, degW, pos, neg) => {
-    const a = Math.abs(v), d = Math.floor(a), m = (a - d) * 60;
-    return `${String(d).padStart(degW, '0')}${m.toFixed(5).padStart(8, '0')},${v >= 0 ? pos : neg}`;
-  };
-  const sentence = (body) => `<span class="t-talker">$${body.slice(0, 5)}</span>${body.slice(5)}<span class="t-cs">*${checksum(body)}</span>`;
-  function emitFix() {
-    const v = selected, ll = toLatLon(v.x, v.y), now = new Date();
-    const hms = now.toISOString().slice(11, 19).replace(/:/g, '');
-    const iso = now.toISOString();
-    const dmy = iso.slice(8, 10) + iso.slice(5, 7) + iso.slice(2, 4);
-    const lat = nmeaCoord(ll.lat, 2, 'N', 'S'), lon = nmeaCoord(ll.lon, 3, 'E', 'W');
-    const alt = altitudeAt(v.x, v.y);
-    const spd = v.speed < 0.5 ? 0 : v.speed;
-    termLines.push(sentence(`GNGGA,${hms}.00,${lat},${lon},1,${String(fix.used).padStart(2, '0')},${fix.hdop.toFixed(1)},${alt.toFixed(1)},M,46.1,M,,`));
-    termLines.push(sentence(`GNRMC,${hms}.00,A,${lat},${lon},${(spd / 1.852).toFixed(2)},${v.heading.toFixed(1)},${dmy},,,A`));
-    while (termLines.length > 40) termLines.shift();
-  }
-  function renderTerm() {
-    if (termMode === 'nmea') {
-      if (!termLines.length) emitFix();
-      term.innerHTML = termLines.join('\n');
-      term.scrollTop = term.scrollHeight;
-    } else {
-      const v = selected, ll = toLatLon(v.x, v.y);
-      const obj = {
-        unit: v.id,
-        plate: v.plate,
-        time: new Date().toISOString().slice(0, 19) + 'Z',
-        position: { lat: +ll.lat.toFixed(6), lon: +ll.lon.toFixed(6), alt_m: +altitudeAt(v.x, v.y).toFixed(1) },
-        speed_kmh: +(v.speed < 0.5 ? 0 : v.speed).toFixed(1),
-        heading_deg: Math.round(v.heading),
-        status: statusOf(v)[1].toLowerCase(),
-        fix: { type: '3d', sats_used: fix.used, sats_in_view: fix.view, hdop: +fix.hdop.toFixed(2) },
-        can: { fuel_pct: +v.fuel.toFixed(1), odometer_km: Math.round(v.odo) },
-        zones: [...v.zones].map((id) => ZONES.find((z) => z.id === id).name),
-      };
-      const json = JSON.stringify(obj, null, 2)
-        .replace(/("[^"]+")(\s*:)/g, '<span class="j-key">$1</span>$2')
-        .replace(/:\s("[^"]*")/g, ': <span class="j-str">$1</span>')
-        .replace(/(\[\s*|,\s*)("[^"]*")(?=\s*[\],])/g, '$1<span class="j-str">$2</span>')
-        .replace(/:\s(-?\d+(\.\d+)?)/g, ': <span class="j-num">$1</span>');
-      term.innerHTML = `<span class="t-cs">GET /v1/units/${v.id}/fix  200 OK</span>\n\n${json}`;
-      term.scrollTop = 0;
-    }
-  }
-  ['nmea', 'json'].forEach((mode) => $('#tab-' + mode).addEventListener('click', () => {
-    termMode = mode;
-    $('#tab-nmea').setAttribute('aria-selected', String(mode === 'nmea'));
-    $('#tab-json').setAttribute('aria-selected', String(mode === 'json'));
-    renderTerm();
+  document.querySelectorAll('.seg').forEach((seg) => seg.addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-f]'); if (!b) return;
+    filter = b.dataset.f;
+    document.querySelectorAll('.seg button').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.f === filter)));
+    renderLists(); draw(performance.now());
   }));
 
-  /* ---------- Route replay: a recorded trip, generated deterministically ---------- */
-  const replay = (() => {
-    const RT = ROUTES;
-    function nearestD(route, x, y) {
-      let best = 0, bd = Infinity;
-      route.pts.forEach((p, i) => { const d = kmBetween(p[0], p[1], x, y); if (d < bd) { bd = d; best = i; } });
-      return route.cum[best];
-    }
-    function crossD(a, b, hx, hy) {
-      let best = null, bd = Infinity;
-      a.pts.forEach((p, i) => {
-        if (kmBetween(p[0], p[1], hx, hy) > 1.2) return;
-        b.pts.forEach((q, j) => { const d = kmBetween(p[0], p[1], q[0], q[1]); if (d < bd) { bd = d; best = [a.cum[i], b.cum[j]]; } });
-      });
-      return best;
-    }
-    const dDepot = nearestD(RT.ew, 0.8, 0.41);
-    const [ewC, nsC] = crossD(RT.ew, RT.ns, 0.5, 0.5);
-    const [nsBot, ringBot] = crossD(RT.ns, RT.ring, 0.55, 0.86);
-    const [ringL, ewL] = crossD(RT.ring, RT.ew, 0.17, 0.62);
-    const [nsTop, ringTop] = crossD(RT.ns, RT.ring, 0.42, 0.12);
-    const [ringR, ewR] = crossD(RT.ring, RT.ew, 0.84, 0.4);
-    const wrap = (a, b) => (b < a ? b + RT.ring.len : b);
-    const ROAD = { ew: 'East–West Arterial', ns: 'North–South Arterial', ring: 'Ring Road' };
-    const LIMIT = { ew: 42, ns: 38, ring: 54 };
-    const legs = [
-      ['ew', dDepot, ewC], ['ns', nsC, nsBot], ['ring', ringBot, wrap(ringBot, ringL)],
-      ['ew', ewL, ewC], ['ns', nsC, nsTop], ['ring', ringTop, wrap(ringTop, ringR)], ['ew', ewR, dDepot],
-    ];
-
-    const pts = [], cum = [], legOf = [], legStart = [];
-    legs.forEach(([rk, a, b], li) => {
-      const r = RT[rk], n = Math.max(2, Math.ceil(Math.abs(b - a) / 0.012));
-      legStart.push(cum.length ? cum[cum.length - 1] : 0);
-      for (let k = li ? 1 : 0; k <= n; k++) {
-        const p = pointAt(r, a + (b - a) * k / n);
-        if (pts.length) { const q = pts[pts.length - 1]; cum.push(cum[cum.length - 1] + kmBetween(p.x, p.y, q[0], q[1])); } else cum.push(0);
-        pts.push([p.x, p.y]); legOf.push(li);
-      }
-    });
-    const total = cum[cum.length - 1];
-    const legEnd = (li) => (li + 1 < legStart.length ? legStart[li + 1] : total);
-    function at(s) {
-      s = Math.max(0, Math.min(total, s));
-      let lo = 0, hi = cum.length - 1;
-      while (hi - lo > 1) { const m = (lo + hi) >> 1; if (cum[m] <= s) lo = m; else hi = m; }
-      const t = (s - cum[lo]) / ((cum[hi] - cum[lo]) || 1e-9), a = pts[lo], b = pts[hi];
-      const hx = (b[0] - a[0]) * KM_W, hy = (b[1] - a[1]) * KM_H;
-      return { x: a[0] + (b[0] - a[0]) * t, y: a[1] + (b[1] - a[1]) * t, leg: legOf[lo], heading: (Math.atan2(hx, -hy) * 180 / Math.PI + 360) % 360 };
-    }
-
-    const halts = [
-      { s: legStart[1] - 0.01, dwell: 45, kind: 'light', harsh: true },
-      { s: legEnd(1) - 0.05, dwell: 12 * 60, kind: 'stop' },
-      { s: legStart[3] + (legEnd(3) - legStart[3]) * 0.45, dwell: 9 * 60, kind: 'stop' },
-      { s: legEnd(3) - 0.01, dwell: 35, kind: 'light' },
-      { s: legStart[5] + (legEnd(5) - legStart[5]) * 0.42, dwell: 15 * 60, kind: 'stop', harsh: true },
-      { s: total, dwell: 0, kind: 'end' },
-    ];
-    const school = ZONES[1];
-
-    // Drive the trip at 1 s resolution, record every 5 s.
-    const rng = (() => { let a = 1186; return () => { a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; })();
-    const ph = [rng() * 6, rng() * 6];
-    const samples = [], flags = [], stops = [];
-    let s = 0, v = 0, t = 0, hi = 0, dwell = 0, harshFlagged = false, speedFlagged = false;
-    while (t < 20000) {
-      const h = halts[hi];
-      let state = 'drive';
-      if (dwell > 0) { dwell -= 1; v = 0; state = h.kind; if (dwell <= 0) { hi++; harshFlagged = false; } }
-      else {
-        const p = at(s), leg = legs[p.leg][0];
-        const inSchool = kmBetween(p.x, p.y, school.x, school.y) < school.r;
-        let target = LIMIT[leg] * (0.86 + 0.08 * Math.sin(t / 47 + ph[0]) + 0.06 * Math.sin(t / 13 + ph[1]));
-        if (inSchool) target = p.leg === 4 ? 37 : 27;
-        const distM = (h.s - s) * 1000;
-        const dec = h.harsh ? 4.2 : 1.3;
-        const allowed = Math.sqrt(Math.max(0, 2 * dec * distM)) * 3.6;
-        const want = Math.min(target, allowed);
-        const prev = v;
-        v = want > v ? Math.min(want, v + 1.2 * 3.6) : Math.max(want, v - 4.6 * 3.6);
-        if (prev - v > 3.5 * 3.6 && !harshFlagged) { harshFlagged = true; flags.push({ t, s, kind: 'warn', text: `Harsh braking, ${((prev - v) / 3.6 / 9.81).toFixed(2)} g` }); }
-        if (inSchool && v > school.limit + 3 && !speedFlagged) { speedFlagged = true; flags.push({ t, s, kind: 'alert', text: `${Math.round(v)} km/h in school zone` }); }
-        s += v / 3600;
-        if (s >= h.s - 0.002 && v < 12) {
-          s = Math.min(s, h.s); v = 0;
-          if (h.kind === 'end') { samples.push({ t, s, v: 0, state: 'end' }); break; }
-          if (h.kind === 'stop') { const p2 = at(s); stops.push({ n: stops.length + 1, name: districtAt(p2.x, p2.y), t, dwell: h.dwell, s }); }
-          dwell = h.dwell; state = h.kind;
-        }
-      }
-      if (t % 5 === 0) samples.push({ t, s, v, state });
-      t += 1;
-    }
-    const duration = samples[samples.length - 1].t;
-    const START = Date.UTC(2026, 9, 13, 7, 40, 0);
-    const clock = (sec) => new Date(START + sec * 1000).toISOString().slice(11, 19);
-    const hhmm = (sec) => clock(sec).slice(0, 5);
-    const sample = (sec) => {
-      const f = Math.max(0, Math.min(samples.length - 1, sec / 5)), i = Math.floor(f), j = Math.min(samples.length - 1, i + 1), k = f - i;
-      const A = samples[i], B = samples[j];
-      return { s: A.s + (B.s - A.s) * k, v: A.v + (B.v - A.v) * k };
-    };
-
-    const drivingSec = samples.filter((x) => x.v > 1).length * 5;
-    const maxV = Math.max(...samples.map((x) => x.v));
-    const fmtDur = (sec) => { const m = Math.round(sec / 60); return m >= 60 ? `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')}` : `${m} min`; };
-    $('#rp-dist').innerHTML = `${total.toFixed(1)}<small> km</small>`;
-    $('#rp-dur').textContent = fmtDur(duration);
-    $('#rp-drive').textContent = fmtDur(drivingSec);
-    $('#rp-max').innerHTML = `${Math.round(maxV)}<small> km/h</small>`;
-    $('#rp-stops').innerHTML = stops.map((x) => `<li><button type="button" data-t="${x.t}"><span class="n">${x.n}</span><span>${x.name} · ${Math.round(x.dwell / 60)} min</span><time>${hhmm(x.t)}</time></button></li>`).join('');
-    const ICON = {
-      warn: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M8 2l6.5 11.5h-13z"/><path d="M8 6.5v3.2M8 11.6v.1" stroke-linecap="round"/></svg>',
-      alert: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="8" cy="8" r="6.2"/><path d="M8 4.6v4.2M8 10.9v.1" stroke-linecap="round"/></svg>',
-    };
-    $('#rp-flags').innerHTML = flags.map((f) => `<li><button type="button" data-t="${f.t}"><span class="ic ${f.kind}">${ICON[f.kind]}</span><span>${f.text}</span><time>${clock(f.t)}</time></button></li>`).join('');
-    const score = Math.max(0, 100 - flags.filter((f) => f.kind === 'warn').length * 6 - flags.filter((f) => f.kind === 'alert').length * 9);
-    $('#rp-score').textContent = score;
-    $('#rp-meter').style.width = score + '%';
-
-    const view = makeView($('#replay-map'));
-    const chart = $('#replay-chart'), cctx = chart.getContext('2d');
-    let cW = 1, cH = 1, cDPR = 1;
-    let tCur = Math.round(duration * 0.38 / 5) * 5, playing = false, rate = 60, started = false;
-    const scrub = $('#rp-scrub');
-    scrub.max = duration;
-    const M = { l: 36, r: 12, t: 28, b: 24 }, VMAX = 60;
-    const cx = (sec) => M.l + (cW - M.l - M.r) * sec / duration;
-    const cy = (kmh) => M.t + (cH - M.t - M.b) * (1 - kmh / VMAX);
-
-    function fitChart() {
-      const r = chart.parentElement.getBoundingClientRect();
-      cW = Math.max(1, r.width); cH = Math.max(1, r.height); cDPR = Math.min(2, window.devicePixelRatio || 1);
-      chart.width = Math.round(cW * cDPR); chart.height = Math.round(cH * cDPR);
-      chart.style.width = cW + 'px'; chart.style.height = cH + 'px';
-    }
-    function drawChart() {
-      const g = cctx;
-      g.setTransform(cDPR, 0, 0, cDPR, 0, 0);
-      g.clearRect(0, 0, cW, cH);
-      g.font = '500 10px "IBM Plex Mono", ui-monospace, monospace';
-      for (const st of stops) {
-        const x0 = cx(st.t), x1 = cx(st.t + st.dwell);
-        g.fillStyle = C['surface-2']; g.fillRect(x0, M.t, x1 - x0, cH - M.t - M.b);
-        g.fillStyle = C.muted; g.textAlign = 'center'; g.fillText(`Stop ${st.n}`, (x0 + x1) / 2, M.t + 12);
-      }
-      g.strokeStyle = C.grid; g.lineWidth = 1; g.textAlign = 'right'; g.fillStyle = C.muted;
-      for (const k of [0, 20, 40, 60]) {
-        const y = Math.round(cy(k)) + 0.5;
-        g.beginPath(); g.moveTo(M.l, y); g.lineTo(cW - M.r, y); g.stroke();
-        g.fillText(String(k), M.l - 8, y + 3.5);
-      }
-      g.textAlign = 'left'; g.fillText('km/h', 6, 11);
-      g.textAlign = 'center';
-      for (let sec = 600 - ((7 * 3600 + 40 * 60) % 600); sec <= duration; sec += 600) {
-        const x = cx(sec);
-        if (x < M.l + 14 || x > cW - M.r - 14) continue;
-        g.fillText(hhmm(sec), x, cH - 7);
-      }
-      g.strokeStyle = C.alert; g.setLineDash([3, 3]); g.lineWidth = 1.2;
-      let runStart = null;
-      samples.forEach((x, i) => {
-        const p = at(x.s), inside = kmBetween(p.x, p.y, school.x, school.y) < school.r;
-        if (inside && runStart === null) runStart = x.t;
-        if ((!inside || i === samples.length - 1) && runStart !== null) {
-          g.beginPath(); g.moveTo(cx(runStart), cy(school.limit)); g.lineTo(cx(x.t), cy(school.limit)); g.stroke(); runStart = null;
-        }
-      });
-      g.setLineDash([]);
-      g.beginPath(); g.moveTo(cx(0), cy(0));
-      samples.forEach((x) => g.lineTo(cx(x.t), cy(x.v)));
-      g.lineTo(cx(duration), cy(0)); g.closePath();
-      g.fillStyle = C['accent-soft']; g.fill();
-      g.beginPath();
-      samples.forEach((x, i) => (i ? g.lineTo(cx(x.t), cy(x.v)) : g.moveTo(cx(x.t), cy(x.v))));
-      g.strokeStyle = C.accent; g.lineWidth = 2; g.lineJoin = 'round'; g.stroke();
-      for (const f of flags) {
-        const x = cx(f.t), y = cy(sample(f.t).v);
-        g.beginPath(); g.arc(x, y, 5, 0, TAU); g.fillStyle = C[f.kind]; g.fill();
-        g.lineWidth = 2; g.strokeStyle = C.surface; g.stroke();
-      }
-      const cur = sample(tCur), x = cx(tCur), y = cy(cur.v);
-      g.strokeStyle = C.ink; g.lineWidth = 1; g.beginPath(); g.moveTo(Math.round(x) + 0.5, M.t); g.lineTo(Math.round(x) + 0.5, cH - M.b); g.stroke();
-      g.beginPath(); g.arc(x, y, 4.5, 0, TAU); g.fillStyle = C.ink; g.fill(); g.lineWidth = 2; g.strokeStyle = C.surface; g.stroke();
-      const label = `${clock(tCur).slice(0, 5)} · ${Math.round(cur.v)} km/h`;
-      g.font = '600 10.5px "IBM Plex Mono", ui-monospace, monospace';
-      const tw = g.measureText(label).width + 12, lx = Math.min(Math.max(M.l, x - tw / 2), cW - M.r - tw);
-      roundRect(g, lx, 4, tw, 16, 3); g.fillStyle = C.ink; g.fill();
-      g.fillStyle = C.bg; g.textAlign = 'left'; g.fillText(label, lx + 6, 15.5);
-    }
-    function drawMap() {
-      const { ctx: g, W, H, DPR, P, base } = view;
-      g.setTransform(DPR, 0, 0, DPR, 0, 0);
-      g.clearRect(0, 0, W, H);
-      g.drawImage(base, 0, 0, W, H);
-      drawZones(view, g);
-      const cur = sample(tCur);
-      g.lineCap = 'round'; g.lineJoin = 'round';
-      path(g, pts, P);
-      g.setLineDash([2, 6]); g.strokeStyle = C.ink; g.globalAlpha = 0.45; g.lineWidth = 2.5; g.stroke(); g.globalAlpha = 1; g.setLineDash([]);
-      g.beginPath();
-      let begun = false;
-      for (let i = 0; i < pts.length && cum[i] <= cur.s; i++) { const [px, py] = P(pts[i][0], pts[i][1]); begun ? g.lineTo(px, py) : g.moveTo(px, py); begun = true; }
-      const here = at(cur.s), [hx, hy] = P(here.x, here.y);
-      if (begun) { g.lineTo(hx, hy); g.strokeStyle = C.accent; g.lineWidth = 4.5; g.stroke(); }
-      for (const f of flags) {
-        const p = at(f.s), [px, py] = P(p.x, p.y);
-        g.save(); g.translate(px, py); g.rotate(Math.PI / 4);
-        g.fillStyle = C[f.kind]; g.fillRect(-5, -5, 10, 10); g.lineWidth = 2; g.strokeStyle = C.surface; g.strokeRect(-5, -5, 10, 10);
-        g.restore();
-      }
-      g.font = '600 11px "IBM Plex Mono", ui-monospace, monospace'; g.textAlign = 'center'; g.textBaseline = 'middle';
-      for (const st of stops) {
-        const p = at(st.s), [px, py] = P(p.x, p.y), done = tCur >= st.t;
-        g.beginPath(); g.arc(px, py, 11, 0, TAU);
-        g.fillStyle = done ? C.ink : C.surface; g.fill(); g.lineWidth = 2; g.strokeStyle = C.ink; g.stroke();
-        g.fillStyle = done ? C.bg : C.ink; g.fillText(String(st.n), px, py + 0.5);
-      }
-      g.textAlign = 'left'; g.textBaseline = 'alphabetic';
-      drawArrow(g, hx, hy, here.heading, C.accent, C.surface, C['on-accent'], 12);
-    }
-    function readout() {
-      const cur = sample(tCur), here = at(cur.s);
-      $('#rp-clock').textContent = clock(tCur);
-      $('#rp-speed').textContent = `${Math.round(cur.v)} km/h`;
-      const st = stops.find((x) => tCur >= x.t && tCur <= x.t + x.dwell);
-      $('#rp-state').textContent = st ? `Stop ${st.n} · ${st.name}`
-        : tCur >= duration ? 'Back at depot'
-        : cur.v < 1 && tCur < 10 ? 'Leaving depot'
-        : cur.v < 1 ? 'Waiting at signals'
-        : ROAD[legs[here.leg][0]];
-      scrub.value = tCur;
-      scrub.setAttribute('aria-valuetext', `${clock(tCur)}, ${Math.round(cur.v)} km/h`);
-    }
-    function render() { drawMap(); drawChart(); readout(); }
-    function setPlaying(on) {
-      playing = on;
-      $('#rp-play-icon').setAttribute('d', on ? 'M4 2.5h3v11H4zM9 2.5h3v11H9z' : 'M4 2.5v11l9-5.5z');
-      $('#rp-play-label').textContent = on ? 'Pause' : tCur >= duration ? 'Replay' : 'Play';
-    }
-    $('#rp-play').addEventListener('click', () => {
-      started = true;
-      if (!playing && tCur >= duration) tCur = 0;
-      setPlaying(!playing); render();
-    });
-    scrub.addEventListener('input', () => { started = true; tCur = +scrub.value; setPlaying(false); render(); });
-    document.querySelectorAll('.rate button').forEach((b) => b.addEventListener('click', () => {
-      rate = +b.dataset.rate;
-      document.querySelectorAll('.rate button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
-    }));
-    const jump = (e) => { const b = e.target.closest('button[data-t]'); if (!b) return; started = true; tCur = +b.dataset.t; setPlaying(false); render(); };
-    $('#rp-stops').addEventListener('click', jump);
-    $('#rp-flags').addEventListener('click', jump);
-    const wrapEl = $('#rp-chart-wrap');
-    const seek = (e) => {
-      const r = wrapEl.getBoundingClientRect();
-      tCur = Math.round(Math.max(0, Math.min(1, (e.clientX - r.left - M.l) / (r.width - M.l - M.r))) * duration / 5) * 5;
-      started = true; setPlaying(false); render();
-    };
-    wrapEl.addEventListener('pointerdown', (e) => { wrapEl.setPointerCapture(e.pointerId); seek(e); });
-    wrapEl.addEventListener('pointermove', (e) => { if (e.buttons) seek(e); });
-
-    let visible = false;
-    if ('IntersectionObserver' in window) new IntersectionObserver(([en]) => {
-      visible = en.isIntersecting;
-      if (visible && !started && !reduceMotion) { started = true; setPlaying(true); }
-    }, { threshold: 0.35 }).observe(wrapEl.parentElement);
-    new ResizeObserver(() => { view.fit(); fitChart(); render(); }).observe(view.canvas.parentElement);
-
-    return {
-      frame(dt) {
-        if (!playing) return;
-        tCur = Math.min(duration, tCur + dt * rate);
-        if (tCur >= duration) setPlaying(false);
-        if (visible) render();
-      },
-      rebuild() { buildBase(view); render(); },
-    };
-  })();
-
-  /* ---------- Savings estimate ---------- */
-  (function roi() {
-    const eur = new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
-    const num = new Intl.NumberFormat('en-IE', { maximumFractionDigits: 0 });
-    const ids = ['veh', 'km', 'cons', 'idle', 'price'];
-    const fmt = { veh: (v) => `${v}`, km: (v) => `${v} km`, cons: (v) => `${v} L/100 km`, idle: (v) => `${v} min`, price: (v) => `€${(+v).toFixed(2)} / L` };
-    function calc() {
-      const val = Object.fromEntries(ids.map((k) => [k, +$('#r-' + k).value]));
-      ids.forEach((k) => { $('#o-' + k).textContent = fmt[k](val[k]); });
-      const days = 250;
-      const driveL = val.veh * val.km * days * val.cons / 100;
-      const idleL = val.veh * (val.idle / 60) * 1.8 * days;
-      const litres = driveL * 0.05 + idleL * 0.40;
-      const saving = litres * val.price;
-      const cost = val.veh * 9 * 12;
-      const net = saving - cost;
-      const hw = val.veh * 89;
-      $('#roi-net').innerHTML = `${eur.format(net)}<small> / year</small>`;
-      $('#v-save').textContent = eur.format(saving);
-      $('#v-cost').textContent = eur.format(cost);
-      const mx = Math.max(saving, cost, 1);
-      $('#b-save').style.width = (saving / mx * 100).toFixed(1) + '%';
-      $('#b-cost').style.width = (cost / mx * 100).toFixed(1) + '%';
-      $('#roi-litres').innerHTML = `${num.format(litres)}<small> L / year</small>`;
-      $('#roi-payback').innerHTML = net > 0 ? `${(hw / (net / 12)).toFixed(1)}<small> months</small>` : 'Not reached';
-    }
-    ids.forEach((k) => $('#r-' + k).addEventListener('input', calc));
-    calc();
-  })();
-
-  /* ---------- Theme switch ---------- */
-  const root = document.documentElement;
-  const isDark = () => root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
-  const syncThemeBtn = () => {
-    root.classList.toggle('is-dark', isDark());
-    $('#theme-btn').setAttribute('aria-label', isDark() ? 'Switch to light theme' : 'Switch to dark theme');
-  };
-  try { const saved = localStorage.getItem('lodestar-theme'); if (saved === 'dark' || saved === 'light') root.dataset.theme = saved; } catch (e) { /* storage unavailable */ }
-  syncThemeBtn();
-  $('#theme-btn').addEventListener('click', () => {
-    const next = isDark() ? 'light' : 'dark';
-    root.dataset.theme = next;
-    try { localStorage.setItem('lodestar-theme', next); } catch (e) { /* storage unavailable */ }
-    syncThemeBtn();
-  });
-
-  /* ---------- Demo form ---------- */
-  $('#demo-form').addEventListener('submit', (e) => {
+  /* ---------- CTA form ---------- */
+  $('#cta-form').addEventListener('submit', (e) => {
     e.preventDefault();
-    const msg = $('#form-msg');
-    const name = $('#f-name').value.trim(), company = $('#f-company').value.trim(), email = $('#f-email').value.trim();
-    const bad = !name ? '#f-name' : !company ? '#f-company' : !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? '#f-email' : null;
-    if (bad) {
-      msg.className = 'form-msg err';
-      msg.textContent = bad === '#f-email' ? 'Enter a work email such as name@company.com.' : 'Fill in your name and company.';
-      $(bad).focus();
-      return;
-    }
-    msg.className = 'form-msg ok';
-    msg.textContent = `Request recorded for ${company}. This is a demonstration site, so nothing was sent.`;
+    const email = $('#cta-email').value.trim(), msg = $('#cta-msg');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { msg.className = 'cta-msg err'; msg.textContent = 'Enter a work email, like name@company.com.'; $('#cta-email').focus(); return; }
+    msg.className = 'cta-msg ok';
+    msg.textContent = `Thanks. We'd reply to ${email} within a day. This is a demo page, so nothing was sent.`;
   });
 
   /* ---------- Loop ---------- */
-  let last = performance.now(), acc = 0, panelAcc = 0, mapVisible = true;
+  const clockText = () => {
+    const d = new Date();
+    $('#clock').textContent = `Live · ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    $('#p-time').textContent = `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
+  };
+  let last = performance.now(), acc = 0, onScreen = true;
   function tick(now) {
     const dt = Math.min(0.1, (now - last) / 1000); last = now;
-    if (!reduceMotion) {
-      FLEET.forEach((v) => stepVehicle(v, dt));
-      if (mapVisible) draw(now);
-    }
-    replay.frame(dt);
-    panelAcc += dt; acc += dt;
-    if (panelAcc > 0.25) { panelAcc = 0; renderPanel(); }
-    if (acc >= 1) {
-      acc -= 1;
-      if (reduceMotion) { FLEET.forEach((v) => stepVehicle(v, 1)); draw(now); }
-      stepSky(1); renderSky();
-      emitFix(); renderTerm();
-      $('#clock').textContent = utc() + ' UTC';
+    acc += dt;
+    if (!reduceMotion) { FLEET.forEach((v) => step(v, dt)); if (onScreen) draw(now); }
+    if (acc > 0.5) {
+      acc = 0;
+      if (reduceMotion) { FLEET.forEach((v) => step(v, 0.5)); draw(now); }
+      renderLists(); clockText();
     }
     requestAnimationFrame(tick);
   }
-
-  // Warm up so trails and positions look lived-in on first paint
-  for (let i = 0; i < 80; i++) FLEET.forEach((v) => stepVehicle(v, 0.1));
-  events.length = 0; alertsToday = 0; $('#k-alert').textContent = '0';
-  logEvent(null, `Shift started · ${FLEET.length} of ${FLEET.length} units reporting`, 'info');
-
-  new ResizeObserver(() => resize()).observe(canvas.parentElement);
-  if ('IntersectionObserver' in window) new IntersectionObserver(([en]) => { mapVisible = en.isIntersecting; }).observe(canvas);
-  const rethemed = () => { buildBase(live); draw(performance.now()); replay.rebuild(); };
-  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { syncThemeBtn(); rethemed(); });
-  new MutationObserver(() => { rethemed(); syncThemeBtn(); }).observe(root, { attributes: true, attributeFilter: ['data-theme'] });
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(rethemed);
-
-  $('#clock').textContent = utc() + ' UTC';
-  resize();
-  renderPanel(); renderSky(); emitFix(); renderTerm();
+  for (let i = 0; i < 60; i++) FLEET.forEach((v) => step(v, 0.1));
+  new ResizeObserver(resize).observe(canvas.parentElement);
+  if ('IntersectionObserver' in window) new IntersectionObserver(([en]) => { onScreen = en.isIntersecting; }).observe(canvas);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { buildBase(); draw(performance.now()); });
+  resize(); renderLists(); clockText();
   requestAnimationFrame(tick);
 })();
 </script>
