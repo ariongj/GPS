@@ -1,0 +1,1229 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lodestar GPS</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Lodestar GPS: live, metre-level fleet tracking on four satellite constellations.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Instrument+Sans:wght@400..700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: a survey sheet. A compact headline sits over a full-width live map; below it, instrument
+   plates (sky plot, signal chart, NMEA terminal) are laid on the sheet like inset panels. */
+:root {
+  --bg: #EDF1F2;
+  --surface: #F8FAFA;
+  --surface-2: #E2E8EA;
+  --ink: #0E1D2B;
+  --muted: #55677A;
+  --line: #C9D3D8;
+  --accent: #E2580B;
+  --accent-soft: rgba(226, 88, 11, .12);
+  --on-accent: #FFFFFF;
+  --map-bg: #E1E8E9;
+  --map-contour: rgba(14, 29, 43, .085);
+  --map-contour-strong: rgba(14, 29, 43, .17);
+  --map-road: #FFFFFF;
+  --map-road-edge: #BCC7CD;
+  --map-street: rgba(14, 29, 43, .07);
+  --water: #B8D0DA;
+  --grid: rgba(14, 29, 43, .14);
+  --ok: #1D8656;
+  --warn: #B26A00;
+  --alert: #C53030;
+  --sys-gps: #2F6DB5;
+  --sys-gal: #12897F;
+  --sys-glo: #9A4E9A;
+  --sys-bds: #A87C12;
+  --on-sys: #FFFFFF;
+  --term-bg: #0E1B26;
+  --term-ink: #CFE0E8;
+  --term-dim: #6C8595;
+  --term-key: #FF8A47;
+  --term-num: #7CC4F0;
+  --term-str: #9FDDB4;
+  --shadow: 0 1px 0 rgba(14, 29, 43, .04), 0 18px 40px -18px rgba(14, 29, 43, .28);
+
+  --f-display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Instrument Sans", "Helvetica Neue", Arial, system-ui, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  --radius: 14px;
+  --gutter: max(16px, env(safe-area-inset-left, 0px));
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #09131B; --surface: #0E1B25; --surface-2: #142632; --ink: #E2EAEE; --muted: #8B9DAA; --line: #1E3242;
+    --accent: #FF7A33; --accent-soft: rgba(255, 122, 51, .14); --on-accent: #1A0B02;
+    --map-bg: #0B1821; --map-contour: rgba(150, 190, 210, .075); --map-contour-strong: rgba(150, 190, 210, .16);
+    --map-road: #1D3343; --map-road-edge: #0F2230; --map-street: rgba(150, 190, 210, .07); --water: #0F2F45; --grid: rgba(150, 190, 210, .16);
+    --ok: #3CC487; --warn: #F2A93B; --alert: #F26565;
+    --sys-gps: #73A9F0; --sys-gal: #43C9B8; --sys-glo: #CD8DD2; --sys-bds: #DDB75C; --on-sys: #09131B;
+    --term-bg: #060E14;
+    --shadow: 0 1px 0 rgba(0, 0, 0, .3), 0 18px 40px -18px rgba(0, 0, 0, .7);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #09131B; --surface: #0E1B25; --surface-2: #142632; --ink: #E2EAEE; --muted: #8B9DAA; --line: #1E3242;
+  --accent: #FF7A33; --accent-soft: rgba(255, 122, 51, .14); --on-accent: #1A0B02;
+  --map-bg: #0B1821; --map-contour: rgba(150, 190, 210, .075); --map-contour-strong: rgba(150, 190, 210, .16);
+  --map-road: #1D3343; --map-road-edge: #0F2230; --map-street: rgba(150, 190, 210, .07); --water: #0F2F45; --grid: rgba(150, 190, 210, .16);
+  --ok: #3CC487; --warn: #F2A93B; --alert: #F26565;
+  --sys-gps: #73A9F0; --sys-gal: #43C9B8; --sys-glo: #CD8DD2; --sys-bds: #DDB75C; --on-sys: #09131B;
+  --term-bg: #060E14;
+  --shadow: 0 1px 0 rgba(0, 0, 0, .3), 0 18px 40px -18px rgba(0, 0, 0, .7);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 400 16px/1.55 var(--f-body);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+a { color: inherit; }
+.mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.wrap {
+  max-width: 1240px;
+  margin-inline: auto;
+  padding-left: max(clamp(16px, 4vw, 32px), env(safe-area-inset-left, 0px));
+  padding-right: max(clamp(16px, 4vw, 32px), env(safe-area-inset-right, 0px));
+}
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; }
+h2 { font-size: clamp(1.9rem, 3.6vw, 2.8rem); line-height: 1.04; letter-spacing: -.025em; font-weight: 700; }
+p { margin: 0; }
+.eyebrow {
+  font: 600 .72rem/1 var(--f-mono);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  display: inline-flex; align-items: center; gap: .55rem;
+}
+.eyebrow::before { content: ""; width: 18px; height: 1px; background: var(--accent); }
+.lede { color: var(--muted); font-size: 1.08rem; max-width: 56ch; }
+
+/* ---------- Nav ---------- */
+.nav {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
+  background: color-mix(in srgb, var(--bg) 84%, transparent);
+  backdrop-filter: saturate(1.4) blur(12px);
+  -webkit-backdrop-filter: saturate(1.4) blur(12px);
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent);
+}
+.nav .wrap { display: flex; align-items: center; gap: 1.5rem; padding-block: .85rem; }
+.brand { display: inline-flex; align-items: center; gap: .55rem; text-decoration: none; font: 700 1.15rem/1 var(--f-display); letter-spacing: -.02em; }
+.brand svg { width: 26px; height: 26px; }
+.brand small { font: 500 .66rem/1 var(--f-mono); letter-spacing: .12em; color: var(--muted); margin-left: .1rem; }
+.nav-links { display: flex; gap: 1.6rem; margin-left: auto; }
+.nav-links a { text-decoration: none; color: var(--muted); font-size: .94rem; font-weight: 500; }
+.nav-links a:hover { color: var(--ink); }
+@media (max-width: 760px) { .nav-links { display: none; } .nav .btn { margin-left: auto; } }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+  padding: .78rem 1.15rem; border-radius: 10px; border: 1px solid transparent;
+  font: 600 .95rem/1 var(--f-body); text-decoration: none; cursor: pointer;
+  transition: transform .15s ease, background .15s ease, border-color .15s ease;
+}
+.btn:active { transform: translateY(1px); }
+.btn-primary { background: var(--accent); color: var(--on-accent); }
+.btn-primary:hover { background: color-mix(in srgb, var(--accent) 88%, var(--ink)); }
+.btn-ghost { border-color: var(--line); color: var(--ink); background: transparent; }
+.btn-ghost:hover { border-color: var(--ink); }
+.btn-sm { padding: .58rem .9rem; font-size: .88rem; }
+
+/* ---------- Hero ---------- */
+.hero { padding-block: clamp(2.5rem, 6vw, 4.5rem) clamp(1.5rem, 3vw, 2.25rem); }
+.hero-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: clamp(1.5rem, 4vw, 4rem); align-items: end; }
+.hero h1 {
+  font-size: clamp(2.7rem, 7.2vw, 5.6rem);
+  line-height: .94;
+  letter-spacing: -.045em;
+  font-weight: 800;
+  font-variation-settings: "opsz" 96;
+  margin-top: 1rem;
+}
+.hero h1 .hl { color: var(--accent); position: relative; white-space: nowrap; }
+.hero h1 .hl svg { position: absolute; left: 0; right: 0; bottom: -.08em; width: 100%; height: .2em; overflow: visible; }
+.hero-side { display: grid; gap: 1.4rem; min-width: 0; }
+.cta-row { display: flex; flex-wrap: wrap; gap: .7rem; }
+.specs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin: 0; padding-top: 1.2rem; border-top: 1px solid var(--line); }
+.specs div { min-width: 0; }
+.specs dt { font: 700 1.6rem/1 var(--f-display); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.specs dd { margin: .35rem 0 0; font-size: .8rem; line-height: 1.35; color: var(--muted); }
+@media (max-width: 900px) { .hero-grid { grid-template-columns: 1fr; align-items: start; } }
+
+/* ---------- Live console ---------- */
+.console {
+  display: grid; grid-template-columns: minmax(0, 1fr) 340px;
+  height: clamp(460px, 50vw, 640px);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.map-wrap { position: relative; min-width: 0; background: var(--map-bg); }
+.map-wrap canvas { position: absolute; inset: 0; display: block; cursor: crosshair; touch-action: manipulation; }
+.hud { position: absolute; display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; pointer-events: none; }
+.hud > * { pointer-events: auto; }
+.hud-tl { top: 12px; left: 12px; right: 140px; }
+.hud-tr { top: 12px; right: 12px; }
+.hud-bl { bottom: 12px; left: 12px; }
+.hud-br { bottom: 12px; right: 12px; }
+.tag {
+  display: inline-flex; align-items: center; gap: .45rem;
+  padding: .38rem .6rem; border-radius: 8px;
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  border: 1px solid var(--line);
+  font: 500 .72rem/1 var(--f-mono); color: var(--ink); font-variant-numeric: tabular-nums;
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+}
+.tag.dim { color: var(--muted); }
+.live { font-weight: 600; letter-spacing: .1em; text-transform: uppercase; }
+.live i { width: 7px; height: 7px; border-radius: 50%; background: var(--alert); box-shadow: 0 0 0 0 var(--alert); animation: blink 1.6s ease-out infinite; }
+@keyframes blink { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--alert) 60%, transparent); } 100% { box-shadow: 0 0 0 8px transparent; } }
+.chip { cursor: pointer; }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.scale { display: flex; flex-direction: column; gap: 4px; }
+.scale-bar { height: 6px; border: 1.5px solid var(--ink); border-top: 0; width: 80px; }
+.legend { display: flex; gap: .8rem; }
+.legend span { display: inline-flex; align-items: center; gap: .35rem; }
+.legend b { width: 10px; height: 10px; border-radius: 50%; border: 1.5px dashed var(--accent); background: var(--accent-soft); }
+.legend b.school { border-color: var(--alert); background: color-mix(in srgb, var(--alert) 10%, transparent); }
+
+.side { display: flex; flex-direction: column; border-left: 1px solid var(--line); min-width: 0; overflow-y: auto; }
+.side section { padding: 1rem 1.1rem; border-bottom: 1px solid var(--line); }
+.side section:last-child { border-bottom: 0; flex: 1; }
+.side h3 { font: 600 .68rem/1 var(--f-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin-bottom: .8rem; display: flex; justify-content: space-between; }
+.unit-head { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+.unit-id { font: 700 1.55rem/1 var(--f-display); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.unit-sub { color: var(--muted); font-size: .86rem; margin-top: .3rem; }
+.pill { display: inline-flex; align-items: center; gap: .35rem; padding: .3rem .55rem; border-radius: 999px; font: 600 .7rem/1 var(--f-mono); letter-spacing: .04em; text-transform: uppercase; }
+.pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.pill.ok { color: var(--ok); background: color-mix(in srgb, var(--ok) 13%, transparent); }
+.pill.warn { color: var(--warn); background: color-mix(in srgb, var(--warn) 14%, transparent); }
+.pill.alert { color: var(--alert); background: color-mix(in srgb, var(--alert) 13%, transparent); }
+.tele { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem 1rem; margin: 1rem 0 0; }
+.tele div { min-width: 0; }
+.tele dt { font-size: .7rem; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+.tele dd { margin: .15rem 0 0; font: 500 .9rem/1.2 var(--f-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.fleet { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.fleet button {
+  width: 100%; display: grid; grid-template-columns: 10px auto 1fr auto; align-items: center; gap: .6rem;
+  padding: .5rem .55rem; border: 0; border-radius: 8px; background: transparent; color: var(--ink);
+  font: inherit; font-size: .86rem; text-align: left; cursor: pointer;
+}
+.fleet button:hover { background: var(--surface-2); }
+.fleet button[aria-current="true"] { background: var(--accent-soft); }
+.fleet .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
+.fleet .dot.warn { background: var(--warn); }
+.fleet .dot.alert { background: var(--alert); }
+.fleet .fid { font: 600 .82rem/1 var(--f-mono); }
+.fleet .fdrv { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.fleet .fspd { font: 500 .78rem/1 var(--f-mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+
+.events { list-style: none; margin: 0; padding: 0; display: grid; gap: .55rem; font-size: .84rem; }
+.events li { display: grid; grid-template-columns: auto 1fr; gap: .6rem; align-items: baseline; animation: slidein .35s ease-out; }
+.events time { font: 500 .72rem/1 var(--f-mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.events .k-alert { color: var(--alert); font-weight: 600; }
+.events .k-zone b { color: var(--accent); font-weight: 600; }
+@keyframes slidein { from { transform: translateY(-4px); opacity: .3; } to { transform: none; opacity: 1; } }
+.console-note { margin-top: .8rem; color: var(--muted); font-size: .8rem; }
+
+@media (max-width: 900px) {
+  .console { grid-template-columns: 1fr; height: auto; }
+  .map-wrap { height: min(118vw, 520px); }
+  .side { border-left: 0; border-top: 1px solid var(--line); overflow: visible; }
+  .hud-tl { right: 12px; }
+  .hud-tr { top: auto; bottom: 48px; }
+}
+
+/* ---------- Sections ---------- */
+.section { padding-block: clamp(3.5rem, 8vw, 6.5rem); }
+.section-head { display: grid; gap: 1rem; margin-bottom: clamp(2rem, 4vw, 3rem); max-width: 720px; }
+
+/* Sky */
+.sky-grid { display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); gap: clamp(1.5rem, 4vw, 3.5rem); align-items: start; }
+.sky-copy { display: grid; gap: 1.5rem; }
+.dop { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; margin: 0; }
+.dop div { background: var(--surface); padding: .9rem 1rem; }
+.dop dt { font-size: .72rem; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+.dop dd { margin: .25rem 0 0; font: 600 1.45rem/1.1 var(--f-mono); font-variant-numeric: tabular-nums; }
+.dop dd small { font-size: .8rem; color: var(--muted); font-weight: 500; }
+.sys-legend { display: flex; flex-wrap: wrap; gap: .5rem 1.2rem; font-size: .88rem; }
+.sys-legend span { display: inline-flex; align-items: center; gap: .45rem; }
+.sys-legend i { width: 10px; height: 10px; border-radius: 50%; }
+.sys-legend em { font-style: normal; color: var(--muted); font-family: var(--f-mono); font-size: .78rem; }
+
+.plate { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: clamp(1rem, 2.5vw, 1.6rem); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1.5rem; }
+.plate-cell { min-width: 0; display: grid; gap: .8rem; align-content: start; }
+.plate-cell h3 { font: 600 .68rem/1 var(--f-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+#skyplot { width: 100%; max-width: 100%; height: auto; display: block; }
+#skyplot .ring { fill: none; stroke: var(--grid); }
+#skyplot .axis { stroke: var(--grid); }
+#skyplot .lbl { fill: var(--muted); font: 500 10px var(--f-mono); }
+#skyplot .card { fill: var(--ink); font: 700 11px var(--f-mono); }
+#skyplot .sat { transition: transform 1s linear; }
+#skyplot .sat text { font: 600 7.5px var(--f-mono); text-anchor: middle; dominant-baseline: central; }
+.snr { position: relative; display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 6px; }
+.snr-axis { position: relative; height: 200px; }
+.snr-axis span { position: absolute; right: 0; transform: translateY(50%); font: 500 .66rem/1 var(--f-mono); color: var(--muted); }
+.snr-plot {
+  position: relative; height: 200px; display: flex; align-items: flex-end; gap: 3px;
+  border-bottom: 1px solid var(--muted);
+  background: repeating-linear-gradient(to top, var(--grid) 0 1px, transparent 1px 20%);
+}
+.snr-plot .b { flex: 1; min-width: 0; border-radius: 3px 3px 0 0; transition: height .9s ease; }
+.snr-plot .b.unused { opacity: .35; }
+.snr-labels { display: flex; gap: 3px; margin-left: 28px; }
+.snr-labels span { flex: 1; min-width: 0; font: 500 .62rem/1 var(--f-mono); color: var(--muted); writing-mode: vertical-rl; transform: rotate(180deg); text-align: right; height: 2.4em; display: flex; align-items: center; }
+.axis-note { font-size: .78rem; color: var(--muted); }
+@media (max-width: 1000px) { .sky-grid { grid-template-columns: 1fr; } }
+@media (max-width: 620px) { .plate { grid-template-columns: 1fr; } }
+
+/* Platform */
+.features { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(1.5rem, 3vw, 2.5rem) clamp(1.5rem, 4vw, 4rem); }
+.feature { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 1rem; padding-top: 1.4rem; border-top: 1px solid var(--line); }
+.feature svg { width: 44px; height: 44px; color: var(--accent); }
+.feature h3 { font-size: 1.3rem; letter-spacing: -.015em; margin-bottom: .4rem; }
+.feature p { color: var(--muted); max-width: 46ch; }
+.feature .fact { margin-top: .8rem; font: 500 .78rem/1.3 var(--f-mono); color: var(--ink); }
+@media (max-width: 720px) { .features { grid-template-columns: 1fr; } }
+
+/* Developers */
+.dev { background: var(--surface-2); }
+.dev-grid { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: clamp(1.5rem, 4vw, 3.5rem); align-items: start; }
+.endpoints { list-style: none; margin: 1.6rem 0 0; padding: 0; display: grid; gap: .5rem; }
+.endpoints li { display: flex; flex-wrap: wrap; gap: .3rem .7rem; align-items: baseline; font-size: .9rem; color: var(--muted); }
+.endpoints code { font: 500 .82rem/1.4 var(--f-mono); color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: .15rem .45rem; }
+.term { background: var(--term-bg); color: var(--term-ink); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); min-width: 0; }
+.term-bar { display: flex; align-items: center; gap: .4rem; padding: .6rem .7rem; border-bottom: 1px solid rgba(255,255,255,.08); flex-wrap: wrap; }
+.term-bar .tab { background: transparent; border: 0; color: var(--term-dim); font: 500 .76rem/1 var(--f-mono); padding: .5rem .65rem; border-radius: 6px; cursor: pointer; }
+.term-bar .tab[aria-selected="true"] { color: var(--term-ink); background: rgba(255,255,255,.08); }
+.term-bar .src { margin-left: auto; font: 500 .72rem/1 var(--f-mono); color: var(--term-dim); padding-right: .3rem; }
+.term-bar .src b { color: var(--term-key); font-weight: 600; }
+.term pre { margin: 0; padding: 1rem 1.1rem 1.2rem; height: 340px; overflow: auto; font: 400 .78rem/1.65 var(--f-mono); white-space: pre; }
+.t-talker { color: var(--term-key); }
+.t-cs { color: var(--term-dim); }
+.j-key { color: var(--term-key); }
+.j-str { color: var(--term-str); }
+.j-num { color: var(--term-num); }
+@media (max-width: 900px) { .dev-grid { grid-template-columns: 1fr; } }
+
+/* Pricing */
+.tiers { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; align-items: stretch; }
+.tier { display: flex; flex-direction: column; gap: 1.1rem; padding: 1.5rem; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.tier.featured { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), var(--shadow); }
+.tier-top { display: flex; justify-content: space-between; align-items: center; gap: .5rem; }
+.tier h3 { font-size: 1.25rem; }
+.tier .badge { font: 600 .66rem/1 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); background: var(--accent-soft); padding: .35rem .5rem; border-radius: 6px; }
+.price { display: flex; align-items: baseline; gap: .4rem; }
+.price strong { font: 800 2.6rem/1 var(--f-display); letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+.price span { color: var(--muted); font-size: .86rem; }
+.tier ul { list-style: none; margin: 0; padding: 0; display: grid; gap: .55rem; font-size: .92rem; flex: 1; }
+.tier li { display: grid; grid-template-columns: 16px 1fr; gap: .55rem; }
+.tier li svg { width: 16px; height: 16px; margin-top: .2rem; color: var(--accent); }
+@media (max-width: 860px) { .tiers { grid-template-columns: 1fr; } }
+
+/* CTA + footer */
+.cta { padding-block: clamp(3rem, 7vw, 5.5rem); border-top: 1px solid var(--line); }
+.cta-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 2rem; align-items: center; }
+.cta h2 { font-size: clamp(2.2rem, 5vw, 3.6rem); }
+form.demo { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) auto; gap: .6rem; }
+form.demo label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+form.demo input, form.demo select {
+  width: 100%; min-width: 0; padding: .78rem .9rem; border-radius: 10px; border: 1px solid var(--line);
+  background: var(--surface); color: var(--ink); font: inherit; font-size: .95rem;
+}
+.form-msg { grid-column: 1 / -1; font-size: .88rem; color: var(--muted); min-height: 1.3em; }
+.form-msg.ok { color: var(--ok); }
+@media (max-width: 860px) { .cta-grid { grid-template-columns: 1fr; } form.demo { grid-template-columns: 1fr; } }
+footer { border-top: 1px solid var(--line); padding-block: 1.6rem; font-size: .84rem; color: var(--muted); }
+footer .wrap { display: flex; flex-wrap: wrap; gap: .6rem 1.5rem; align-items: center; }
+footer .coords { margin-left: auto; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  html { scroll-behavior: auto; }
+}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="Lodestar GPS home">
+      <svg viewBox="0 0 32 32" aria-hidden="true">
+        <circle cx="16" cy="16" r="13" fill="none" stroke="currentColor" stroke-width="2"/>
+        <path d="M16 3v5M16 24v5M3 16h5M24 16h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <path d="M16 9l3.2 7L16 23l-3.2-7z" fill="var(--accent)"/>
+      </svg>
+      Lodestar <small>GPS</small>
+    </a>
+    <nav class="nav-links" aria-label="Main">
+      <a href="#live">Live map</a>
+      <a href="#sky">Satellites</a>
+      <a href="#platform">Platform</a>
+      <a href="#developers">Developers</a>
+      <a href="#pricing">Pricing</a>
+    </nav>
+    <a class="btn btn-primary btn-sm" href="#demo">Book a demo</a>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <span class="eyebrow">GNSS fleet tracking</span>
+        <h1>Every vehicle, to the <span class="hl">metre<svg viewBox="0 0 100 10" preserveAspectRatio="none" aria-hidden="true"><path d="M0 5 H100" stroke="currentColor" stroke-width="2" stroke-dasharray="4 3"/><path d="M0 0v10M100 0v10" stroke="currentColor" stroke-width="2"/></svg></span>.</h1>
+      </div>
+      <div class="hero-side">
+        <p class="lede">Lodestar trackers read four satellite constellations at once and report a position every second. Dispatch sees the whole fleet live, drivers get fewer calls, and you get a clean record of every trip.</p>
+        <div class="cta-row">
+          <a class="btn btn-primary" href="#demo">Book a demo</a>
+          <a class="btn btn-ghost" href="#live">Watch the live map</a>
+        </div>
+        <dl class="specs">
+          <div><dt>±1.5 m</dt><dd>typical horizontal accuracy (CEP50)</dd></div>
+          <div><dt>1 Hz</dt><dd>position updates, around the clock</dd></div>
+          <div><dt>72 h</dt><dd>offline buffer when coverage drops</dd></div>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <section id="live" class="wrap" aria-label="Live fleet map">
+    <div class="console">
+      <div class="map-wrap">
+        <canvas id="map" role="img" aria-label="Simulated live map of six vehicles moving around Prishtina, with a depot and a school zone marked."></canvas>
+        <div class="hud hud-tl">
+          <span class="tag live"><i></i>Live</span>
+          <span class="tag" id="clock">00:00:00 UTC</span>
+          <span class="tag dim">Demo fleet · simulated</span>
+        </div>
+        <div class="hud hud-tr">
+          <button class="tag chip" id="btn-trails" aria-pressed="true">Trails</button>
+          <button class="tag chip" id="btn-zones" aria-pressed="true">Zones</button>
+        </div>
+        <div class="hud hud-bl">
+          <div class="tag scale"><div class="scale-bar" id="scale-bar"></div><span id="scale-label">1 km</span></div>
+        </div>
+        <div class="hud hud-br">
+          <div class="tag legend"><span><b></b>Depot</span><span><b class="school"></b>School · 30 km/h</span></div>
+        </div>
+      </div>
+      <aside class="side" aria-label="Selected vehicle and fleet">
+        <section>
+          <div class="unit-head">
+            <div>
+              <div class="unit-id" id="t-id">LS-204</div>
+              <div class="unit-sub" id="t-sub">Van</div>
+            </div>
+            <span class="pill ok" id="t-status">Moving</span>
+          </div>
+          <dl class="tele">
+            <div><dt>Latitude</dt><dd id="t-lat">–</dd></div>
+            <div><dt>Longitude</dt><dd id="t-lon">–</dd></div>
+            <div><dt>Speed</dt><dd id="t-spd">–</dd></div>
+            <div><dt>Heading</dt><dd id="t-hdg">–</dd></div>
+            <div><dt>Satellites</dt><dd id="t-sat">–</dd></div>
+            <div><dt>HDOP</dt><dd id="t-hdop">–</dd></div>
+            <div><dt>Altitude</dt><dd id="t-alt">–</dd></div>
+            <div><dt>Fix</dt><dd id="t-fix">3D · GNSS</dd></div>
+          </dl>
+        </section>
+        <section>
+          <h3><span>Fleet</span><span id="fleet-count">6 units</span></h3>
+          <ul class="fleet" id="fleet"></ul>
+        </section>
+        <section>
+          <h3><span>Events</span><span>UTC</span></h3>
+          <ol class="events" id="events"></ol>
+        </section>
+      </aside>
+    </div>
+    <p class="console-note">Tap a vehicle on the map or in the fleet list to follow it. Positions, satellites and events are simulated for this demo.</p>
+  </section>
+
+  <section id="sky" class="section">
+    <div class="wrap sky-grid">
+      <div class="sky-copy">
+        <span class="eyebrow">Multi-constellation</span>
+        <h2>More satellites overhead, a tighter fix on the ground.</h2>
+        <p class="lede">Each tracker listens to GPS, Galileo, GLONASS and BeiDou together. Between tall buildings, under bridges and along valley roads, that means enough satellites to keep a confident fix where single-system receivers drift.</p>
+        <dl class="dop">
+          <div><dt>Used in fix</dt><dd id="d-used">–</dd></div>
+          <div><dt>HDOP</dt><dd id="d-hdop">–</dd></div>
+          <div><dt>PDOP</dt><dd id="d-pdop">–</dd></div>
+          <div><dt>Mean C/N₀</dt><dd id="d-cn0">–</dd></div>
+        </dl>
+        <div class="sys-legend" id="sys-legend"></div>
+      </div>
+      <div class="plate">
+        <div class="plate-cell">
+          <h3>Sky plot · LS-204 receiver</h3>
+          <svg id="skyplot" viewBox="0 0 320 320" role="img" aria-label="Sky plot of satellites by azimuth and elevation"></svg>
+          <p class="axis-note">Centre is straight up. Rings mark 30° and 60° elevation. Hollow markers are tracked but not used in the fix.</p>
+        </div>
+        <div class="plate-cell">
+          <h3>Signal strength</h3>
+          <div class="snr">
+            <div class="snr-axis" id="snr-axis"></div>
+            <div class="snr-plot" id="snr-plot"></div>
+          </div>
+          <div class="snr-labels" id="snr-labels"></div>
+          <p class="axis-note">Carrier-to-noise density in dB-Hz. Satellites under 28 dB-Hz or below 10° elevation are left out of the solution.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="platform" class="section" style="padding-top:0">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">Platform</span>
+        <h2>Built for the people who answer “where is it?” all day.</h2>
+      </div>
+      <div class="features">
+        <article class="feature">
+          <svg viewBox="0 0 44 44" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="22" cy="22" r="15" stroke-dasharray="3 3"/><circle cx="22" cy="22" r="3" fill="currentColor"/><path d="M22 7v4M22 33v4M7 22h4M33 22h4"/></svg>
+          <div>
+            <h3>Geofences</h3>
+            <p>Draw a zone around a depot, a client site or a school. Lodestar tells you the moment a unit enters, leaves or speeds inside it.</p>
+            <p class="fact">Circle or polygon · up to 5,000 zones per account</p>
+          </div>
+        </article>
+        <article class="feature">
+          <svg viewBox="0 0 44 44" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M6 34c6-14 10-2 16-12s10-8 16-14"/><circle cx="6" cy="34" r="2.5" fill="currentColor"/><circle cx="38" cy="8" r="2.5"/><path d="M6 40h32" stroke-dasharray="2 3"/><path d="M22 37v6"/></svg>
+          <div>
+            <h3>Route replay</h3>
+            <p>Scrub through any day at one-second resolution. See where a van stopped, for how long, and which way it was facing.</p>
+            <p class="fact">12 months of history on Fleet plans</p>
+          </div>
+        </article>
+        <article class="feature">
+          <svg viewBox="0 0 44 44" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 30a14 14 0 0 1 28 0"/><path d="M22 30l7-9"/><circle cx="22" cy="30" r="2.5" fill="currentColor"/><path d="M8 36h28"/></svg>
+          <div>
+            <h3>Driver scorecards</h3>
+            <p>Harsh braking, sharp cornering and idling, scored per driver every week from the tracker's accelerometer.</p>
+            <p class="fact">Events above 0.35 g are flagged</p>
+          </div>
+        </article>
+        <article class="feature">
+          <svg viewBox="0 0 44 44" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M6 30h32"/><path d="M10 30c0-9 5-16 12-16s12 7 12 16"/><path d="M16 22h2M21 22h2M26 22h2" stroke-linecap="round"/><path d="M22 6v4"/></svg>
+          <div>
+            <h3>Offline buffering</h3>
+            <p>No signal in the tunnel? The tracker keeps every fix and uploads them in order as soon as it reconnects. No gaps in the record.</p>
+            <p class="fact">259,200 fixes stored on the device</p>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="developers" class="section dev">
+    <div class="wrap dev-grid">
+      <div>
+        <span class="eyebrow">Developers</span>
+        <h2 style="margin-top:1rem">Raw NMEA or clean JSON. Same fix, your choice.</h2>
+        <p class="lede" style="margin-top:1rem">Point an existing dispatch system at the NMEA 0183 feed, or call the REST API and get JSON with zone membership already worked out. The stream on the right follows whichever vehicle you picked on the map.</p>
+        <ul class="endpoints">
+          <li><code>GET /v1/units/{id}/fix</code> latest position</li>
+          <li><code>GET /v1/units/{id}/track</code> history by time range</li>
+          <li><code>POST /v1/geofences</code> create a zone</li>
+          <li><code>zone.entered · zone.left · speed.exceeded</code> webhooks</li>
+        </ul>
+      </div>
+      <div class="term">
+        <div class="term-bar" role="tablist" aria-label="Output format">
+          <button class="tab" role="tab" id="tab-nmea" aria-selected="true">NMEA 0183</button>
+          <button class="tab" role="tab" id="tab-json" aria-selected="false">REST · JSON</button>
+          <span class="src">streaming <b id="term-unit">LS-204</b> · 1 Hz</span>
+        </div>
+        <pre id="term" aria-live="off"></pre>
+      </div>
+    </div>
+  </section>
+
+  <section id="pricing" class="section">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">Pricing</span>
+        <h2>Per tracker, per month. Hardware included on annual plans.</h2>
+      </div>
+      <div class="tiers">
+        <article class="tier">
+          <div class="tier-top"><h3>Starter</h3></div>
+          <div class="price"><strong>€5</strong><span>per device / month</span></div>
+          <ul>
+            <li><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8.5l3 3 7-7"/></svg>Live map, 10-second updates</li>
+            <li><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8.5l3 3 7-7"/></svg>30 days of history</li>
+            <li><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8.5l3 3 7-7"/></svg>Email alerts</li>
+            <li><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8.5l3 3 7-7"/></svg>Up to 25 vehicles</li>
+          </ul>
+          <a class="btn btn-ghost" href="#demo">Start with Starter</a>
+        </article>
+        <article class="tier featured">
+          <div class="tier-top"><h3>Fleet</h3><span class="badge">Most chosen</span></div>
+          <div class="price"><strong>€9</strong><span>per device / month</span></div>
+          <ul>
+            <li><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8.5l3 3 7-7"/></svg>1-second updates</li>
+            <li><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8.5l3 3 7-7"/></svg>12 months of history and route replay</li>
+            <li><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8.5l3 3 7-7"/></svg>Geofences and driver scorecards</li>
+            <li><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8.5l3 3 7-7"/></svg>REST API, NMEA feed and webhooks</li>
+          </ul>
+          <a class="btn btn-primary" href="#demo">Book a Fleet demo</a>
+        </article>
+        <article class="tier">
+          <div class="tier-top"><h3>Enterprise</h3></div>
+          <div class="price"><strong>Custom</strong></div>
+          <ul>
+            <li><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8.5l3 3 7-7"/></svg>Private cloud or on-premises</li>
+            <li><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8.5l3 3 7-7"/></svg>SSO and audit log</li>
+            <li><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8.5l3 3 7-7"/></svg>99.95% uptime SLA</li>
+            <li><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8.5l3 3 7-7"/></svg>A named support engineer</li>
+          </ul>
+          <a class="btn btn-ghost" href="#demo">Talk to sales</a>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="demo" class="cta">
+    <div class="wrap cta-grid">
+      <div>
+        <span class="eyebrow">Book a demo</span>
+        <h2 style="margin-top:1rem">Put your fleet on the map.</h2>
+      </div>
+      <form class="demo" id="demo-form" novalidate>
+        <label for="f-email">Work email</label>
+        <input id="f-email" name="email" type="email" placeholder="you@company.com" autocomplete="email" required>
+        <label for="f-size">Fleet size</label>
+        <select id="f-size" name="size">
+          <option>1–25 vehicles</option>
+          <option selected>26–100 vehicles</option>
+          <option>101–500 vehicles</option>
+          <option>500+ vehicles</option>
+        </select>
+        <button class="btn btn-primary" type="submit">Request demo</button>
+        <p class="form-msg" id="form-msg" role="status"></p>
+      </form>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <strong style="color:var(--ink)">Lodestar GPS</strong>
+    <span>© 2026</span>
+    <a href="#platform">Platform</a>
+    <a href="#developers">API</a>
+    <a href="#pricing">Pricing</a>
+    <span class="coords mono">42°39′46″N 21°09′56″E</span>
+  </div>
+</footer>
+
+<script>
+(() => {
+  'use strict';
+  const $ = (s) => document.querySelector(s);
+  const TAU = Math.PI * 2;
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---------- World: a 6.5 × 5.5 km window over Prishtina ---------- */
+  const ORIGIN = { lat: 42.6629, lon: 21.1655 };
+  const SPAN = { lat: 0.05, lon: 0.08 };
+  const KM_W = SPAN.lon * 111.32 * Math.cos(ORIGIN.lat * Math.PI / 180);
+  const KM_H = SPAN.lat * 110.57;
+  const TIME_SCALE = 10; // simulation runs 10× real time so movement is visible
+  const toLatLon = (x, y) => ({ lat: ORIGIN.lat + (0.5 - y) * SPAN.lat, lon: ORIGIN.lon + (x - 0.5) * SPAN.lon });
+  const kmBetween = (ax, ay, bx, by) => Math.hypot((ax - bx) * KM_W, (ay - by) * KM_H);
+
+  /* ---------- Terrain noise for contour lines ---------- */
+  function hash(i, j) {
+    let h = (Math.imul(i, 374761393) + Math.imul(j, 668265263)) | 0;
+    h = Math.imul(h ^ (h >>> 13), 1274126177);
+    h ^= h >>> 16;
+    return (h >>> 0) / 4294967296;
+  }
+  function vnoise(x, y) {
+    const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi;
+    const u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+    const a = hash(xi, yi), b = hash(xi + 1, yi), c = hash(xi, yi + 1), d = hash(xi + 1, yi + 1);
+    return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+  }
+  function terrain(x, y) {
+    const kx = x * KM_W * 0.42, ky = y * KM_H * 0.42;
+    return vnoise(kx, ky) * 0.58 + vnoise(kx * 2.1 + 7.3, ky * 2.1 + 3.1) * 0.29 + vnoise(kx * 4.3 + 1.7, ky * 4.3 + 9.2) * 0.13;
+  }
+
+  /* ---------- Roads and routes ---------- */
+  function smooth(pts, closed, n = 10) {
+    const P = closed ? pts.slice(0, -1) : pts;
+    const M = P.length;
+    const get = (i) => closed ? P[((i % M) + M) % M] : P[Math.max(0, Math.min(M - 1, i))];
+    const out = [];
+    const segs = closed ? M : M - 1;
+    for (let i = 0; i < segs; i++) {
+      const p0 = get(i - 1), p1 = get(i), p2 = get(i + 1), p3 = get(i + 2);
+      for (let k = 0; k < n; k++) {
+        const t = k / n, t2 = t * t, t3 = t2 * t;
+        out.push([0, 1].map((d) => 0.5 * (2 * p1[d] + (-p0[d] + p2[d]) * t + (2 * p0[d] - 5 * p1[d] + 4 * p2[d] - p3[d]) * t2 + (-p0[d] + 3 * p1[d] - 3 * p2[d] + p3[d]) * t3)));
+      }
+    }
+    out.push(closed ? out[0].slice() : P[M - 1].slice());
+    return out;
+  }
+  function makeRoute(pts, closed, major) {
+    const cum = [0];
+    for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + kmBetween(pts[i][0], pts[i][1], pts[i - 1][0], pts[i - 1][1]));
+    return { pts, cum, len: cum[cum.length - 1], closed, major };
+  }
+  const ringPts = [];
+  for (let i = 0; i <= 64; i++) {
+    const t = i / 64 * TAU, w = 1 + 0.06 * Math.sin(3 * t) + 0.03 * Math.cos(5 * t);
+    ringPts.push([0.5 + 0.34 * w * Math.cos(t), 0.5 + 0.37 * w * Math.sin(t)]);
+  }
+  ringPts[64] = ringPts[0].slice();
+  const ROUTES = {
+    ring: makeRoute(ringPts, true, true),
+    ew: makeRoute(smooth([[-0.04, 0.67], [0.14, 0.63], [0.3, 0.57], [0.5, 0.5], [0.66, 0.44], [0.8, 0.41], [1.04, 0.35]], false), false, true),
+    ns: makeRoute(smooth([[0.39, -0.04], [0.43, 0.18], [0.47, 0.36], [0.5, 0.5], [0.53, 0.66], [0.55, 0.82], [0.6, 1.04]], false), false, true),
+    ne: makeRoute(smooth([[0.62, 0.2], [0.78, 0.17], [0.84, 0.3], [0.8, 0.41], [0.66, 0.44], [0.6, 0.32], [0.62, 0.2]], true), true, false),
+    sw: makeRoute(smooth([[0.18, 0.74], [0.3, 0.57], [0.42, 0.63], [0.37, 0.82], [0.18, 0.74]], true), true, false),
+  };
+  const RIVER = smooth([[-0.06, 0.24], [0.14, 0.3], [0.3, 0.41], [0.43, 0.46], [0.56, 0.58], [0.7, 0.63], [0.86, 0.76], [1.06, 0.8]], false, 12);
+  const ZONES = [
+    { id: 'depot', name: 'Depot', x: 0.8, y: 0.41, r: 0.34, limit: null, key: 'accent' },
+    { id: 'school', name: 'School zone', x: 0.47, y: 0.36, r: 0.3, limit: 30, key: 'alert' },
+  ];
+
+  function pointAt(route, d) {
+    if (route.closed) d = ((d % route.len) + route.len) % route.len;
+    else d = Math.max(0, Math.min(route.len, d));
+    const c = route.cum;
+    let lo = 0, hi = c.length - 1;
+    while (hi - lo > 1) { const m = (lo + hi) >> 1; if (c[m] <= d) lo = m; else hi = m; }
+    const a = route.pts[lo], b = route.pts[hi];
+    const seg = c[hi] - c[lo] || 1e-9, t = (d - c[lo]) / seg;
+    return { x: a[0] + (b[0] - a[0]) * t, y: a[1] + (b[1] - a[1]) * t, dx: b[0] - a[0], dy: b[1] - a[1] };
+  }
+
+  /* ---------- Fleet (demo data) ---------- */
+  const rand = (a, b) => a + Math.random() * (b - a);
+  const FLEET = [
+    { id: 'LS-204', kind: 'Van', driver: 'Arta K.', route: 'ring', dir: 1, cruise: 46 },
+    { id: 'LS-118', kind: 'Truck', driver: 'Blerim H.', route: 'ew', dir: 1, cruise: 42 },
+    { id: 'LS-311', kind: 'Van', driver: 'Drita B.', route: 'ns', dir: 1, cruise: 44, reckless: true },
+    { id: 'LS-452', kind: 'Car', driver: 'Ilir G.', route: 'ne', dir: 1, cruise: 38 },
+    { id: 'LS-097', kind: 'Truck', driver: 'Valon M.', route: 'ring', dir: -1, cruise: 40 },
+    { id: 'LS-560', kind: 'Car', driver: 'Era S.', route: 'sw', dir: -1, cruise: 36 },
+  ].map((v, i) => {
+    const r = ROUTES[v.route];
+    return Object.assign(v, {
+      d: r.len * ((i * 0.23 + 0.1) % 1), speed: v.cruise * 0.8, state: 'moving',
+      nextStop: rand(15, 40), stopTimer: 0, trail: [], trailT: 0,
+      x: 0.5, y: 0.5, heading: 0, zones: new Set(), flagged: new Set(), speeding: false, obey: true, wobble: rand(0, 100),
+    });
+  });
+  let selected = FLEET[0];
+
+  /* ---------- Satellites (shared fix quality) ---------- */
+  const SYS = {
+    gps: { name: 'GPS', color: '--sys-gps', prns: ['G02', 'G05', 'G07', 'G13', 'G15', 'G20', 'G29', 'G30'] },
+    gal: { name: 'Galileo', color: '--sys-gal', prns: ['E04', 'E09', 'E11', 'E19', 'E36'] },
+    glo: { name: 'GLONASS', color: '--sys-glo', prns: ['R03', 'R14', 'R15', 'R22'] },
+    bds: { name: 'BeiDou', color: '--sys-bds', prns: ['C19', 'C23', 'C32', 'C37'] },
+  };
+  const SATS = [];
+  Object.entries(SYS).forEach(([sys, s]) => s.prns.forEach((prn) => {
+    SATS.push({ prn, sys, az: rand(0, 360), el0: rand(6, 84), phase: rand(0, TAU), rate: rand(0.08, 0.22), el: 0, snr: 0, used: false, noise: rand(-4, 4) });
+  }));
+  const fix = { used: 0, view: 0, hdop: 0.8, pdop: 1.3, cn0: 40 };
+  let skyT = 0;
+  function stepSky(dt) {
+    skyT += dt;
+    let usedSum = 0, n = 0, cn = 0;
+    for (const s of SATS) {
+      s.az = (s.az + s.rate * dt) % 360;
+      s.el = Math.max(2, Math.min(88, s.el0 + 5 * Math.sin(skyT * 0.03 + s.phase)));
+      s.snr = Math.max(14, Math.min(50, 21 + s.el * 0.3 + s.noise + 1.6 * Math.sin(skyT * 0.4 + s.phase)));
+      s.used = s.snr >= 28 && s.el >= 10;
+      if (s.used) { usedSum++; cn += s.snr; }
+      n++;
+    }
+    fix.used = usedSum; fix.view = n;
+    fix.cn0 = usedSum ? cn / usedSum : 0;
+    fix.hdop = Math.max(0.5, 3.1 / Math.sqrt(usedSum || 1));
+    fix.pdop = fix.hdop * 1.62;
+  }
+  stepSky(0);
+
+  /* ---------- Colors from theme tokens ---------- */
+  const C = {};
+  function readColors() {
+    const s = getComputedStyle(document.documentElement);
+    ['bg', 'surface', 'ink', 'muted', 'line', 'accent', 'accent-soft', 'on-accent', 'map-bg', 'map-contour', 'map-contour-strong',
+      'map-road', 'map-road-edge', 'map-street', 'water', 'grid', 'ok', 'warn', 'alert', 'on-sys',
+      'sys-gps', 'sys-gal', 'sys-glo', 'sys-bds'].forEach((k) => { C[k] = s.getPropertyValue('--' + k).trim(); });
+  }
+
+  /* ---------- Map canvas ---------- */
+  const canvas = $('#map');
+  const ctx = canvas.getContext('2d');
+  const base = document.createElement('canvas');
+  const bctx = base.getContext('2d');
+  let W = 0, H = 0, DPR = 1, S = 1;
+  const P = (x, y) => [W / 2 + (x - 0.5) * KM_W * S, H / 2 + (y - 0.5) * KM_H * S];
+  const inv = (px, py) => [(px - W / 2) / (KM_W * S) + 0.5, (py - H / 2) / (KM_H * S) + 0.5];
+  let showTrails = true, showZones = true;
+
+  const MS = { 1: [[3, 2]], 2: [[2, 1]], 3: [[3, 1]], 4: [[0, 1]], 5: [[0, 1], [3, 2]], 6: [[0, 2]], 7: [[0, 3]],
+    8: [[0, 3]], 9: [[0, 2]], 10: [[0, 3], [2, 1]], 11: [[0, 1]], 12: [[3, 1]], 13: [[2, 1]], 14: [[3, 2]] };
+
+  function path(g, pts) {
+    g.beginPath();
+    pts.forEach((p, i) => { const [px, py] = P(p[0], p[1]); i ? g.lineTo(px, py) : g.moveTo(px, py); });
+  }
+  const fmtDM = (v, pos, neg) => {
+    const a = Math.abs(v), d = Math.floor(a + 1e-9), m = Math.round((a - d) * 60);
+    return `${d}°${String(m).padStart(2, '0')}′${v >= 0 ? pos : neg}`;
+  };
+
+  function buildBase() {
+    readColors();
+    const g = bctx;
+    g.setTransform(DPR, 0, 0, DPR, 0, 0);
+    g.fillStyle = C['map-bg'];
+    g.fillRect(0, 0, W, H);
+
+    // Contours (marching squares); every fifth line is an index contour, as on a topo sheet.
+    const step = 8, cols = Math.ceil(W / step) + 1, rows = Math.ceil(H / step) + 1;
+    const val = new Float32Array(cols * rows);
+    for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) { const [x, y] = inv(i * step, j * step); val[j * cols + i] = terrain(x, y); }
+    for (let L = 0; L < 18; L++) {
+      const lv = 0.16 + L * 0.04;
+      const index = L % 5 === 0;
+      g.strokeStyle = index ? C['map-contour-strong'] : C['map-contour'];
+      g.lineWidth = index ? 1.1 : 0.8;
+      g.beginPath();
+      for (let j = 0; j < rows - 1; j++) for (let i = 0; i < cols - 1; i++) {
+        const a = val[j * cols + i], b = val[j * cols + i + 1], c = val[(j + 1) * cols + i + 1], d = val[(j + 1) * cols + i];
+        const idx = (a > lv ? 8 : 0) | (b > lv ? 4 : 0) | (c > lv ? 2 : 0) | (d > lv ? 1 : 0);
+        if (idx === 0 || idx === 15) continue;
+        const x0 = i * step, y0 = j * step;
+        const E = (e) => e === 0 ? [x0 + step * (lv - a) / (b - a), y0]
+          : e === 1 ? [x0 + step, y0 + step * (lv - b) / (c - b)]
+          : e === 2 ? [x0 + step * (lv - d) / (c - d), y0 + step]
+          : [x0, y0 + step * (lv - a) / (d - a)];
+        for (const [e1, e2] of MS[idx]) { const p = E(e1), q = E(e2); g.moveTo(p[0], p[1]); g.lineTo(q[0], q[1]); }
+      }
+      g.stroke();
+    }
+
+    // River
+    g.lineCap = 'round'; g.lineJoin = 'round';
+    path(g, RIVER); g.strokeStyle = C.water; g.lineWidth = Math.max(9, 0.11 * S); g.stroke();
+
+    // Street grid in the centre, rotated like an old town block
+    g.save();
+    const [cx, cy] = P(0.5, 0.5);
+    g.beginPath(); g.ellipse(cx, cy, 0.24 * KM_W * S, 0.26 * KM_H * S, 0, 0, TAU); g.clip();
+    g.translate(cx, cy); g.rotate(-0.32);
+    g.strokeStyle = C['map-street']; g.lineWidth = 1;
+    const sp = 0.2 * S, ext = 2.2 * S;
+    g.beginPath();
+    for (let k = -12; k <= 12; k++) { g.moveTo(k * sp, -ext); g.lineTo(k * sp, ext); g.moveTo(-ext, k * sp * 1.3); g.lineTo(ext, k * sp * 1.3); }
+    g.stroke();
+    g.restore();
+
+    // Roads: casing then fill
+    const roads = Object.values(ROUTES);
+    for (const pass of [0, 1]) for (const r of roads) {
+      path(g, r.pts);
+      const w = r.major ? 9 : 6.5;
+      g.strokeStyle = pass ? C['map-road'] : C['map-road-edge'];
+      g.lineWidth = pass ? w - 3 : w;
+      g.stroke();
+    }
+
+    // Graticule at one arc-minute
+    g.font = '500 10px "JetBrains Mono", ui-monospace, monospace';
+    g.fillStyle = C.muted; g.strokeStyle = C.grid; g.lineWidth = 1;
+    const [tlx, tly] = inv(0, 0), [brx, bry] = inv(W, H);
+    const nw = toLatLon(tlx, tly), se = toLatLon(brx, bry);
+    g.setLineDash([2, 4]);
+    for (let m = Math.ceil(se.lat * 60); m <= Math.floor(nw.lat * 60); m++) {
+      const y = 0.5 - (m / 60 - ORIGIN.lat) / SPAN.lat, py = P(0, y)[1];
+      g.beginPath(); g.moveTo(0, py); g.lineTo(W, py); g.stroke();
+      g.fillText(fmtDM(m / 60, 'N', 'S'), 8, py - 4);
+    }
+    for (let m = Math.ceil(nw.lon * 60); m <= Math.floor(se.lon * 60); m++) {
+      const x = 0.5 + (m / 60 - ORIGIN.lon) / SPAN.lon, px = P(x, 0)[0];
+      g.beginPath(); g.moveTo(px, 0); g.lineTo(px, H); g.stroke();
+      g.save(); g.translate(px + 4, H - 44); g.rotate(-Math.PI / 2); g.fillText(fmtDM(m / 60, 'E', 'W'), 0, 0); g.restore();
+    }
+    g.setLineDash([]);
+  }
+
+  function resize() {
+    const r = canvas.parentElement.getBoundingClientRect();
+    W = Math.max(1, r.width); H = Math.max(1, r.height);
+    DPR = Math.min(2, window.devicePixelRatio || 1);
+    for (const c of [canvas, base]) { c.width = Math.round(W * DPR); c.height = Math.round(H * DPR); }
+    canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+    S = Math.max(W / KM_W, H / KM_H);
+    buildBase();
+    const km = S > 140 ? 0.5 : 1;
+    $('#scale-bar').style.width = Math.round(km * S) + 'px';
+    $('#scale-label').textContent = km === 1 ? '1 km' : '500 m';
+    draw(performance.now());
+  }
+
+  function roundRect(g, x, y, w, h, r) {
+    g.beginPath();
+    if (g.roundRect) g.roundRect(x, y, w, h, r); else g.rect(x, y, w, h);
+  }
+
+  function draw(now) {
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    ctx.drawImage(base, 0, 0, W, H);
+
+    if (showZones) for (const z of ZONES) {
+      const [px, py] = P(z.x, z.y), col = C[z.key];
+      ctx.beginPath(); ctx.arc(px, py, z.r * S, 0, TAU);
+      ctx.fillStyle = z.key === 'accent' ? C['accent-soft'] : 'transparent';
+      ctx.globalAlpha = 1; ctx.fill();
+      ctx.setLineDash([5, 4]); ctx.strokeStyle = col; ctx.lineWidth = 1.5; ctx.stroke(); ctx.setLineDash([]);
+      ctx.font = '600 10px "JetBrains Mono", ui-monospace, monospace';
+      ctx.fillStyle = col; ctx.textAlign = 'center';
+      ctx.fillText(z.limit ? `${z.name.toUpperCase()} · ${z.limit}` : z.name.toUpperCase(), px, py - z.r * S - 6);
+      ctx.textAlign = 'left';
+    }
+
+    if (showTrails) for (const v of FLEET) {
+      const tr = v.trail, isSel = v === selected;
+      if (tr.length < 2) continue;
+      ctx.lineCap = 'round';
+      for (let i = 1; i < tr.length; i++) {
+        const [ax, ay] = P(tr[i - 1][0], tr[i - 1][1]), [bx, by] = P(tr[i][0], tr[i][1]);
+        ctx.globalAlpha = (i / tr.length) * (isSel ? 0.9 : 0.45);
+        ctx.strokeStyle = isSel ? C.accent : C.muted;
+        ctx.lineWidth = isSel ? 3.5 : 2.2;
+        ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    const order = FLEET.filter((v) => v !== selected).concat(selected);
+    for (const v of order) {
+      const [px, py] = P(v.x, v.y), sel = v === selected;
+      const status = v.speeding ? C.alert : v.state === 'stopped' ? C.warn : C.ok;
+      if (sel) {
+        const t = reduceMotion ? 0.5 : (now % 1800) / 1800;
+        ctx.beginPath(); ctx.arc(px, py, 12 + t * 24, 0, TAU);
+        ctx.globalAlpha = 1 - t; ctx.strokeStyle = C.accent; ctx.lineWidth = 2; ctx.stroke(); ctx.globalAlpha = 1;
+      }
+      ctx.beginPath(); ctx.arc(px, py, sel ? 12 : 9.5, 0, TAU);
+      ctx.fillStyle = sel ? C.accent : C.surface; ctx.fill();
+      ctx.lineWidth = sel ? 2.5 : 2.5; ctx.strokeStyle = sel ? status : status; ctx.stroke();
+      ctx.save(); ctx.translate(px, py); ctx.rotate(v.heading * Math.PI / 180);
+      ctx.beginPath(); ctx.moveTo(0, -5.8); ctx.lineTo(4.4, 4.2); ctx.lineTo(0, 1.8); ctx.lineTo(-4.4, 4.2); ctx.closePath();
+      ctx.fillStyle = sel ? C['on-accent'] : C.ink; ctx.fill(); ctx.restore();
+
+      ctx.font = `${sel ? 700 : 600} 10.5px "JetBrains Mono", ui-monospace, monospace`;
+      const label = v.id, tw = ctx.measureText(label).width;
+      const lx = px + 15, ly = py - 9;
+      roundRect(ctx, lx, ly, tw + 10, 18, 5);
+      ctx.fillStyle = sel ? C.ink : C.surface; ctx.globalAlpha = sel ? 1 : 0.92; ctx.fill(); ctx.globalAlpha = 1;
+      if (!sel) { ctx.strokeStyle = C.line; ctx.lineWidth = 1; ctx.stroke(); }
+      ctx.fillStyle = sel ? C.bg : C.ink; ctx.textBaseline = 'middle';
+      ctx.fillText(label, lx + 5, ly + 9.5); ctx.textBaseline = 'alphabetic';
+    }
+  }
+
+  /* ---------- Simulation ---------- */
+  const events = [];
+  const utc = (d = new Date()) => d.toISOString().slice(11, 19);
+  function logEvent(html, kind) {
+    events.unshift({ t: utc(), html, kind });
+    events.length = Math.min(events.length, 7);
+    const ol = $('#events');
+    ol.innerHTML = events.map((e) => `<li><time>${e.t}</time><span class="k-${e.kind}">${e.html}</span></li>`).join('');
+  }
+
+  function stepVehicle(v, dt) {
+    const r = ROUTES[v.route];
+    const school = ZONES[1];
+    const inSchool = v.zones.has('school');
+    if (v.state === 'stopped') {
+      v.stopTimer -= dt;
+      v.speed += (0 - v.speed) * Math.min(1, dt * 3);
+      if (v.stopTimer <= 0) { v.state = 'moving'; v.nextStop = rand(18, 45); }
+    } else {
+      v.wobble += dt * 0.6;
+      let target = v.cruise * (0.88 + 0.14 * Math.sin(v.wobble) + 0.06 * Math.sin(v.wobble * 2.7));
+      if (inSchool && v.obey) target = Math.min(target, school.limit - 5);
+      v.speed += (target - v.speed) * Math.min(1, dt * 1.2);
+      v.nextStop -= dt;
+      if (v.nextStop <= 0) { v.state = 'stopped'; v.stopTimer = rand(4, 9); }
+    }
+    v.d += v.dir * v.speed * TIME_SCALE / 3600 * dt;
+    if (!r.closed) {
+      if (v.d >= r.len) { v.d = r.len; v.dir = -1; }
+      if (v.d <= 0) { v.d = 0; v.dir = 1; }
+    }
+    const p = pointAt(r, v.d);
+    v.x = p.x; v.y = p.y;
+    const hx = p.dx * KM_W * v.dir, hy = p.dy * KM_H * v.dir;
+    if (hx || hy) v.heading = (Math.atan2(hx, -hy) * 180 / Math.PI + 360) % 360;
+
+    v.trailT += dt;
+    if (v.trailT > 0.25) { v.trailT = 0; v.trail.push([v.x, v.y]); if (v.trail.length > 70) v.trail.shift(); }
+
+    v.speeding = false;
+    for (const z of ZONES) {
+      const inside = kmBetween(v.x, v.y, z.x, z.y) < z.r;
+      if (inside && !v.zones.has(z.id)) {
+        v.zones.add(z.id);
+        if (z.limit) v.obey = !(v.reckless && Math.random() < 0.6);
+        logEvent(`<b>${v.id}</b> entered ${z.name}`, 'zone');
+        if (z.id === 'depot' && Math.random() < 0.5 && v.state === 'moving') { v.state = 'stopped'; v.stopTimer = rand(6, 11); }
+      } else if (!inside && v.zones.has(z.id)) {
+        v.zones.delete(z.id); v.flagged.delete(z.id);
+        logEvent(`<b>${v.id}</b> left ${z.name}`, 'zone');
+      }
+      if (inside && z.limit && v.speed > z.limit + 1) {
+        v.speeding = true;
+        if (!v.flagged.has(z.id) && v.speed > z.limit + 4) {
+          v.flagged.add(z.id);
+          logEvent(`${v.id} at ${Math.round(v.speed)} km/h in ${z.name} (limit ${z.limit})`, 'alert');
+        }
+      }
+    }
+  }
+
+  /* ---------- Side panel ---------- */
+  const fleetEl = $('#fleet');
+  fleetEl.innerHTML = FLEET.map((v) => `<li><button type="button" data-id="${v.id}"><span class="dot"></span><span class="fid">${v.id}</span><span class="fdrv">${v.kind} · ${v.driver}</span><span class="fspd">0 km/h</span></button></li>`).join('');
+  fleetEl.addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-id]');
+    if (b) select(FLEET.find((v) => v.id === b.dataset.id));
+  });
+  function select(v) {
+    if (!v || v === selected) return;
+    selected = v;
+    $('#term-unit').textContent = v.id;
+    termLines.length = 0;
+    renderPanel();
+    renderTerm();
+    if (reduceMotion) draw(performance.now());
+  }
+  const compass = (h) => ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'][Math.round(h / 45) % 8];
+  const altitudeAt = (x, y) => 590 + terrain(x, y) * 140;
+  function statusOf(v) { return v.speeding ? ['alert', 'Speeding'] : v.state === 'stopped' ? ['warn', v.zones.has('depot') ? 'Loading' : 'Stopped'] : ['ok', 'Moving']; }
+
+  function renderPanel() {
+    const v = selected, ll = toLatLon(v.x, v.y), [cls, label] = statusOf(v);
+    $('#t-id').textContent = v.id;
+    $('#t-sub').textContent = `${v.kind} · ${v.driver}`;
+    const st = $('#t-status'); st.className = 'pill ' + cls; st.textContent = label;
+    $('#t-lat').textContent = `${ll.lat.toFixed(5)}° N`;
+    $('#t-lon').textContent = `${ll.lon.toFixed(5)}° E`;
+    $('#t-spd').textContent = `${v.speed < 0.5 ? 0 : v.speed.toFixed(1)} km/h`;
+    $('#t-hdg').textContent = `${String(Math.round(v.heading)).padStart(3, '0')}° ${compass(v.heading)}`;
+    $('#t-sat').textContent = `${fix.used} of ${fix.view}`;
+    $('#t-hdop').textContent = fix.hdop.toFixed(2);
+    $('#t-alt').textContent = `${altitudeAt(v.x, v.y).toFixed(1)} m`;
+    fleetEl.querySelectorAll('button').forEach((b, i) => {
+      const f = FLEET[i], [c] = statusOf(f);
+      b.setAttribute('aria-current', f === selected ? 'true' : 'false');
+      b.querySelector('.dot').className = 'dot ' + (c === 'ok' ? '' : c);
+      b.querySelector('.fspd').textContent = `${Math.round(f.speed < 0.5 ? 0 : f.speed)} km/h`;
+    });
+  }
+
+  canvas.addEventListener('click', (e) => {
+    const r = canvas.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
+    let best = null, bd = 30;
+    for (const v of FLEET) { const [px, py] = P(v.x, v.y), d = Math.hypot(px - mx, py - my); if (d < bd) { bd = d; best = v; } }
+    if (best) select(best);
+  });
+  canvas.addEventListener('mousemove', (e) => {
+    const r = canvas.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
+    canvas.style.cursor = FLEET.some((v) => { const [px, py] = P(v.x, v.y); return Math.hypot(px - mx, py - my) < 30; }) ? 'pointer' : 'crosshair';
+  });
+  const toggle = (id, set) => $(id).addEventListener('click', (e) => {
+    const on = e.currentTarget.getAttribute('aria-pressed') !== 'true';
+    e.currentTarget.setAttribute('aria-pressed', String(on)); set(on); draw(performance.now());
+  });
+  toggle('#btn-trails', (on) => { showTrails = on; });
+  toggle('#btn-zones', (on) => { showZones = on; });
+
+  /* ---------- Sky plot + SNR ---------- */
+  const NS = 'http://www.w3.org/2000/svg';
+  const sky = $('#skyplot');
+  const R = 132, CX = 160, CY = 160;
+  (function buildSky() {
+    let s = '';
+    [0, 30, 60].forEach((el) => { s += `<circle class="ring" cx="${CX}" cy="${CY}" r="${R * (90 - el) / 90}"${el ? ' stroke-dasharray="3 4"' : ''}/>`; });
+    s += `<path class="axis" d="M${CX} ${CY - R}V${CY + R}M${CX - R} ${CY}H${CX + R}"/>`;
+    s += `<text class="lbl" x="${CX + 4}" y="${CY - R * 2 / 3 - 3}">30°</text><text class="lbl" x="${CX + 4}" y="${CY - R / 3 - 3}">60°</text>`;
+    s += `<text class="card" x="${CX}" y="${CY - R - 8}" text-anchor="middle">N</text><text class="card" x="${CX + R + 10}" y="${CY + 4}" text-anchor="middle">E</text>`;
+    s += `<text class="card" x="${CX}" y="${CY + R + 17}" text-anchor="middle">S</text><text class="card" x="${CX - R - 10}" y="${CY + 4}" text-anchor="middle">W</text>`;
+    sky.innerHTML = s;
+    for (const sat of SATS) {
+      const g = document.createElementNS(NS, 'g');
+      g.setAttribute('class', 'sat');
+      g.innerHTML = `<circle r="9.5" stroke-width="1.6"/><text>${sat.prn}</text>`;
+      sky.appendChild(g);
+      sat.g = g;
+    }
+    const axis = $('#snr-axis');
+    axis.innerHTML = [0, 10, 20, 30, 40, 50].map((v) => `<span style="bottom:${v * 2}%">${v}</span>`).join('');
+    const sorted = SATS.slice();
+    $('#snr-plot').innerHTML = sorted.map((s) => `<div class="b" data-prn="${s.prn}" style="background:var(${SYS[s.sys].color})"></div>`).join('');
+    $('#snr-labels').innerHTML = sorted.map((s) => `<span>${s.prn}</span>`).join('');
+    sorted.forEach((s, i) => { s.bar = $('#snr-plot').children[i]; });
+  })();
+
+  function renderSky() {
+    for (const s of SATS) {
+      const r = R * (90 - s.el) / 90, a = s.az * Math.PI / 180;
+      const x = CX + r * Math.sin(a), y = CY - r * Math.cos(a);
+      s.g.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
+      const col = `var(${SYS[s.sys].color})`;
+      const c = s.g.firstChild, t = s.g.lastChild;
+      c.style.fill = s.used ? col : 'var(--surface)';
+      c.style.stroke = col;
+      t.style.fill = s.used ? 'var(--on-sys)' : col;
+      s.bar.style.height = (s.snr / 50 * 100).toFixed(1) + '%';
+      s.bar.classList.toggle('unused', !s.used);
+      s.bar.title = `${s.prn}: ${s.snr.toFixed(0)} dB-Hz, elevation ${s.el.toFixed(0)}°`;
+    }
+    $('#d-used').innerHTML = `${fix.used}<small> / ${fix.view}</small>`;
+    $('#d-hdop').textContent = fix.hdop.toFixed(2);
+    $('#d-pdop').textContent = fix.pdop.toFixed(2);
+    $('#d-cn0').innerHTML = `${fix.cn0.toFixed(1)}<small> dB-Hz</small>`;
+    $('#sys-legend').innerHTML = Object.entries(SYS).map(([k, s]) => {
+      const inView = SATS.filter((x) => x.sys === k), used = inView.filter((x) => x.used).length;
+      return `<span><i style="background:var(${s.color})"></i>${s.name} <em>${used}/${inView.length}</em></span>`;
+    }).join('');
+  }
+
+  /* ---------- NMEA / JSON terminal ---------- */
+  const term = $('#term');
+  const termLines = [];
+  let termMode = 'nmea';
+  const checksum = (s) => { let c = 0; for (let i = 0; i < s.length; i++) c ^= s.charCodeAt(i); return c.toString(16).toUpperCase().padStart(2, '0'); };
+  const nmeaCoord = (v, degW, pos, neg) => {
+    const a = Math.abs(v), d = Math.floor(a), m = (a - d) * 60;
+    return `${String(d).padStart(degW, '0')}${m.toFixed(5).padStart(8, '0')},${v >= 0 ? pos : neg}`;
+  };
+  const sentence = (body) => `<span class="t-talker">$${body.slice(0, 5)}</span>${body.slice(5)}<span class="t-cs">*${checksum(body)}</span>`;
+  function emitFix() {
+    const v = selected, ll = toLatLon(v.x, v.y), now = new Date();
+    const hms = now.toISOString().slice(11, 19).replace(/:/g, '');
+    const iso = now.toISOString();
+    const dmy = iso.slice(8, 10) + iso.slice(5, 7) + iso.slice(2, 4);
+    const lat = nmeaCoord(ll.lat, 2, 'N', 'S'), lon = nmeaCoord(ll.lon, 3, 'E', 'W');
+    const alt = altitudeAt(v.x, v.y);
+    const spd = v.speed < 0.5 ? 0 : v.speed;
+    termLines.push(sentence(`GNGGA,${hms}.00,${lat},${lon},1,${String(fix.used).padStart(2, '0')},${fix.hdop.toFixed(1)},${alt.toFixed(1)},M,46.1,M,,`));
+    termLines.push(sentence(`GNRMC,${hms}.00,A,${lat},${lon},${(spd / 1.852).toFixed(2)},${v.heading.toFixed(1)},${dmy},,,A`));
+    while (termLines.length > 40) termLines.shift();
+  }
+  function renderTerm() {
+    if (termMode === 'nmea') {
+      if (!termLines.length) emitFix();
+      term.innerHTML = termLines.join('\n');
+      term.scrollTop = term.scrollHeight;
+    } else {
+      const v = selected, ll = toLatLon(v.x, v.y);
+      const obj = {
+        unit: v.id,
+        time: new Date().toISOString().slice(0, 19) + 'Z',
+        position: { lat: +ll.lat.toFixed(6), lon: +ll.lon.toFixed(6), alt_m: +altitudeAt(v.x, v.y).toFixed(1) },
+        speed_kmh: +(v.speed < 0.5 ? 0 : v.speed).toFixed(1),
+        heading_deg: Math.round(v.heading),
+        status: statusOf(v)[1].toLowerCase(),
+        fix: { type: '3d', sats_used: fix.used, sats_in_view: fix.view, hdop: +fix.hdop.toFixed(2) },
+        zones: [...v.zones].map((id) => ZONES.find((z) => z.id === id).name),
+      };
+      const json = JSON.stringify(obj, null, 2)
+        .replace(/("[^"]+")(\s*:)/g, '<span class="j-key">$1</span>$2')
+        .replace(/:\s("[^"]*")/g, ': <span class="j-str">$1</span>')
+        .replace(/(\[\s*|,\s*)("[^"]*")(?=\s*[\],])/g, '$1<span class="j-str">$2</span>')
+        .replace(/:\s(-?\d+(\.\d+)?)/g, ': <span class="j-num">$1</span>');
+      term.innerHTML = `<span class="t-cs">GET /v1/units/${v.id}/fix  200 OK</span>\n\n${json}`;
+      term.scrollTop = 0;
+    }
+  }
+  ['nmea', 'json'].forEach((mode) => $('#tab-' + mode).addEventListener('click', () => {
+    termMode = mode;
+    $('#tab-nmea').setAttribute('aria-selected', String(mode === 'nmea'));
+    $('#tab-json').setAttribute('aria-selected', String(mode === 'json'));
+    renderTerm();
+  }));
+
+  /* ---------- Demo form ---------- */
+  $('#demo-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const email = $('#f-email').value.trim(), msg = $('#form-msg');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { msg.className = 'form-msg'; msg.textContent = 'Enter a work email like name@company.com.'; $('#f-email').focus(); return; }
+    msg.className = 'form-msg ok';
+    msg.textContent = `Request noted for ${email} (${$('#f-size').value}). This is a demo page, so nothing was sent.`;
+  });
+
+  /* ---------- Loop ---------- */
+  let last = performance.now(), acc = 0, panelAcc = 0, mapVisible = true;
+  function tick(now) {
+    const dt = Math.min(0.1, (now - last) / 1000); last = now;
+    if (!reduceMotion) {
+      FLEET.forEach((v) => stepVehicle(v, dt));
+      if (mapVisible) draw(now);
+    }
+    panelAcc += dt; acc += dt;
+    if (panelAcc > 0.25) { panelAcc = 0; renderPanel(); }
+    if (acc >= 1) {
+      acc -= 1;
+      if (reduceMotion) { FLEET.forEach((v) => stepVehicle(v, 1)); draw(now); }
+      stepSky(1); renderSky();
+      emitFix(); renderTerm();
+      $('#clock').textContent = utc() + ' UTC';
+    }
+    requestAnimationFrame(tick);
+  }
+
+  // Warm up so trails and positions look lived-in on first paint
+  for (let i = 0; i < 80; i++) FLEET.forEach((v) => stepVehicle(v, 0.1));
+  events.length = 0;
+  logEvent(`Fleet online · <b>${FLEET.length}</b> units reporting`, 'zone');
+
+  new ResizeObserver(() => resize()).observe(canvas.parentElement);
+  if ('IntersectionObserver' in window) new IntersectionObserver(([en]) => { mapVisible = en.isIntersecting; }).observe(canvas);
+  const rethemed = () => { buildBase(); draw(performance.now()); };
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', rethemed);
+  new MutationObserver(rethemed).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(rethemed);
+
+  $('#clock').textContent = utc() + ' UTC';
+  resize();
+  renderPanel(); renderSky(); emitFix(); renderTerm();
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>
