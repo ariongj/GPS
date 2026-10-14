@@ -30,4 +30,4 @@ All vehicles and data are simulated.
 
 ## Deploying
 
-Every push to `main` publishes the site with the workflow in `.github/workflows/pages.yml`. GitHub Pages has to be switched on once: in the repository, go to **Settings → Pages**, set **Source** to **GitHub Actions**, then re-run the workflow from the **Actions** tab.
+Every push to `main` runs `.github/workflows/pages.yml`. The workflow copies the site to the `gh-pages` branch, and GitHub Pages serves it from there at https://ariongj.github.io/GPS/.
