@@ -2,6 +2,8 @@
 
 Demo website for a fictional fleet-tracking company, in a clean, minimal, Apple-style look. It's a single self-contained `index.html` with no build step: open it in a browser.
 
+**Live site:** https://ariongj.github.io/GPS/ (deployed from `main` by GitHub Actions).
+
 ## Sections
 
 - **Hero:** "Every vehicle. Every second." The live map runs inside a studio-display mockup.
@@ -25,3 +27,7 @@ Demo website for a fictional fleet-tracking company, in a clean, minimal, Apple-
   - A demo request form (it sends nothing).
 
 All vehicles and data are simulated.
+
+## Deploying
+
+Every push to `main` publishes the site with the workflow in `.github/workflows/pages.yml`. GitHub Pages has to be switched on once: in the repository, go to **Settings → Pages**, set **Source** to **GitHub Actions**, then re-run the workflow from the **Actions** tab.
