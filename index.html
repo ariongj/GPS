@@ -123,9 +123,16 @@ p { margin: 0; }
 .brand svg { width: 26px; height: 26px; }
 .brand small { font: 500 .66rem/1 var(--f-mono); letter-spacing: .12em; color: var(--muted); margin-left: .1rem; }
 .nav-links { display: flex; gap: 1.6rem; margin-left: auto; }
+.nav-actions { display: flex; gap: .5rem; align-items: center; }
+.theme-btn { width: 36px; height: 36px; padding: 0; border-radius: 10px; border: 1px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; display: inline-grid; place-items: center; }
+.theme-btn:hover { border-color: var(--ink); }
+.theme-btn svg { width: 18px; height: 18px; }
+.theme-btn .moon { display: none; }
+.is-dark .theme-btn .sun { display: none; }
+.is-dark .theme-btn .moon { display: block; }
 .nav-links a { text-decoration: none; color: var(--muted); font-size: .94rem; font-weight: 500; }
 .nav-links a:hover { color: var(--ink); }
-@media (max-width: 760px) { .nav-links { display: none; } .nav .btn { margin-left: auto; } }
+@media (max-width: 760px) { .nav-links { display: none; } .nav-actions { margin-left: auto; } }
 
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
@@ -300,6 +307,41 @@ p { margin: 0; }
 .feature .fact { margin-top: .8rem; font: 500 .78rem/1.3 var(--f-mono); color: var(--ink); }
 @media (max-width: 720px) { .features { grid-template-columns: 1fr; } }
 
+/* Replay */
+.replay-grid { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: clamp(1.25rem, 3vw, 2.5rem); align-items: start; }
+.replay-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); min-width: 0; }
+.replay-map { position: relative; height: clamp(320px, 34vw, 430px); background: var(--map-bg); }
+.replay-map canvas { position: absolute; inset: 0; display: block; }
+.replay-chart { position: relative; height: 170px; border-top: 1px solid var(--line); cursor: ew-resize; touch-action: none; }
+.replay-chart canvas { position: absolute; inset: 0; display: block; }
+.replay-controls { display: flex; align-items: center; gap: .8rem; padding: .8rem 1rem; border-top: 1px solid var(--line); flex-wrap: wrap; }
+.replay-controls input[type="range"] { flex: 1 1 200px; min-width: 0; accent-color: var(--accent); }
+.play { min-width: 96px; }
+.play svg { width: 14px; height: 14px; }
+.rate { display: flex; gap: .3rem; }
+.replay-side { display: grid; gap: 1.4rem; min-width: 0; }
+.replay-side h3 { font: 600 .68rem/1 var(--f-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin-bottom: .7rem; }
+.trip { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; margin: 0; }
+.trip div { background: var(--surface); padding: .75rem .9rem; }
+.trip dt { font-size: .7rem; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+.trip dd { margin: .2rem 0 0; font: 600 1.15rem/1.1 var(--f-mono); font-variant-numeric: tabular-nums; }
+.stops, .flags { list-style: none; margin: 0; padding: 0; display: grid; gap: .3rem; }
+.stops button, .flags button { width: 100%; display: grid; grid-template-columns: 24px 1fr auto; gap: .6rem; align-items: center; text-align: left; border: 0; background: transparent; color: var(--ink); font: inherit; font-size: .88rem; padding: .45rem .5rem; border-radius: 8px; cursor: pointer; }
+.stops button:hover, .flags button:hover { background: var(--surface-2); }
+.stops .n { width: 22px; height: 22px; border-radius: 50%; background: var(--ink); color: var(--bg); display: grid; place-items: center; font: 700 .72rem/1 var(--f-mono); }
+.stops time, .flags time { font: 500 .76rem/1 var(--f-mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.flags .ic { width: 22px; height: 22px; display: grid; place-items: center; }
+.flags .ic svg { width: 16px; height: 16px; }
+.flags .warn { color: var(--warn); }
+.flags .alert { color: var(--alert); }
+.score { display: grid; gap: .5rem; }
+.score-row { display: flex; align-items: baseline; justify-content: space-between; }
+.score-row strong { font: 800 2.2rem/1 var(--f-display); letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+.score-row span { color: var(--muted); font-size: .84rem; }
+.meter { height: 8px; border-radius: 4px; background: var(--surface-2); overflow: hidden; }
+.meter i { display: block; height: 100%; background: var(--accent); border-radius: 4px; }
+@media (max-width: 980px) { .replay-grid { grid-template-columns: 1fr; } .replay-side { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); } }
+
 /* Developers */
 .dev { background: var(--surface-2); }
 .dev-grid { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: clamp(1.5rem, 4vw, 3.5rem); align-items: start; }
@@ -373,11 +415,18 @@ footer .coords { margin-left: auto; }
     <nav class="nav-links" aria-label="Main">
       <a href="#live">Live map</a>
       <a href="#sky">Satellites</a>
+      <a href="#replay">Replay</a>
       <a href="#platform">Platform</a>
       <a href="#developers">Developers</a>
       <a href="#pricing">Pricing</a>
     </nav>
-    <a class="btn btn-primary btn-sm" href="#demo">Book a demo</a>
+    <div class="nav-actions">
+      <button class="theme-btn" id="theme-btn" type="button" aria-label="Switch to dark theme">
+        <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>
+      </button>
+      <a class="btn btn-primary btn-sm" href="#demo">Book a demo</a>
+    </div>
   </div>
 </header>
 
@@ -528,6 +577,67 @@ footer .coords { margin-left: auto; }
             <p class="fact">259,200 fixes stored on the device</p>
           </div>
         </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="replay" class="section" style="padding-top:0">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">Route replay</span>
+        <h2>Yesterday's run, second by second.</h2>
+        <p class="lede">Truck LS-118 on Tuesday 13 October 2026: three deliveries around Prishtina and back to the depot. Press play, drag the timeline, or pick a stop to jump to it.</p>
+      </div>
+      <div class="replay-grid">
+        <div class="replay-card">
+          <div class="replay-map">
+            <canvas id="replay-map" role="img" aria-label="Map of LS-118's recorded route with numbered delivery stops"></canvas>
+            <div class="hud hud-tl">
+              <span class="tag" id="rp-clock">07:40:00</span>
+              <span class="tag" id="rp-speed">0 km/h</span>
+              <span class="tag dim" id="rp-state">At depot</span>
+            </div>
+          </div>
+          <div class="replay-chart" id="rp-chart-wrap">
+            <canvas id="replay-chart" role="img" aria-label="Speed over time for the trip, in km/h"></canvas>
+          </div>
+          <div class="replay-controls">
+            <button class="btn btn-primary btn-sm play" id="rp-play" type="button">
+              <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path id="rp-play-icon" d="M4 2.5v11l9-5.5z"/></svg>
+              <span id="rp-play-label">Play</span>
+            </button>
+            <input type="range" id="rp-scrub" min="0" max="100" step="1" value="0" aria-label="Replay position">
+            <div class="rate" role="group" aria-label="Playback speed">
+              <button class="tag chip" type="button" data-rate="30" aria-pressed="false">30×</button>
+              <button class="tag chip" type="button" data-rate="60" aria-pressed="true">60×</button>
+              <button class="tag chip" type="button" data-rate="120" aria-pressed="false">120×</button>
+            </div>
+          </div>
+        </div>
+        <aside class="replay-side" aria-label="Trip summary">
+          <div>
+            <h3>Trip · LS-118 · Blerim H.</h3>
+            <dl class="trip">
+              <div><dt>Distance</dt><dd id="rp-dist">–</dd></div>
+              <div><dt>Duration</dt><dd id="rp-dur">–</dd></div>
+              <div><dt>Driving</dt><dd id="rp-drive">–</dd></div>
+              <div><dt>Top speed</dt><dd id="rp-max">–</dd></div>
+            </dl>
+          </div>
+          <div>
+            <h3>Stops</h3>
+            <ol class="stops" id="rp-stops"></ol>
+          </div>
+          <div>
+            <h3>Flags</h3>
+            <ul class="flags" id="rp-flags"></ul>
+          </div>
+          <div class="score">
+            <h3>Driver score</h3>
+            <div class="score-row"><strong id="rp-score">–</strong><span>out of 100 for this trip</span></div>
+            <div class="meter"><i id="rp-meter" style="width:0"></i></div>
+          </div>
+        </aside>
       </div>
     </div>
   </section>
@@ -779,20 +889,31 @@ footer .coords { margin-left: auto; }
       'sys-gps', 'sys-gal', 'sys-glo', 'sys-bds'].forEach((k) => { C[k] = s.getPropertyValue('--' + k).trim(); });
   }
 
-  /* ---------- Map canvas ---------- */
-  const canvas = $('#map');
-  const ctx = canvas.getContext('2d');
-  const base = document.createElement('canvas');
-  const bctx = base.getContext('2d');
-  let W = 0, H = 0, DPR = 1, S = 1;
-  const P = (x, y) => [W / 2 + (x - 0.5) * KM_W * S, H / 2 + (y - 0.5) * KM_H * S];
-  const inv = (px, py) => [(px - W / 2) / (KM_W * S) + 0.5, (py - H / 2) / (KM_H * S) + 0.5];
+  /* ---------- Map views (the live map and the replay share one renderer) ---------- */
+  function makeView(cv) {
+    const v = { canvas: cv, ctx: cv.getContext('2d'), base: document.createElement('canvas'), W: 1, H: 1, DPR: 1, S: 1 };
+    v.bctx = v.base.getContext('2d');
+    v.P = (x, y) => [v.W / 2 + (x - 0.5) * KM_W * v.S, v.H / 2 + (y - 0.5) * KM_H * v.S];
+    v.inv = (px, py) => [(px - v.W / 2) / (KM_W * v.S) + 0.5, (py - v.H / 2) / (KM_H * v.S) + 0.5];
+    v.fit = () => {
+      const r = cv.parentElement.getBoundingClientRect();
+      v.W = Math.max(1, r.width); v.H = Math.max(1, r.height);
+      v.DPR = Math.min(2, window.devicePixelRatio || 1);
+      for (const c of [cv, v.base]) { c.width = Math.round(v.W * v.DPR); c.height = Math.round(v.H * v.DPR); }
+      cv.style.width = v.W + 'px'; cv.style.height = v.H + 'px';
+      v.S = Math.max(v.W / KM_W, v.H / KM_H);
+      buildBase(v);
+    };
+    return v;
+  }
+  const live = makeView($('#map'));
+  const canvas = live.canvas;
   let showTrails = true, showZones = true;
 
   const MS = { 1: [[3, 2]], 2: [[2, 1]], 3: [[3, 1]], 4: [[0, 1]], 5: [[0, 1], [3, 2]], 6: [[0, 2]], 7: [[0, 3]],
     8: [[0, 3]], 9: [[0, 2]], 10: [[0, 3], [2, 1]], 11: [[0, 1]], 12: [[3, 1]], 13: [[2, 1]], 14: [[3, 2]] };
 
-  function path(g, pts) {
+  function path(g, pts, P) {
     g.beginPath();
     pts.forEach((p, i) => { const [px, py] = P(p[0], p[1]); i ? g.lineTo(px, py) : g.moveTo(px, py); });
   }
@@ -801,9 +922,9 @@ footer .coords { margin-left: auto; }
     return `${d}°${String(m).padStart(2, '0')}′${v >= 0 ? pos : neg}`;
   };
 
-  function buildBase() {
+  function buildBase(view) {
     readColors();
-    const g = bctx;
+    const { bctx: g, W, H, DPR, P, inv, S } = view;
     g.setTransform(DPR, 0, 0, DPR, 0, 0);
     g.fillStyle = C['map-bg'];
     g.fillRect(0, 0, W, H);
@@ -834,7 +955,7 @@ footer .coords { margin-left: auto; }
 
     // River
     g.lineCap = 'round'; g.lineJoin = 'round';
-    path(g, RIVER); g.strokeStyle = C.water; g.lineWidth = Math.max(9, 0.11 * S); g.stroke();
+    path(g, RIVER, P); g.strokeStyle = C.water; g.lineWidth = Math.max(9, 0.11 * S); g.stroke();
 
     // Street grid in the centre, rotated like an old town block
     g.save();
@@ -851,7 +972,7 @@ footer .coords { margin-left: auto; }
     // Roads: casing then fill
     const roads = Object.values(ROUTES);
     for (const pass of [0, 1]) for (const r of roads) {
-      path(g, r.pts);
+      path(g, r.pts, P);
       const w = r.major ? 9 : 6.5;
       g.strokeStyle = pass ? C['map-road'] : C['map-road-edge'];
       g.lineWidth = pass ? w - 3 : w;
@@ -878,15 +999,9 @@ footer .coords { margin-left: auto; }
   }
 
   function resize() {
-    const r = canvas.parentElement.getBoundingClientRect();
-    W = Math.max(1, r.width); H = Math.max(1, r.height);
-    DPR = Math.min(2, window.devicePixelRatio || 1);
-    for (const c of [canvas, base]) { c.width = Math.round(W * DPR); c.height = Math.round(H * DPR); }
-    canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
-    S = Math.max(W / KM_W, H / KM_H);
-    buildBase();
-    const km = S > 140 ? 0.5 : 1;
-    $('#scale-bar').style.width = Math.round(km * S) + 'px';
+    live.fit();
+    const km = live.S > 140 ? 0.5 : 1;
+    $('#scale-bar').style.width = Math.round(km * live.S) + 'px';
     $('#scale-label').textContent = km === 1 ? '1 km' : '500 m';
     draw(performance.now());
   }
@@ -897,6 +1012,7 @@ footer .coords { margin-left: auto; }
   }
 
   function draw(now) {
+    const { ctx, W, H, DPR, P, base, S } = live;
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
     ctx.clearRect(0, 0, W, H);
     ctx.drawImage(base, 0, 0, W, H);
@@ -1058,12 +1174,12 @@ footer .coords { margin-left: auto; }
   canvas.addEventListener('click', (e) => {
     const r = canvas.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
     let best = null, bd = 30;
-    for (const v of FLEET) { const [px, py] = P(v.x, v.y), d = Math.hypot(px - mx, py - my); if (d < bd) { bd = d; best = v; } }
+    for (const v of FLEET) { const [px, py] = live.P(v.x, v.y), d = Math.hypot(px - mx, py - my); if (d < bd) { bd = d; best = v; } }
     if (best) select(best);
   });
   canvas.addEventListener('mousemove', (e) => {
     const r = canvas.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
-    canvas.style.cursor = FLEET.some((v) => { const [px, py] = P(v.x, v.y); return Math.hypot(px - mx, py - my) < 30; }) ? 'pointer' : 'crosshair';
+    canvas.style.cursor = FLEET.some((v) => { const [px, py] = live.P(v.x, v.y); return Math.hypot(px - mx, py - my) < 30; }) ? 'pointer' : 'crosshair';
   });
   const toggle = (id, set) => $(id).addEventListener('click', (e) => {
     const on = e.currentTarget.getAttribute('aria-pressed') !== 'true';
@@ -1178,6 +1294,325 @@ footer .coords { margin-left: auto; }
     renderTerm();
   }));
 
+  /* ---------- Route replay: a recorded trip, generated deterministically ---------- */
+  const replay = (() => {
+    const RT = ROUTES;
+    function nearestD(route, x, y) {
+      let best = 0, bd = Infinity;
+      route.pts.forEach((p, i) => { const d = kmBetween(p[0], p[1], x, y); if (d < bd) { bd = d; best = i; } });
+      return route.cum[best];
+    }
+    function crossD(a, b, hx, hy) {
+      let best = null, bd = Infinity;
+      a.pts.forEach((p, i) => {
+        if (kmBetween(p[0], p[1], hx, hy) > 1.2) return;
+        b.pts.forEach((q, j) => { const d = kmBetween(p[0], p[1], q[0], q[1]); if (d < bd) { bd = d; best = [a.cum[i], b.cum[j]]; } });
+      });
+      return best;
+    }
+    const dDepot = nearestD(RT.ew, 0.8, 0.41);
+    const [ewC, nsC] = crossD(RT.ew, RT.ns, 0.5, 0.5);
+    const [nsBot, ringBot] = crossD(RT.ns, RT.ring, 0.55, 0.86);
+    const [ringL, ewL] = crossD(RT.ring, RT.ew, 0.17, 0.62);
+    const [nsTop, ringTop] = crossD(RT.ns, RT.ring, 0.42, 0.12);
+    const [ringR, ewR] = crossD(RT.ring, RT.ew, 0.84, 0.4);
+    const wrap = (a, b) => (b < a ? b + RT.ring.len : b);
+    const ROAD = { ew: 'East–West Arterial', ns: 'North–South Arterial', ring: 'Ring Road' };
+    const LIMIT = { ew: 42, ns: 38, ring: 54 };
+    const legs = [
+      ['ew', dDepot, ewC], ['ns', nsC, nsBot], ['ring', ringBot, wrap(ringBot, ringL)],
+      ['ew', ewL, ewC], ['ns', nsC, nsTop], ['ring', ringTop, wrap(ringTop, ringR)], ['ew', ewR, dDepot],
+    ];
+
+    // Stitch legs into one path with cumulative distance (km) and the leg each point belongs to.
+    const pts = [], cum = [], legOf = [], legStart = [];
+    legs.forEach(([rk, a, b], li) => {
+      const r = RT[rk], n = Math.max(2, Math.ceil(Math.abs(b - a) / 0.012));
+      legStart.push(cum.length ? cum[cum.length - 1] : 0);
+      for (let k = li ? 1 : 0; k <= n; k++) {
+        const p = pointAt(r, a + (b - a) * k / n);
+        if (pts.length) { const q = pts[pts.length - 1]; cum.push(cum[cum.length - 1] + kmBetween(p.x, p.y, q[0], q[1])); } else cum.push(0);
+        pts.push([p.x, p.y]); legOf.push(li);
+      }
+    });
+    const total = cum[cum.length - 1];
+    const legEnd = (li) => (li + 1 < legStart.length ? legStart[li + 1] : total);
+    function at(s) {
+      s = Math.max(0, Math.min(total, s));
+      let lo = 0, hi = cum.length - 1;
+      while (hi - lo > 1) { const m = (lo + hi) >> 1; if (cum[m] <= s) lo = m; else hi = m; }
+      const t = (s - cum[lo]) / ((cum[hi] - cum[lo]) || 1e-9), a = pts[lo], b = pts[hi];
+      const hx = (b[0] - a[0]) * KM_W, hy = (b[1] - a[1]) * KM_H;
+      return { x: a[0] + (b[0] - a[0]) * t, y: a[1] + (b[1] - a[1]) * t, leg: legOf[lo], heading: (Math.atan2(hx, -hy) * 180 / Math.PI + 360) % 360 };
+    }
+
+    // Planned halts along the path. Deliveries are numbered in the order they happen.
+    const halts = [
+      { s: legStart[1] - 0.01, dwell: 45, kind: 'light', harsh: true },
+      { s: legEnd(1) - 0.05, dwell: 12 * 60, kind: 'stop', name: 'Ulpiana' },
+      { s: legStart[3] + (legEnd(3) - legStart[3]) * 0.45, dwell: 9 * 60, kind: 'stop', name: 'Dardania' },
+      { s: legEnd(3) - 0.01, dwell: 35, kind: 'light' },
+      { s: legStart[5] + (legEnd(5) - legStart[5]) * 0.42, dwell: 15 * 60, kind: 'stop', name: 'Kodra e Diellit', harsh: true },
+      { s: total, dwell: 0, kind: 'end' },
+    ];
+    const school = ZONES[1];
+
+    // Drive it at 1 s resolution, record every 5 s.
+    const rng = (() => { let a = 1186; return () => { a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; })();
+    const ph = [rng() * 6, rng() * 6, rng() * 6];
+    const samples = [], flags = [], stops = [];
+    let s = 0, v = 0, t = 0, hi = 0, dwell = 0, harshFlagged = false, speedFlagged = false;
+    while (t < 20000) {
+      const h = halts[hi];
+      let state = 'drive';
+      if (dwell > 0) { dwell -= 1; v = 0; state = h.kind; if (dwell <= 0) { hi++; harshFlagged = false; } }
+      else {
+        const p = at(s), leg = legs[p.leg][0];
+        const inSchool = kmBetween(p.x, p.y, school.x, school.y) < school.r;
+        let target = LIMIT[leg] * (0.86 + 0.08 * Math.sin(t / 47 + ph[0]) + 0.06 * Math.sin(t / 13 + ph[1]));
+        if (inSchool) target = p.leg === 4 ? 37 : 27;
+        const distM = (h.s - s) * 1000;
+        const dec = h.harsh ? 4.2 : 1.3;
+        const allowed = Math.sqrt(Math.max(0, 2 * dec * distM)) * 3.6;
+        const want = Math.min(target, allowed);
+        const prev = v;
+        v = want > v ? Math.min(want, v + 1.2 * 3.6) : Math.max(want, v - 4.6 * 3.6);
+        if (prev - v > 3.5 * 3.6 && !harshFlagged) { harshFlagged = true; flags.push({ t, s, kind: 'warn', text: `Harsh braking, ${((prev - v) / 3.6 / 9.81).toFixed(2)} g` }); }
+        if (inSchool && v > school.limit + 3 && !speedFlagged) { speedFlagged = true; flags.push({ t, s, kind: 'alert', text: `${Math.round(v)} km/h in school zone` }); }
+        s += v / 3600;
+        if (s >= h.s - 0.002 && v < 12) {
+          s = Math.min(s, h.s); v = 0;
+          if (h.kind === 'end') { samples.push({ t, s, v: 0, state: 'end' }); break; }
+          if (h.kind === 'stop') stops.push({ n: stops.length + 1, name: h.name, t, dwell: h.dwell, s });
+          dwell = h.dwell; state = h.kind;
+        }
+      }
+      if (t % 5 === 0) samples.push({ t, s, v, state, stopN: state === 'stop' ? stops.length : 0 });
+      t += 1;
+    }
+    const duration = samples[samples.length - 1].t;
+    const START = Date.UTC(2026, 9, 13, 7, 40, 0);
+    const clock = (sec) => new Date(START + sec * 1000).toISOString().slice(11, 19);
+    const hhmm = (sec) => clock(sec).slice(0, 5);
+    const sample = (sec) => {
+      const f = Math.max(0, Math.min(samples.length - 1, sec / 5)), i = Math.floor(f), j = Math.min(samples.length - 1, i + 1), k = f - i;
+      const A = samples[i], B = samples[j];
+      return { s: A.s + (B.s - A.s) * k, v: A.v + (B.v - A.v) * k, state: k < 0.5 ? A.state : B.state, stopN: A.stopN || B.stopN };
+    };
+
+    // Summary
+    const drivingSec = samples.filter((x) => x.v > 1).length * 5;
+    const maxV = Math.max(...samples.map((x) => x.v));
+    const fmtDur = (sec) => { const m = Math.round(sec / 60); return m >= 60 ? `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')}` : `${m} min`; };
+    $('#rp-dist').textContent = `${total.toFixed(1)} km`;
+    $('#rp-dur').textContent = fmtDur(duration);
+    $('#rp-drive').textContent = fmtDur(drivingSec);
+    $('#rp-max').textContent = `${Math.round(maxV)} km/h`;
+    $('#rp-stops').innerHTML = stops.map((x) => `<li><button type="button" data-t="${x.t}"><span class="n">${x.n}</span><span>${x.name} · ${Math.round(x.dwell / 60)} min</span><time>${hhmm(x.t)}</time></button></li>`).join('');
+    const ICON = {
+      warn: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M8 2l6.5 11.5h-13z"/><path d="M8 6.5v3.2M8 11.6v.1" stroke-linecap="round"/></svg>',
+      alert: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8" cy="8" r="6.2"/><path d="M8 4.6v4.2M8 10.9v.1" stroke-linecap="round"/></svg>',
+    };
+    $('#rp-flags').innerHTML = flags.map((f) => `<li><button type="button" data-t="${f.t}"><span class="ic ${f.kind}">${ICON[f.kind]}</span><span>${f.text}</span><time>${clock(f.t)}</time></button></li>`).join('');
+    const score = Math.max(0, 100 - flags.filter((f) => f.kind === 'warn').length * 6 - flags.filter((f) => f.kind === 'alert').length * 9);
+    $('#rp-score').textContent = score;
+    $('#rp-meter').style.width = score + '%';
+
+    // Rendering
+    const view = makeView($('#replay-map'));
+    const chart = $('#replay-chart'), cctx = chart.getContext('2d');
+    let cW = 1, cH = 1, cDPR = 1;
+    let tCur = Math.round(duration * 0.38 / 5) * 5, playing = false, rate = 60, started = false;
+    const scrub = $('#rp-scrub');
+    scrub.max = duration; scrub.step = 5;
+    const M = { l: 36, r: 12, t: 28, b: 24 }, VMAX = 60;
+    const cx = (sec) => M.l + (cW - M.l - M.r) * sec / duration;
+    const cy = (kmh) => M.t + (cH - M.t - M.b) * (1 - kmh / VMAX);
+
+    function fitChart() {
+      const r = chart.parentElement.getBoundingClientRect();
+      cW = Math.max(1, r.width); cH = Math.max(1, r.height); cDPR = Math.min(2, window.devicePixelRatio || 1);
+      chart.width = Math.round(cW * cDPR); chart.height = Math.round(cH * cDPR);
+      chart.style.width = cW + 'px'; chart.style.height = cH + 'px';
+    }
+    function drawChart() {
+      const g = cctx;
+      g.setTransform(cDPR, 0, 0, cDPR, 0, 0);
+      g.clearRect(0, 0, cW, cH);
+      g.font = '500 10px "JetBrains Mono", ui-monospace, monospace';
+      // Stop bands
+      for (const st of stops) {
+        const x0 = cx(st.t), x1 = cx(st.t + st.dwell);
+        g.fillStyle = C['accent-soft']; g.fillRect(x0, M.t, x1 - x0, cH - M.t - M.b);
+        g.fillStyle = C.muted; g.textAlign = 'center'; g.fillText(`Stop ${st.n}`, (x0 + x1) / 2, M.t + 12);
+      }
+      // Grid + y labels
+      g.strokeStyle = C.grid; g.lineWidth = 1; g.textAlign = 'right'; g.fillStyle = C.muted;
+      for (const k of [0, 20, 40, 60]) {
+        const y = Math.round(cy(k)) + 0.5;
+        g.beginPath(); g.moveTo(M.l, y); g.lineTo(cW - M.r, y); g.stroke();
+        g.fillText(String(k), M.l - 8, y + 3.5);
+      }
+      g.textAlign = 'left'; g.fillText('km/h', 6, 11);
+      // x ticks every 10 minutes
+      g.textAlign = 'center';
+      const firstTick = 600 - ((7 * 3600 + 40 * 60) % 600);
+      for (let sec = firstTick % 600; sec <= duration; sec += 600) {
+        const x = cx(sec);
+        if (x < M.l + 14 || x > cW - M.r - 14) continue;
+        g.fillText(hhmm(sec), x, cH - 7);
+      }
+      // School zone limit, drawn only where the truck is inside it
+      g.strokeStyle = C.alert; g.setLineDash([3, 3]); g.lineWidth = 1.2;
+      let runStart = null;
+      samples.forEach((x, i) => {
+        const p = at(x.s), inside = kmBetween(p.x, p.y, school.x, school.y) < school.r;
+        if (inside && runStart === null) runStart = x.t;
+        if ((!inside || i === samples.length - 1) && runStart !== null) {
+          g.beginPath(); g.moveTo(cx(runStart), cy(school.limit)); g.lineTo(cx(x.t), cy(school.limit)); g.stroke(); runStart = null;
+        }
+      });
+      g.setLineDash([]);
+      // Speed area + line
+      g.beginPath(); g.moveTo(cx(0), cy(0));
+      samples.forEach((x) => g.lineTo(cx(x.t), cy(x.v)));
+      g.lineTo(cx(duration), cy(0)); g.closePath();
+      g.fillStyle = C['accent-soft']; g.fill();
+      g.beginPath();
+      samples.forEach((x, i) => (i ? g.lineTo(cx(x.t), cy(x.v)) : g.moveTo(cx(x.t), cy(x.v))));
+      g.strokeStyle = C.accent; g.lineWidth = 2; g.lineJoin = 'round'; g.stroke();
+      // Flags
+      for (const f of flags) {
+        const sm = sample(f.t), x = cx(f.t), y = cy(sm.v);
+        g.beginPath(); g.arc(x, y, 5, 0, TAU); g.fillStyle = C[f.kind]; g.fill();
+        g.lineWidth = 2; g.strokeStyle = C.surface; g.stroke();
+      }
+      // Cursor
+      const cur = sample(tCur), x = cx(tCur), y = cy(cur.v);
+      g.strokeStyle = C.ink; g.lineWidth = 1; g.beginPath(); g.moveTo(Math.round(x) + 0.5, M.t); g.lineTo(Math.round(x) + 0.5, cH - M.b); g.stroke();
+      g.beginPath(); g.arc(x, y, 4.5, 0, TAU); g.fillStyle = C.ink; g.fill(); g.lineWidth = 2; g.strokeStyle = C.surface; g.stroke();
+      const label = `${clock(tCur).slice(0, 5)} · ${Math.round(cur.v)} km/h`;
+      g.font = '600 10.5px "JetBrains Mono", ui-monospace, monospace';
+      const tw = g.measureText(label).width + 12, lx = Math.min(Math.max(M.l, x - tw / 2), cW - M.r - tw);
+      roundRect(g, lx, 0, tw, 15, 4); g.fillStyle = C.ink; g.fill();
+      g.fillStyle = C.bg; g.textAlign = 'left'; g.fillText(label, lx + 6, 11);
+    }
+    function drawMap() {
+      const { ctx: g, W, H, DPR, P, base, S } = view;
+      g.setTransform(DPR, 0, 0, DPR, 0, 0);
+      g.clearRect(0, 0, W, H);
+      g.drawImage(base, 0, 0, W, H);
+      for (const z of ZONES) {
+        const [px, py] = P(z.x, z.y);
+        g.beginPath(); g.arc(px, py, z.r * S, 0, TAU);
+        if (z.key === 'accent') { g.fillStyle = C['accent-soft']; g.fill(); }
+        g.setLineDash([5, 4]); g.strokeStyle = C[z.key]; g.lineWidth = 1.4; g.stroke(); g.setLineDash([]);
+      }
+      const cur = sample(tCur);
+      g.lineCap = 'round'; g.lineJoin = 'round';
+      g.beginPath(); pts.forEach((p, i) => { const [px, py] = P(p[0], p[1]); i ? g.lineTo(px, py) : g.moveTo(px, py); });
+      g.setLineDash([2, 6]); g.strokeStyle = C.ink; g.globalAlpha = 0.45; g.lineWidth = 2.5; g.stroke(); g.globalAlpha = 1; g.setLineDash([]);
+      g.beginPath();
+      let started2 = false;
+      for (let i = 0; i < pts.length && cum[i] <= cur.s; i++) { const [px, py] = P(pts[i][0], pts[i][1]); started2 ? g.lineTo(px, py) : g.moveTo(px, py); started2 = true; }
+      const here = at(cur.s), [hx, hy] = P(here.x, here.y);
+      if (started2) { g.lineTo(hx, hy); g.strokeStyle = C.accent; g.lineWidth = 4.5; g.stroke(); }
+      for (const f of flags) {
+        const p = at(f.s), [px, py] = P(p.x, p.y);
+        g.save(); g.translate(px, py); g.rotate(Math.PI / 4);
+        g.fillStyle = C[f.kind]; g.fillRect(-5, -5, 10, 10); g.lineWidth = 2; g.strokeStyle = C.surface; g.strokeRect(-5, -5, 10, 10);
+        g.restore();
+      }
+      g.font = '700 11px "JetBrains Mono", ui-monospace, monospace'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      for (const st of stops) {
+        const p = at(st.s), [px, py] = P(p.x, p.y), done = tCur >= st.t;
+        g.beginPath(); g.arc(px, py, 11, 0, TAU);
+        g.fillStyle = done ? C.ink : C.surface; g.fill(); g.lineWidth = 2; g.strokeStyle = C.ink; g.stroke();
+        g.fillStyle = done ? C.bg : C.ink; g.fillText(String(st.n), px, py + 0.5);
+      }
+      g.textAlign = 'left'; g.textBaseline = 'alphabetic';
+      // Vehicle
+      g.beginPath(); g.arc(hx, hy, 12, 0, TAU); g.fillStyle = C.accent; g.fill(); g.lineWidth = 2.5; g.strokeStyle = C.surface; g.stroke();
+      g.save(); g.translate(hx, hy); g.rotate(here.heading * Math.PI / 180);
+      g.beginPath(); g.moveTo(0, -5.8); g.lineTo(4.4, 4.2); g.lineTo(0, 1.8); g.lineTo(-4.4, 4.2); g.closePath();
+      g.fillStyle = C['on-accent']; g.fill(); g.restore();
+    }
+    function readout() {
+      const cur = sample(tCur), here = at(cur.s);
+      $('#rp-clock').textContent = clock(tCur);
+      $('#rp-speed').textContent = `${Math.round(cur.v)} km/h`;
+      const st = stops.find((x) => tCur >= x.t && tCur <= x.t + x.dwell);
+      $('#rp-state').textContent = st ? `Stop ${st.n} · ${st.name}`
+        : tCur >= duration ? 'Back at depot'
+        : cur.v < 1 && tCur < 10 ? 'Leaving depot'
+        : cur.v < 1 ? 'Waiting at lights'
+        : ROAD[legs[here.leg][0]];
+      scrub.value = tCur;
+      scrub.setAttribute('aria-valuetext', `${clock(tCur)}, ${Math.round(cur.v)} km/h`);
+    }
+    function render() { drawMap(); drawChart(); readout(); }
+    function setPlaying(on) {
+      playing = on;
+      $('#rp-play-icon').setAttribute('d', on ? 'M4 2.5h3v11H4zM9 2.5h3v11H9z' : 'M4 2.5v11l9-5.5z');
+      $('#rp-play-label').textContent = on ? 'Pause' : tCur >= duration ? 'Replay' : 'Play';
+    }
+    $('#rp-play').addEventListener('click', () => {
+      started = true;
+      if (!playing && tCur >= duration) tCur = 0;
+      setPlaying(!playing); render();
+    });
+    scrub.addEventListener('input', () => { started = true; tCur = +scrub.value; setPlaying(false); render(); });
+    document.querySelectorAll('.rate button').forEach((b) => b.addEventListener('click', () => {
+      rate = +b.dataset.rate;
+      document.querySelectorAll('.rate button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+    }));
+    const jump = (e) => { const b = e.target.closest('button[data-t]'); if (!b) return; started = true; tCur = +b.dataset.t; setPlaying(false); render(); };
+    $('#rp-stops').addEventListener('click', jump);
+    $('#rp-flags').addEventListener('click', jump);
+    const wrapEl = $('#rp-chart-wrap');
+    const seek = (e) => {
+      const r = wrapEl.getBoundingClientRect();
+      tCur = Math.round(Math.max(0, Math.min(1, (e.clientX - r.left - M.l) / (r.width - M.l - M.r))) * duration / 5) * 5;
+      started = true; setPlaying(false); render();
+    };
+    wrapEl.addEventListener('pointerdown', (e) => { wrapEl.setPointerCapture(e.pointerId); seek(e); });
+    wrapEl.addEventListener('pointermove', (e) => { if (e.buttons) seek(e); });
+
+    let visible = false;
+    if ('IntersectionObserver' in window) new IntersectionObserver(([en]) => {
+      visible = en.isIntersecting;
+      if (visible && !started && !reduceMotion) { started = true; setPlaying(true); }
+    }, { threshold: 0.35 }).observe(wrapEl.parentElement);
+    new ResizeObserver(() => { view.fit(); fitChart(); render(); }).observe(view.canvas.parentElement);
+
+    return {
+      frame(dt) {
+        if (!playing) return;
+        tCur = Math.min(duration, tCur + dt * rate);
+        if (tCur >= duration) setPlaying(false);
+        if (visible) render();
+      },
+      rebuild() { buildBase(view); render(); },
+    };
+  })();
+
+  /* ---------- Theme switch ---------- */
+  const root = document.documentElement;
+  const isDark = () => root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+  const syncThemeBtn = () => {
+    root.classList.toggle('is-dark', isDark());
+    $('#theme-btn').setAttribute('aria-label', isDark() ? 'Switch to light theme' : 'Switch to dark theme');
+  };
+  try { const saved = localStorage.getItem('lodestar-theme'); if (saved === 'dark' || saved === 'light') root.dataset.theme = saved; } catch (e) { /* storage unavailable */ }
+  syncThemeBtn();
+  $('#theme-btn').addEventListener('click', () => {
+    const next = isDark() ? 'light' : 'dark';
+    root.dataset.theme = next;
+    try { localStorage.setItem('lodestar-theme', next); } catch (e) { /* storage unavailable */ }
+    syncThemeBtn();
+  });
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', syncThemeBtn);
+
   /* ---------- Demo form ---------- */
   $('#demo-form').addEventListener('submit', (e) => {
     e.preventDefault();
@@ -1195,6 +1630,7 @@ footer .coords { margin-left: auto; }
       FLEET.forEach((v) => stepVehicle(v, dt));
       if (mapVisible) draw(now);
     }
+    replay.frame(dt);
     panelAcc += dt; acc += dt;
     if (panelAcc > 0.25) { panelAcc = 0; renderPanel(); }
     if (acc >= 1) {
@@ -1214,9 +1650,9 @@ footer .coords { margin-left: auto; }
 
   new ResizeObserver(() => resize()).observe(canvas.parentElement);
   if ('IntersectionObserver' in window) new IntersectionObserver(([en]) => { mapVisible = en.isIntersecting; }).observe(canvas);
-  const rethemed = () => { buildBase(); draw(performance.now()); };
+  const rethemed = () => { buildBase(live); draw(performance.now()); replay.rebuild(); };
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', rethemed);
-  new MutationObserver(rethemed).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  new MutationObserver(() => { rethemed(); syncThemeBtn(); }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(rethemed);
 
   $('#clock').textContent = utc() + ' UTC';
