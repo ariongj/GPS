@@ -1,0 +1,1637 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lodestar GPS</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Lodestar puts your whole fleet on one live map, accurate to 1.5 metres.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: an Apple-style product page. Centred statements over generous white space, alternating
+   white / light-grey / black bands, with the live map shown inside a studio display.
+   Deliberately a single light look with one black band, so colours are set explicitly. */
+:root {
+  --white: #FFFFFF;
+  --grey-bg: #F5F5F7;
+  --ink: #1D1D1F;
+  --muted: #6E6E73;
+  --faint: #86868B;
+  --line: #D2D2D7;
+  --blue: #0071E3;
+  --link: #0066CC;
+  --black: #000000;
+  --dark-ink: #F5F5F7;
+  --dark-muted: #A1A1A6;
+  --green: #34C759;
+  --orange: #FF9F0A;
+  --red: #FF3B30;
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter Tight", "Helvetica Neue", Arial, sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--white);
+  color: var(--ink);
+  font: 400 17px/1.47 var(--font);
+  letter-spacing: -.012em;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+a { color: var(--link); text-decoration: none; }
+a:hover { text-decoration: underline; }
+:focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; border-radius: 6px; }
+h1, h2, h3 { margin: 0; text-wrap: balance; font-weight: 700; }
+p { margin: 0; }
+.wrap {
+  max-width: 1120px;
+  margin-inline: auto;
+  padding-left: max(22px, env(safe-area-inset-left, 0px));
+  padding-right: max(22px, env(safe-area-inset-right, 0px));
+}
+.center { text-align: center; }
+.band { padding-block: clamp(5rem, 11vw, 8.5rem); }
+.band.grey { background: rgba(245, 245, 247, .86); }
+.eyebrow { font-size: clamp(1.05rem, 1.6vw, 1.3rem); font-weight: 600; color: var(--muted); margin-bottom: .6rem; letter-spacing: -.01em; }
+.h-xl { font-size: clamp(3rem, 8.4vw, 6rem); line-height: 1.02; letter-spacing: -.045em; }
+.h-lg { font-size: clamp(2.4rem, 5.6vw, 4rem); line-height: 1.05; letter-spacing: -.04em; }
+.h-md { font-size: clamp(1.6rem, 3vw, 2.1rem); line-height: 1.12; letter-spacing: -.028em; }
+.sub { font-size: clamp(1.15rem, 2vw, 1.5rem); line-height: 1.38; color: var(--muted); font-weight: 500; letter-spacing: -.02em; max-width: 34em; }
+.center .sub { margin-inline: auto; }
+.links { display: flex; justify-content: center; flex-wrap: wrap; gap: 1rem 2.2rem; margin-top: 1.6rem; font-size: clamp(1.05rem, 1.6vw, 1.2rem); }
+.links a::after { content: " ›"; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: .4rem; border: 0; border-radius: 980px; padding: .75rem 1.4rem; font: 500 1.02rem/1 var(--font); letter-spacing: -.01em; cursor: pointer; text-decoration: none !important; }
+.btn-blue { background: var(--blue); color: #fff; }
+.btn-blue:hover { background: #0077ED; }
+
+/* ---------- Nav ---------- */
+.nav {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 50;
+  background: rgba(255, 255, 255, .78);
+  backdrop-filter: saturate(1.8) blur(20px);
+  -webkit-backdrop-filter: saturate(1.8) blur(20px);
+  border-bottom: 1px solid rgba(0, 0, 0, .08);
+}
+.nav .wrap { display: flex; align-items: center; gap: 2rem; height: 52px; }
+.logo { display: inline-flex; align-items: center; gap: .5rem; color: var(--ink); font-weight: 600; font-size: 1.05rem; letter-spacing: -.02em; text-decoration: none !important; }
+.logo svg { width: 22px; height: 22px; }
+.nav-links { display: flex; gap: 1.9rem; margin-left: auto; font-size: .82rem; }
+.nav-links a { color: var(--ink); opacity: .82; }
+.nav-links a:hover { opacity: 1; text-decoration: none; }
+.nav .btn { padding: .45rem .95rem; font-size: .82rem; }
+@media (max-width: 760px) { .nav-links { display: none; } .lang { margin-left: auto; } .nav .wrap { gap: .6rem; } }
+.nav .btn { white-space: nowrap; }
+@media (max-width: 400px) { .nav .btn { padding: .45rem .7rem; font-size: .76rem; } .logo { font-size: .98rem; } }
+.lang { display: inline-grid; grid-template-columns: 1fr 1fr; background: rgba(118, 118, 128, .12); border-radius: 980px; padding: 2px; }
+.lang button { border: 0; background: transparent; border-radius: 980px; padding: .32rem .62rem; font: 600 .72rem/1 var(--font); letter-spacing: .02em; color: var(--muted); cursor: pointer; }
+.lang button[aria-pressed="true"] { background: #fff; color: var(--ink); box-shadow: 0 1px 3px rgba(0, 0, 0, .15); }
+#gps-bg { position: fixed; top: 0; left: 0; z-index: 0; pointer-events: none; }
+main, footer { position: relative; z-index: 1; }
+main[id], section[id] { scroll-margin-top: 56px; }
+.rail { position: fixed; right: max(20px, env(safe-area-inset-right, 0px)); top: 20vh; bottom: 20vh; width: 16px; z-index: 40; }
+.rail-line { position: absolute; left: 7px; top: 0; bottom: 0; width: 2px; background: repeating-linear-gradient(to bottom, rgba(0, 0, 0, .2) 0 4px, transparent 4px 9px); }
+.rail-done { position: absolute; left: 0; top: 0; width: 2px; height: 0; background: var(--blue); border-radius: 2px; }
+.rail .wp { position: absolute; left: 2px; width: 12px; height: 12px; margin-top: -6px; padding: 0; border-radius: 50%; background: #fff; border: 2px solid #C7C7CC; cursor: pointer; transition: border-color .3s, transform .2s; }
+.rail .wp:hover { transform: scale(1.25); }
+.rail .wp.passed { border-color: var(--blue); }
+.rail .wp::after { content: attr(data-label); position: absolute; right: 22px; top: 50%; transform: translateY(-50%); white-space: nowrap; font: 600 .72rem/1 var(--font); color: var(--ink); background: rgba(255, 255, 255, .94); padding: .35rem .6rem; border-radius: 980px; box-shadow: 0 2px 8px rgba(0, 0, 0, .14); opacity: 0; pointer-events: none; transition: opacity .2s; }
+.rail .wp:hover::after, .rail .wp:focus-visible::after { opacity: 1; }
+.rail-car { position: absolute; left: -2px; width: 20px; height: 20px; margin-top: -10px; border-radius: 50%; background: var(--blue); border: 3px solid #fff; box-shadow: 0 0 0 5px rgba(0, 113, 227, .18), 0 2px 8px rgba(0, 0, 0, .25); pointer-events: none; }
+.rail-car::before { content: ""; position: absolute; inset: -9px; border-radius: 50%; border: 2px solid rgba(0, 113, 227, .45); animation: railping 2s ease-out infinite; }
+@keyframes railping { from { transform: scale(.6); opacity: 1; } to { transform: scale(1.6); opacity: 0; } }
+.rail-car span { position: absolute; right: 30px; top: 50%; transform: translateY(-50%); white-space: nowrap; font: 600 .72rem/1 var(--font); color: #fff; background: var(--blue); padding: .38rem .7rem; border-radius: 980px; box-shadow: 0 2px 8px rgba(0, 0, 0, .2); }
+@media (max-width: 1180px) { .rail { display: none; } }
+@media (max-width: 1500px) { .rail-car span { display: none; } }
+
+/* ---------- Hero ---------- */
+.hero { position: relative; overflow: hidden; padding-block: clamp(3.5rem, 8vw, 6rem) clamp(4rem, 8vw, 6rem); }
+.hero > .wrap { position: relative; z-index: 1; }
+.hero .sub { margin-top: 1.2rem; }
+
+.display { max-width: 1080px; margin: clamp(2.75rem, 6vw, 4.5rem) auto 0; }
+.bezel { background: #1D1D1F; border-radius: 24px; padding: clamp(7px, 1.1vw, 13px); box-shadow: 0 50px 90px -40px rgba(0, 0, 0, .45), inset 0 0 0 1px #3A3A3C; }
+.screen { position: relative; aspect-ratio: 16 / 10; border-radius: 12px; overflow: hidden; background: #F2F0EB; isolation: isolate; }
+.screen canvas { position: absolute; inset: 0; display: block; cursor: default; }
+.stand { width: 24%; height: clamp(34px, 6vw, 70px); margin: 0 auto; background: linear-gradient(180deg, #BDBDC2, #D9D9DE 40%, #C7C7CC); clip-path: polygon(8% 0, 92% 0, 100% 100%, 0 100%); }
+.foot { width: 32%; height: 7px; margin: 0 auto; border-radius: 0 0 6px 6px; background: linear-gradient(180deg, #C7C7CC, #A9A9AE); }
+
+.glass {
+  background: rgba(255, 255, 255, .74);
+  backdrop-filter: blur(22px) saturate(1.8);
+  -webkit-backdrop-filter: blur(22px) saturate(1.8);
+  border: 1px solid rgba(0, 0, 0, .06);
+  border-radius: 14px;
+  box-shadow: 0 8px 28px -10px rgba(0, 0, 0, .25);
+}
+.side { position: absolute; top: 14px; left: 14px; bottom: 14px; width: 262px; display: flex; flex-direction: column; padding: 14px 10px 10px; text-align: left; }
+.side-head { padding: 0 6px 10px; }
+.side-head strong { display: block; font-size: 1.15rem; letter-spacing: -.025em; }
+.side-head span { font-size: .78rem; color: var(--muted); }
+.seg { display: grid; grid-template-columns: repeat(3, 1fr); background: rgba(118, 118, 128, .14); border-radius: 9px; padding: 2px; margin: 0 4px 10px; }
+.seg button { border: 0; background: transparent; border-radius: 7px; padding: .32rem 0; font: 500 .74rem/1.2 var(--font); color: var(--ink); cursor: pointer; }
+.seg button[aria-pressed="true"] { background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, .14); font-weight: 600; }
+.vlist { list-style: none; margin: 0; padding: 0; overflow-y: auto; display: grid; gap: 2px; align-content: start; }
+.vlist button { width: 100%; display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; gap: .65rem; align-items: center; border: 0; background: transparent; border-radius: 9px; padding: .45rem .5rem; text-align: left; font: inherit; color: var(--ink); cursor: pointer; }
+.vlist button:hover { background: rgba(0, 0, 0, .04); }
+.vlist button[aria-current="true"] { background: rgba(0, 113, 227, .12); }
+.vicon { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; color: #fff; background: var(--blue); }
+.vicon.stopped { background: var(--orange); }
+.vicon svg { width: 17px; height: 17px; }
+.vname { font-size: .86rem; font-weight: 600; letter-spacing: -.015em; display: block; }
+.vsub { font-size: .74rem; color: var(--muted); display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vmeta { font-size: .74rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.vempty { font-size: .8rem; color: var(--muted); padding: .5rem; }
+
+.vcard { position: absolute; right: 14px; bottom: 14px; width: 300px; padding: 16px 18px; text-align: left; }
+.vcard-top { display: flex; align-items: center; gap: .7rem; }
+.vcard-top .vicon { width: 38px; height: 38px; }
+.vcard-name { font-size: 1.08rem; font-weight: 700; letter-spacing: -.025em; line-height: 1.2; }
+.vcard-status { font-size: .8rem; color: var(--muted); }
+.vstats { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; margin-top: .9rem; padding-top: .8rem; border-top: 1px solid rgba(0, 0, 0, .08); }
+.vstats dt { font-size: .68rem; color: var(--muted); font-weight: 500; }
+.vstats dd { margin: .1rem 0 0; font-size: 1.02rem; font-weight: 600; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.vstats dd small { font-size: .72rem; font-weight: 500; color: var(--muted); }
+.live-pill { position: absolute; top: 14px; right: 14px; display: inline-flex; align-items: center; gap: .45rem; padding: .4rem .75rem; border-radius: 980px; font-size: .74rem; font-weight: 600; }
+.live-pill i { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 3px rgba(52, 199, 89, .25); }
+.display-note { margin-top: 1.2rem; font-size: .8rem; color: var(--faint); }
+
+@media (max-width: 760px) {
+  .screen { aspect-ratio: 4 / 5; }
+  .side { display: none; }
+  .vcard { left: 10px; right: 10px; bottom: 10px; width: auto; padding: 14px; }
+  .live-pill { top: 10px; right: 10px; }
+  .bezel { border-radius: 18px; }
+}
+
+/* ---------- Numbers ---------- */
+.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2rem; margin-top: clamp(3rem, 6vw, 4.5rem); }
+.stat-num { font-size: clamp(3.4rem, 8vw, 6.2rem); font-weight: 700; letter-spacing: -.05em; line-height: 1; font-variant-numeric: tabular-nums;
+  background: linear-gradient(180deg, #1D1D1F 30%, #5B5B60); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.stat-num small { font-size: .42em; letter-spacing: -.02em; }
+.stat-cap { margin-top: .7rem; color: var(--muted); font-size: 1.02rem; max-width: 18em; margin-inline: auto; }
+@media (max-width: 680px) { .stats { grid-template-columns: 1fr; gap: 2.6rem; } }
+
+/* ---------- Bento ---------- */
+.bento { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; margin-top: clamp(3rem, 6vw, 4.5rem); text-align: left; }
+.tile { background: var(--white); border-radius: 28px; padding: clamp(1.6rem, 3vw, 2.3rem); display: flex; flex-direction: column; gap: 1.4rem; min-width: 0; overflow: hidden; }
+.tile.span2 { grid-column: span 2; }
+.tile.span3 { grid-column: 1 / -1; }
+.tile h3 { font-size: clamp(1.45rem, 2.4vw, 1.8rem); letter-spacing: -.03em; line-height: 1.12; }
+.tile h3 span { color: var(--muted); }
+.tile .vis { margin-top: auto; }
+.tile svg.art { width: 100%; height: auto; display: block; }
+.notes { display: grid; gap: 10px; }
+.note { display: grid; grid-template-columns: 34px 1fr; gap: .7rem; background: rgba(245, 245, 247, .9); border-radius: 16px; padding: .75rem .85rem; }
+.note-icon { width: 34px; height: 34px; border-radius: 9px; background: #1D1D1F; display: grid; place-items: center; }
+.note-icon svg { width: 20px; height: 20px; }
+.note-top { display: flex; justify-content: space-between; font-size: .68rem; color: var(--faint); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+.note-title { font-size: .86rem; font-weight: 600; letter-spacing: -.015em; margin-top: .1rem; }
+.note-body { font-size: .8rem; color: var(--muted); }
+.note:nth-child(2) { transform: scale(.97); opacity: .9; }
+.note:nth-child(3) { transform: scale(.94); opacity: .75; }
+.bars { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; align-items: end; height: 160px; }
+.bars div { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 6px; height: 100%; }
+.bars i { display: block; width: 100%; max-width: 26px; border-radius: 6px 6px 3px 3px; background: #C9DDF5; }
+.bars div:last-child i { background: var(--blue); }
+.bars b { font-size: .7rem; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
+.bars span { font-size: .7rem; color: var(--faint); }
+.bar-cap { font-size: .76rem; color: var(--faint); margin-top: .6rem; }
+.pills { display: flex; flex-wrap: wrap; gap: 10px; }
+.pills span { padding: .6rem 1rem; border-radius: 980px; background: var(--grey-bg); font-size: .9rem; font-weight: 500; }
+.tile-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 2rem; align-items: center; }
+@media (max-width: 900px) { .bento { grid-template-columns: 1fr 1fr; } .tile.span2 { grid-column: 1 / -1; } }
+@media (max-width: 640px) { .bento { grid-template-columns: 1fr; } .tile-row { grid-template-columns: 1fr; } }
+
+/* ---------- Dark product band ---------- */
+.dark { background: var(--black); color: var(--dark-ink); }
+.dark .eyebrow { color: #FF9F45; }
+.dark .sub { color: var(--dark-muted); }
+.device { max-width: 640px; margin: clamp(2.5rem, 6vw, 4rem) auto 0; }
+.device svg { width: 100%; height: auto; display: block; }
+.led { animation: led 2.4s ease-in-out infinite; transform-origin: 462px 104px; }
+@keyframes led { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
+.specs { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 2rem 1.5rem; margin-top: clamp(2.5rem, 6vw, 4rem); padding-top: 2.4rem; border-top: 1px solid #2C2C2E; }
+.specs div { min-width: 0; }
+.specs dt { font-size: clamp(1.25rem, 2.2vw, 1.7rem); font-weight: 700; letter-spacing: -.03em; color: var(--dark-ink); font-variant-numeric: tabular-nums; }
+.specs dd { margin: .35rem 0 0; font-size: .86rem; color: var(--dark-muted); }
+@media (max-width: 900px) { .specs { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 480px) { .specs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* ---------- Phone ---------- */
+.app-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: clamp(2rem, 6vw, 6rem); align-items: center; }
+.app-row .sub { margin-top: 1.2rem; }
+.checks { list-style: none; margin: 2rem 0 0; padding: 0; display: grid; gap: .9rem; font-size: 1.02rem; }
+.checks li { display: grid; grid-template-columns: 24px 1fr; gap: .7rem; }
+.checks svg { width: 22px; height: 22px; color: var(--blue); margin-top: .1rem; }
+.phone { width: 300px; max-width: 100%; background: #1D1D1F; border-radius: 52px; padding: 11px; box-shadow: 0 50px 90px -40px rgba(0, 0, 0, .45), inset 0 0 0 1px #3A3A3C; }
+.phone-screen { position: relative; aspect-ratio: 9 / 19.2; background: #F2F2F7; border-radius: 42px; overflow: hidden; padding: 14px 16px 0; text-align: left; }
+.island { position: absolute; top: 10px; left: 50%; width: 92px; height: 27px; margin-left: -46px; background: #000; border-radius: 20px; }
+.statusbar { display: flex; justify-content: space-between; align-items: center; height: 26px; padding: 0 10px; font-size: .8rem; font-weight: 600; }
+.statusbar svg { width: 44px; height: 12px; }
+.app-title { font-size: 1.9rem; font-weight: 700; letter-spacing: -.035em; margin: 18px 4px 10px; }
+.phone .seg { margin: 0 0 12px; }
+.ios-list { list-style: none; margin: 0; padding: 0; background: #fff; border-radius: 12px; overflow: hidden; }
+.ios-list li { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; gap: .6rem; align-items: center; padding: .55rem .7rem; position: relative; }
+.ios-list li + li::before { content: ""; position: absolute; top: 0; left: 50px; right: 0; height: 1px; background: #E5E5EA; }
+.ios-list .vicon { width: 30px; height: 30px; }
+.ios-list .vicon svg { width: 16px; height: 16px; }
+.ios-list .vname { font-size: .82rem; }
+.ios-list .vsub { font-size: .7rem; }
+.ios-list .vmeta { font-size: .7rem; }
+.ios-foot { margin: 12px 4px 0; font-size: .7rem; color: var(--faint); }
+@media (max-width: 820px) { .app-row { grid-template-columns: 1fr; justify-items: center; text-align: center; } .app-row .sub { margin-inline: auto; } .checks { justify-items: start; text-align: left; max-width: 26em; margin-inline: auto; } }
+
+/* ---------- Steps ---------- */
+.steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; margin-top: clamp(3rem, 6vw, 4.5rem); text-align: left; }
+.step { background: var(--white); border-radius: 28px; padding: clamp(1.6rem, 3vw, 2.2rem); }
+.step-n { font-size: 3.4rem; font-weight: 700; letter-spacing: -.05em; line-height: 1; color: #D2D2D7; }
+.step h3 { font-size: 1.4rem; letter-spacing: -.03em; margin-top: 1.6rem; }
+.step p { color: var(--muted); margin-top: .5rem; }
+@media (max-width: 800px) { .steps { grid-template-columns: 1fr; } }
+
+/* ---------- Pricing ---------- */
+.plans { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; max-width: 860px; margin: clamp(3rem, 6vw, 4.5rem) auto 0; text-align: left; }
+.plan { border: 1px solid var(--line); border-radius: 28px; padding: clamp(1.75rem, 3vw, 2.5rem); display: flex; flex-direction: column; gap: 1.2rem; }
+.plan h3 { font-size: 1.5rem; letter-spacing: -.03em; }
+.plan .price { font-size: 3rem; font-weight: 700; letter-spacing: -.05em; line-height: 1; }
+.plan .price small { font-size: .95rem; font-weight: 500; letter-spacing: -.01em; color: var(--muted); }
+.plan ul { list-style: none; margin: 0; padding: 1.2rem 0 0; border-top: 1px solid var(--line); display: grid; gap: .7rem; flex: 1; }
+.plan li { display: grid; grid-template-columns: 20px 1fr; gap: .6rem; font-size: .98rem; }
+.plan li svg { width: 18px; height: 18px; color: var(--blue); margin-top: .2rem; }
+.plan .btn { align-self: flex-start; }
+.btn-line { background: transparent; color: var(--blue); box-shadow: inset 0 0 0 1px var(--blue); }
+.btn-line:hover { background: rgba(0, 113, 227, .06); }
+.plan-note { margin-top: 1.6rem; font-size: .9rem; color: var(--muted); }
+@media (max-width: 720px) { .plans { grid-template-columns: 1fr; } }
+
+/* ---------- CTA ---------- */
+.cta-form { display: flex; gap: 10px; max-width: 520px; margin: 2.2rem auto 0; }
+.cta-form input { flex: 1; min-width: 0; padding: .85rem 1.2rem; border-radius: 980px; border: 1px solid var(--line); background: #fff; color: var(--ink); font: inherit; font-size: 1rem; }
+.cta-form input:focus { border-color: var(--blue); outline: none; box-shadow: 0 0 0 4px rgba(0, 113, 227, .18); }
+.cta-msg { min-height: 1.5em; margin-top: 1rem; font-size: .92rem; color: var(--muted); }
+.cta-msg.ok { color: #1E8E3E; }
+.cta-msg.err { color: #D70015; }
+@media (max-width: 520px) { .cta-form { flex-direction: column; } }
+
+/* ---------- Footer ---------- */
+footer { background: var(--grey-bg); border-top: 1px solid var(--line); padding-block: 2.2rem 2.6rem; font-size: .76rem; color: var(--muted); }
+.foot-cols { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.5rem; padding-bottom: 1.6rem; border-bottom: 1px solid var(--line); }
+.foot-cols h4 { margin: 0 0 .6rem; font-size: .76rem; font-weight: 600; color: var(--ink); }
+.foot-cols ul { list-style: none; margin: 0; padding: 0; display: grid; gap: .45rem; }
+.foot-cols a { color: var(--muted); }
+.foot-cols a:hover { color: var(--ink); }
+.foot-base { display: flex; flex-wrap: wrap; gap: .5rem 1.5rem; padding-top: 1.2rem; }
+.foot-base span:last-child { margin-left: auto; }
+@media (max-width: 700px) { .foot-cols { grid-template-columns: 1fr 1fr; } .foot-base span:last-child { margin-left: 0; } }
+
+/* ---------- Interactive polish ---------- */
+.show-all { position: absolute; top: 14px; left: 290px; display: inline-flex; align-items: center; gap: .4rem; padding: .45rem .85rem; border-radius: 980px; border: 1px solid rgba(0, 0, 0, .06); font: 600 .76rem/1 var(--font); color: var(--link); cursor: pointer; }
+.show-all svg { width: 13px; height: 13px; }
+@media (max-width: 760px) { .show-all { left: 10px; top: 10px; } }
+.nav-links a[aria-current="true"] { opacity: 1; font-weight: 600; }
+.reveal { transform: translateY(32px); transition: transform 1s cubic-bezier(.16, .8, .24, 1); }
+.reveal.in { transform: none; }
+.tile-ctrl { display: flex; align-items: center; gap: .8rem; margin-top: 1rem; }
+.tile-ctrl input[type="range"], .field-row input[type="range"] { flex: 1; min-width: 0; accent-color: var(--blue); }
+.play-btn { flex: none; width: 38px; height: 38px; border-radius: 50%; border: 0; background: var(--ink); color: #fff; display: grid; place-items: center; cursor: pointer; }
+.play-btn:hover { background: #3A3A3C; }
+.play-btn svg { width: 13px; height: 13px; }
+.readout { font-size: .84rem; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.readout b { color: var(--ink); font-weight: 600; }
+.tile .seg { margin: 0; max-width: 280px; }
+.rings .seg { width: 100%; }
+.tile .seg.two { grid-template-columns: repeat(2, 1fr); }
+.notes .note.new { animation: notein .55s cubic-bezier(.2, .8, .2, 1); }
+@keyframes notein { from { transform: translateY(-16px) scale(.97); opacity: .2; } to { transform: none; opacity: 1; } }
+.zone-chip { display: inline-flex; align-items: center; gap: .45rem; padding: .42rem .8rem; border-radius: 980px; background: var(--grey-bg); font-size: .8rem; font-weight: 600; color: var(--muted); transition: background .3s, color .3s; }
+.zone-chip i { width: 8px; height: 8px; border-radius: 50%; background: #AEAEB2; transition: background .3s; }
+.zone-chip.in { background: rgba(0, 113, 227, .1); color: var(--blue); }
+.zone-chip.in i { background: var(--blue); }
+.field-row { display: flex; align-items: center; gap: .8rem; margin-top: .9rem; font-size: .82rem; color: var(--muted); }
+.field-row output { min-width: 3.6em; text-align: right; color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+#gf-zone { transition: fill .3s; }
+.rings { display: grid; justify-items: center; gap: 1.1rem; }
+.ring-wrap { position: relative; width: 156px; height: 156px; }
+.ring-wrap svg { width: 156px; height: 156px; }
+.ring-wrap svg circle.p { transition: stroke-dasharray .9s cubic-bezier(.2, .8, .2, 1); }
+.ring-score { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+.ring-score b { font-size: 1.7rem; letter-spacing: -.04em; line-height: 1; font-variant-numeric: tabular-nums; }
+.ring-score span { font-size: .66rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
+.ring-legend { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; width: 100%; text-align: center; }
+.ring-legend li { display: grid; gap: .1rem; justify-items: center; }
+.ring-legend b { font-size: 1.05rem; letter-spacing: -.02em; font-variant-numeric: tabular-nums; display: inline-flex; align-items: center; gap: .35rem; }
+.ring-legend b::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--c); }
+.ring-legend span { font-size: .74rem; color: var(--muted); line-height: 1.25; }
+.bars i { transition: height .7s cubic-bezier(.2, .8, .2, 1), background .3s; }
+.bars div { cursor: default; }
+.bars div:hover i, .bars div:focus-visible i { background: #8DBBEE; }
+.bars div:last-child:hover i { background: #0062C4; }
+.pills button { padding: .6rem 1rem; border-radius: 980px; border: 0; background: var(--grey-bg); font: 500 .9rem/1.2 var(--font); color: var(--ink); cursor: pointer; transition: background .2s, color .2s; }
+.pills button:hover { background: #E8E8ED; }
+.pills button[aria-pressed="true"] { background: var(--ink); color: #fff; }
+.snippet { margin: 1.4rem 0 0; background: #1D1D1F; color: #F5F5F7; border-radius: 18px; padding: 1.1rem 1.3rem; font: 500 .8rem/1.65 ui-monospace, "SF Mono", Menlo, Consolas, monospace; white-space: pre; overflow-x: auto; text-align: left; min-height: 8.5em; }
+.snippet .c { color: #8E8E93; }
+.snippet .k { color: #FF9F45; }
+.snippet .s { color: #8FD9A8; }
+.snippet .n { color: #7CC0F5; }
+.device { position: relative; }
+.hotspot { position: absolute; width: 34px; height: 34px; margin: -17px 0 0 -17px; border-radius: 50%; border: 0; padding: 0; background: rgba(255, 255, 255, .12); cursor: pointer; display: grid; place-items: center; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+.hotspot::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: #fff; animation: ping 2.2s ease-out infinite; }
+.hotspot[aria-pressed="true"] { background: rgba(255, 159, 69, .25); }
+.hotspot[aria-pressed="true"]::before { background: #FF9F45; }
+@keyframes ping { 0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, .55); } 100% { box-shadow: 0 0 0 12px rgba(255, 255, 255, 0); } }
+.hot-cap { max-width: 34em; margin: 1.6rem auto 0; min-height: 3.4em; font-size: 1.02rem; color: var(--dark-muted); }
+.hot-cap b { color: var(--dark-ink); }
+.calc { max-width: 860px; margin: 1.5rem auto 0; border-radius: 28px; background: var(--grey-bg); padding: clamp(1.5rem, 3vw, 2.2rem); text-align: left; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 1.5rem 2.5rem; align-items: center; }
+.calc label { font-weight: 600; font-size: 1.05rem; letter-spacing: -.02em; }
+.calc .field-row { margin-top: .8rem; }
+.calc .field-row output { font-size: 1.05rem; }
+.calc-out { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin: 0; }
+.calc-out dt { font-size: .78rem; color: var(--muted); }
+.calc-out dd { margin: .2rem 0 0; font-size: clamp(1.3rem, 2.4vw, 1.75rem); font-weight: 700; letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
+@media (max-width: 720px) { .calc { grid-template-columns: 1fr; } }
+.faq { max-width: 820px; margin: clamp(2.5rem, 5vw, 3.5rem) auto 0; text-align: left; border-top: 1px solid var(--line); }
+.faq details { border-bottom: 1px solid var(--line); }
+.faq summary { list-style: none; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 1.35rem 0; font-size: clamp(1.05rem, 1.8vw, 1.25rem); font-weight: 600; letter-spacing: -.02em; }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after { content: "+"; font-size: 1.6rem; font-weight: 300; color: var(--muted); transition: transform .3s; line-height: 1; }
+.faq details[open] summary::after { transform: rotate(45deg); }
+.faq details p { padding: 0 0 1.4rem; color: var(--muted); max-width: 44em; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  html { scroll-behavior: auto; }
+}
+</style>
+</head>
+<body>
+<canvas id="gps-bg" aria-hidden="true"></canvas>
+<nav class="rail" id="rail" aria-label="Page route"><div class="rail-line"><div class="rail-done" id="rail-done"></div></div><div class="rail-car" id="rail-car"><span id="rail-label">Start</span></div></nav>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="logo" href="#top" aria-label="Lodestar home">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10.5" fill="#1D1D1F"/><circle cx="12" cy="12" r="5.6" fill="none" stroke="#fff" stroke-width="1.4"/><path d="M12 3.6v3M12 17.4v3M3.6 12h3M17.4 12h3" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/><circle cx="12" cy="12" r="1.9" fill="#FF9F0A"/></svg>
+      Lodestar
+    </a>
+    <nav class="nav-links" aria-label="Main">
+      <a href="#features">Features</a>
+      <a href="#tracker">Tracker</a>
+      <a href="#app">App</a>
+      <a href="#how">How it works</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+    <div class="lang" role="group" aria-label="Language"><button type="button" data-lang="en" aria-pressed="true">EN</button><button type="button" data-lang="sq" aria-pressed="false" lang="sq">SQ</button></div>
+    <a class="btn btn-blue" href="#demo">Book a demo</a>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero center">
+    <div class="wrap">
+      <p class="eyebrow">Lodestar Fleet</p>
+      <h1 class="h-xl">Every vehicle.<br>Every second.</h1>
+      <p class="sub">Your whole fleet on one live map, accurate to a metre and a half. Set up in an afternoon.</p>
+      <div class="links"><a href="#demo">Book a demo</a><a href="#how">See how it works</a></div>
+
+      <div class="display">
+        <div class="bezel">
+          <div class="screen" id="screen">
+            <canvas id="map" role="img" aria-label="Live map of six vehicles moving around Prishtina"></canvas>
+            <div class="side glass" aria-label="Fleet list">
+              <div class="side-head"><strong>Fleet</strong><span id="side-count">6 vehicles</span></div>
+              <div class="seg" role="group" aria-label="Filter vehicles">
+                <button type="button" data-f="all" aria-pressed="true">All</button>
+                <button type="button" data-f="moving" aria-pressed="false">Moving</button>
+                <button type="button" data-f="stopped" aria-pressed="false">Stopped</button>
+              </div>
+              <ul class="vlist" id="vlist"></ul>
+              <p class="vempty" id="vempty" hidden>No vehicles in this view.</p>
+            </div>
+            <div class="live-pill glass"><i></i><span id="clock">Live</span></div>
+            <button class="show-all glass" id="show-all" type="button" hidden><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M1.5 5V1.5H5M9 1.5h3.5V5M12.5 9v3.5H9M5 12.5H1.5V9"/></svg>Show all vehicles</button>
+            <div class="vcard glass" aria-live="polite">
+              <div class="vcard-top">
+                <span class="vicon" id="c-icon"></span>
+                <div><div class="vcard-name" id="c-name">Van 204</div><div class="vcard-status" id="c-status">Driving</div></div>
+              </div>
+              <dl class="vstats">
+                <div><dt>Speed</dt><dd id="c-speed">–</dd></div>
+                <div><dt>Today</dt><dd id="c-today">–</dd></div>
+                <div><dt>Fuel</dt><dd id="c-fuel">–</dd></div>
+              </dl>
+            </div>
+          </div>
+        </div>
+        <div class="stand"></div>
+        <div class="foot"></div>
+      </div>
+      <p class="display-note">Live demonstration with simulated vehicles. Select a vehicle on the map or in the list to follow it.</p>
+    </div>
+  </section>
+
+  <section class="band center" style="padding-top:clamp(2rem,5vw,3.5rem)">
+    <div class="wrap">
+      <h2 class="h-lg">Precise to the metre.<br>Current to the second.</h2>
+      <div class="stats">
+        <div><div class="stat-num"><span class="n" data-to="1.5" data-dec="1">1.5</span><small> m</small></div><p class="stat-cap">Typical accuracy, using two satellite frequencies at once.</p></div>
+        <div><div class="stat-num"><span class="n" data-to="1">1</span><small> sec</small></div><p class="stat-cap">Between position updates, all day and all night.</p></div>
+        <div><div class="stat-num"><span class="n" data-to="72">72</span><small> h</small></div><p class="stat-cap">Of driving stored on the device when there's no signal.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="features" class="band grey center">
+    <div class="wrap">
+      <h2 class="h-lg">Everything you need.<br>Nothing you don't.</h2>
+
+      <div class="bento">
+        <article class="tile span2">
+          <h3>Route replay. <span>Rewind any day and watch exactly where each vehicle went, and how fast.</span></h3>
+          <div class="vis">
+            <svg class="art" id="rp-svg" viewBox="0 0 640 272" role="img" aria-label="Replay of a delivery route with three numbered stops and a speed chart below">
+              <defs>
+                <linearGradient id="rg" x1="0" x2="1"><stop offset="0" stop-color="#5AC8FA"/><stop offset="1" stop-color="#0071E3"/></linearGradient>
+                <linearGradient id="sg" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#0071E3" stop-opacity=".22"/><stop offset="1" stop-color="#0071E3" stop-opacity="0"/></linearGradient>
+                <clipPath id="rp-clip"><rect x="0" y="0" width="640" height="170" rx="18"/></clipPath>
+              </defs>
+              <g clip-path="url(#rp-clip)">
+                <rect x="0" y="0" width="640" height="170" fill="#F2F0EB"/>
+                <ellipse cx="560" cy="150" rx="70" ry="40" fill="#D3E9C6"/>
+                <path d="M-10 120 C 120 90, 200 150, 330 110 S 520 40, 650 70" stroke="#A9D2F2" stroke-width="16" fill="none"/>
+                <path d="M0 60 H640 M0 140 H640 M160 0 V170 M300 0 V170 M420 0 V170" stroke="#E0DCD3" stroke-width="9" fill="none"/>
+                <path d="M0 60 H640 M0 140 H640 M160 0 V170 M300 0 V170 M420 0 V170" stroke="#fff" stroke-width="6" fill="none"/>
+                <path id="rp-route" d="M60 140 C 120 140, 140 60, 220 60 S 330 140, 420 120 S 540 40, 590 60" stroke="#C9DDF5" stroke-width="6" stroke-linecap="round" fill="none"/>
+                <path id="rp-done" d="M60 140 C 120 140, 140 60, 220 60 S 330 140, 420 120 S 540 40, 590 60" stroke="url(#rg)" stroke-width="6" stroke-linecap="round" fill="none"/>
+                <circle cx="60" cy="140" r="8" fill="#34C759" stroke="#fff" stroke-width="3"/>
+                <g id="rp-stops" font-family="-apple-system, 'Inter Tight', sans-serif" font-size="12" font-weight="700" text-anchor="middle"></g>
+                <g id="rp-dot"><circle r="13" fill="rgba(0,113,227,.18)"/><circle r="8" fill="#fff"/><circle r="5.5" fill="#0071E3"/></g>
+              </g>
+              <g id="rp-bands"></g>
+              <path id="rp-area" fill="url(#sg)"/>
+              <path id="rp-line" stroke="#0071E3" stroke-width="2" fill="none" stroke-linejoin="round"/>
+              <line x1="0" y1="262" x2="640" y2="262" stroke="#D2D2D7"/>
+              <line id="rp-cur" y1="186" y2="262" stroke="#1D1D1F" stroke-width="1.5"/>
+              <circle id="rp-cdot" r="4.5" fill="#1D1D1F" stroke="#fff" stroke-width="2"/>
+            </svg>
+            <div class="tile-ctrl">
+              <button class="play-btn" id="rp-play" type="button" aria-label="Play replay"><svg viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><path id="rp-icon" d="M3 1.5v11l9-5.5z"/></svg></button>
+              <input type="range" id="rp-scrub" min="0" max="1000" value="0" aria-label="Replay time">
+              <span class="readout" id="rp-read"><b>07:40</b> · 0 km/h</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="tile">
+          <h3>Alerts. <span>Only the ones that matter, the moment they happen.</span></h3>
+          <div class="vis notes" id="notes" aria-live="polite" aria-label="Live notifications from the demo fleet"></div>
+        </article>
+
+        <article class="tile">
+          <h3>Geofences. <span>Draw a zone around any site. Know who arrives, leaves or lingers.</span></h3>
+          <div class="vis">
+            <svg class="art" viewBox="0 0 300 200" role="img" aria-label="A vehicle driving through a circular zone">
+              <rect width="300" height="200" rx="18" fill="#F2F0EB"/>
+              <path d="M0 130 H300 M190 0 V200" stroke="#E0DCD3" stroke-width="13"/>
+              <path d="M0 130 H300 M190 0 V200" stroke="#fff" stroke-width="10"/>
+              <circle id="gf-zone" cx="190" cy="100" r="62" fill="rgba(0,113,227,.08)" stroke="#0071E3" stroke-width="2" stroke-dasharray="6 6"/>
+              <path d="M190 72 c-11 0 -19 8 -19 18 c0 14 19 32 19 32 s19 -18 19 -32 c0 -10 -8 -18 -19 -18z" fill="#0071E3"/>
+              <circle cx="190" cy="90" r="6" fill="#fff"/>
+              <g id="gf-car" transform="translate(40 130)"><circle r="10" fill="#fff"/><circle r="7" fill="#0071E3"/></g>
+            </svg>
+            <div class="tile-ctrl"><span class="zone-chip" id="gf-chip"><i></i><span>Outside the zone</span></span></div>
+            <div class="field-row"><label for="gf-size">Zone size</label><input type="range" id="gf-size" min="36" max="92" value="62"><output id="gf-out" for="gf-size">400 m</output></div>
+          </div>
+        </article>
+
+        <article class="tile">
+          <h3>Driver scores. <span>Fair, clear feedback every week.</span></h3>
+          <div class="vis rings">
+            <div class="seg" role="group" aria-label="Choose a driver" id="drv-seg">
+              <button type="button" data-d="0" aria-pressed="true">Arta</button>
+              <button type="button" data-d="1" aria-pressed="false">Blerim</button>
+              <button type="button" data-d="2" aria-pressed="false">Drita</button>
+            </div>
+            <div class="ring-wrap">
+              <svg viewBox="0 0 156 156" aria-hidden="true">
+                <g fill="none" stroke-width="13" stroke-linecap="round" transform="rotate(-90 78 78)">
+                  <circle cx="78" cy="78" r="66" stroke="#E8F7EC"/>
+                  <circle class="p" id="ring0" cx="78" cy="78" r="66" stroke="#34C759" stroke-dasharray="0 415"/>
+                  <circle cx="78" cy="78" r="49" stroke="#E5F0FC"/>
+                  <circle class="p" id="ring1" cx="78" cy="78" r="49" stroke="#0071E3" stroke-dasharray="0 308"/>
+                  <circle cx="78" cy="78" r="32" stroke="#FFF1DE"/>
+                  <circle class="p" id="ring2" cx="78" cy="78" r="32" stroke="#FF9F0A" stroke-dasharray="0 202"/>
+                </g>
+              </svg>
+              <div class="ring-score"><b id="ring-score">86</b><span>Score</span></div>
+            </div>
+            <ul class="ring-legend" aria-live="polite">
+              <li style="--c:#34C759"><b id="leg0">92%</b><span>Smooth braking</span></li>
+              <li style="--c:#0071E3"><b id="leg1">88%</b><span>Speed limits</span></li>
+              <li style="--c:#FF9F0A"><b id="leg2">76%</b><span>Low idling</span></li>
+            </ul>
+          </div>
+        </article>
+
+        <article class="tile">
+          <h3>Idle time. <span>See it drop once drivers can see it too.</span></h3>
+          <div class="vis">
+            <div class="seg two" role="group" aria-label="Choose week" id="idle-seg" style="margin-bottom:1.2rem">
+              <button type="button" data-w="0" aria-pressed="false">Week 1</button>
+              <button type="button" data-w="1" aria-pressed="true">Week 4</button>
+            </div>
+            <div class="bars" id="bars" role="img" aria-label="Idle minutes per vehicle per day"></div>
+            <p class="bar-cap" id="bar-cap">Idle minutes per vehicle per day. Example data.</p>
+          </div>
+        </article>
+
+        <article class="tile span3">
+          <div class="tile-row">
+            <h3>Works with what you already use. <span>Send trips, stops and alerts to your systems, or pull them in yourself. Pick one to see the data.</span></h3>
+            <div class="pills" id="pills" role="group" aria-label="Integrations">
+              <button type="button" data-k="rest" aria-pressed="true">REST API</button>
+              <button type="button" data-k="hook" aria-pressed="false">Webhooks</button>
+              <button type="button" data-k="csv" aria-pressed="false">CSV export</button>
+              <button type="button" data-k="mqtt" aria-pressed="false">MQTT</button>
+              <button type="button" data-k="nmea" aria-pressed="false">NMEA 0183</button>
+              <button type="button" data-k="mail" aria-pressed="false">Email reports</button>
+            </div>
+          </div>
+          <pre class="snippet" id="snip" aria-live="polite"></pre>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="tracker" class="band dark center">
+    <div class="wrap">
+      <p class="eyebrow">Lodestar T4</p>
+      <h2 class="h-lg">Small enough to hide.<br>Tough enough to forget.</h2>
+      <p class="sub" style="margin-top:1.2rem">A sealed tracker that fits behind the dashboard, reads the vehicle's own data, and keeps working in heat, cold, dust and rain.</p>
+      <div class="device">
+        <svg viewBox="0 0 600 380" role="img" aria-label="The Lodestar T4 tracker, a small dark rounded box with a status light and a cable">
+          <defs>
+            <linearGradient id="body" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4A4A4F"/><stop offset=".55" stop-color="#2A2A2D"/><stop offset="1" stop-color="#1A1A1C"/></linearGradient>
+            <linearGradient id="side" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#232326"/><stop offset="1" stop-color="#0B0B0C"/></linearGradient>
+            <linearGradient id="gloss" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".16"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+            <radialGradient id="glow"><stop offset="0" stop-color="#34C759" stop-opacity=".9"/><stop offset="1" stop-color="#34C759" stop-opacity="0"/></radialGradient>
+            <filter id="blur" x="-20%" y="-200%" width="140%" height="500%"><feGaussianBlur stdDeviation="14"/></filter>
+          </defs>
+          <ellipse cx="300" cy="332" rx="230" ry="16" fill="#1C1C1E" filter="url(#blur)"/>
+          <path d="M531 196 C 570 196, 560 290, 610 300" stroke="#1C1C1E" stroke-width="11" fill="none" stroke-linecap="round"/>
+          <path d="M531 196 C 570 196, 560 290, 610 300" stroke="#3A3A3C" stroke-width="2" fill="none" stroke-linecap="round" transform="translate(0 -3)"/>
+          <rect x="88" y="92" width="424" height="226" rx="42" fill="url(#side)"/>
+          <rect x="88" y="74" width="424" height="226" rx="42" fill="url(#body)"/>
+          <rect x="89" y="75" width="422" height="224" rx="41" fill="none" stroke="#fff" stroke-opacity=".12"/>
+          <rect x="88" y="74" width="424" height="110" rx="42" fill="url(#gloss)"/>
+          <rect x="512" y="164" width="22" height="60" rx="7" fill="#2C2C2E" stroke="#48484A"/>
+          <g transform="translate(300 178)">
+            <circle r="34" fill="none" stroke="#8E8E93" stroke-width="2"/>
+            <path d="M0 -50v12M0 38v12M-50 0h12M38 0h12" stroke="#8E8E93" stroke-width="2" stroke-linecap="round"/>
+            <circle r="6" fill="#FF9F0A"/>
+          </g>
+          <text x="300" y="262" text-anchor="middle" fill="#8E8E93" font-family="-apple-system, Inter Tight, sans-serif" font-size="13" font-weight="600" letter-spacing="5">LODESTAR</text>
+          <g class="led"><circle cx="462" cy="104" r="16" fill="url(#glow)"/><circle cx="462" cy="104" r="4" fill="#34C759"/></g>
+        </svg>
+        <button class="hotspot" type="button" data-h="0" style="left:77%;top:27.4%" aria-label="Status light" aria-pressed="true"></button>
+        <button class="hotspot" type="button" data-h="1" style="left:50%;top:46.8%" aria-label="Antenna" aria-pressed="false"></button>
+        <button class="hotspot" type="button" data-h="2" style="left:87.2%;top:51%" aria-label="Connector" aria-pressed="false"></button>
+        <button class="hotspot" type="button" data-h="3" style="left:24%;top:64%" aria-label="Housing" aria-pressed="false"></button>
+      </div>
+      <p class="hot-cap" id="hot-cap" aria-live="polite"><b>Status light.</b> Green when the tracker has a satellite fix and a network connection. Amber while it searches.</p>
+      <dl class="specs">
+        <div><dt>98 × 62 mm</dt><dd>and 24 mm deep</dd></div>
+        <div><dt>140 g</dt><dd>lighter than a phone</dd></div>
+        <div><dt>IP67</dt><dd>dust-tight, waterproof to 1 m</dd></div>
+        <div><dt>−40 to 85 °C</dt><dd>operating range</dd></div>
+        <div><dt>L1 + L5</dt><dd>dual-band GPS, Galileo, GLONASS, BeiDou</dd></div>
+        <div><dt>4G LTE-M</dt><dd>with automatic 2G fallback</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section id="app" class="band">
+    <div class="wrap app-row">
+      <div>
+        <p class="eyebrow">Lodestar for iPhone and Android</p>
+        <h2 class="h-lg">Your fleet.<br>In your pocket.</h2>
+        <p class="sub">Everything on the big screen, made for the small one. The list here is live: it shows the same six vehicles as the map above.</p>
+        <ul class="checks">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M7.5 12.5l3 3 6-6.5"/></svg>Push alerts for speeding, arrivals and idling</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M7.5 12.5l3 3 6-6.5"/></svg>Share a live ETA link with a customer</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M7.5 12.5l3 3 6-6.5"/></svg>Drivers check in with a tap, no hardware keys</li>
+        </ul>
+      </div>
+      <div class="phone" aria-label="Phone app showing the live fleet list">
+        <div class="phone-screen">
+          <div class="island"></div>
+          <div class="statusbar"><span id="p-time">9:41</span><svg viewBox="0 0 44 12" aria-hidden="true"><rect x="0" y="7" width="3" height="5" rx="1" fill="#1D1D1F"/><rect x="5" y="5" width="3" height="7" rx="1" fill="#1D1D1F"/><rect x="10" y="3" width="3" height="9" rx="1" fill="#1D1D1F"/><rect x="15" y="1" width="3" height="11" rx="1" fill="#1D1D1F"/><rect x="23" y="1" width="18" height="10" rx="3" fill="none" stroke="#1D1D1F" stroke-opacity=".4"/><rect x="25" y="3" width="12" height="6" rx="1.5" fill="#1D1D1F"/><rect x="42" y="4.5" width="1.6" height="3" rx=".8" fill="#1D1D1F" fill-opacity=".4"/></svg></div>
+          <div class="app-title">Fleet</div>
+          <div class="seg" role="group" aria-label="Filter vehicles in app">
+            <button type="button" data-f="all" aria-pressed="true">All</button>
+            <button type="button" data-f="moving" aria-pressed="false">Moving</button>
+            <button type="button" data-f="stopped" aria-pressed="false">Stopped</button>
+          </div>
+          <ul class="ios-list" id="plist"></ul>
+          <p class="ios-foot" id="p-foot">Updated just now</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="how" class="band grey center">
+    <div class="wrap">
+      <h2 class="h-lg">Up and running<br>by this afternoon.</h2>
+      <div class="steps">
+        <article class="step"><div class="step-n">1</div><h3>Plug it in.</h3><p>The tracker fits behind the dashboard and connects to the vehicle's power and data. About 30 minutes per vehicle.</p></article>
+        <article class="step"><div class="step-n">2</div><h3>Switch it on.</h3><p>It finds satellites in seconds and starts reporting over the built-in mobile connection. No SIM cards to buy.</p></article>
+        <article class="step"><div class="step-n">3</div><h3>Open the map.</h3><p>Sign in on any browser or phone. Your vehicles are already there, moving.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <section id="pricing" class="band center">
+    <div class="wrap">
+      <h2 class="h-lg">Simple pricing.</h2>
+      <p class="sub" style="margin-top:1rem">One price per vehicle. No setup fees, no long contracts.</p>
+      <div class="plans">
+        <article class="plan">
+          <h3>Fleet</h3>
+          <div class="price">€9<small> per vehicle / month</small></div>
+          <ul>
+            <li><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5l4 4 8-9"/></svg>Live map with 1-second updates</li>
+            <li><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5l4 4 8-9"/></svg>12 months of route replay</li>
+            <li><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5l4 4 8-9"/></svg>Geofences, alerts and driver scores</li>
+            <li><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5l4 4 8-9"/></svg>iPhone and Android apps</li>
+          </ul>
+          <a class="btn btn-blue" href="#demo">Book a demo</a>
+        </article>
+        <article class="plan">
+          <h3>Enterprise</h3>
+          <div class="price">Let's talk</div>
+          <ul>
+            <li><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5l4 4 8-9"/></svg>Everything in Fleet</li>
+            <li><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5l4 4 8-9"/></svg>API, webhooks and data export</li>
+            <li><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5l4 4 8-9"/></svg>Single sign-on and user roles</li>
+            <li><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5l4 4 8-9"/></svg>A dedicated account manager</li>
+          </ul>
+          <a class="btn btn-line" href="#demo">Contact sales</a>
+        </article>
+      </div>
+      <div class="calc">
+        <div>
+          <label for="calc-n">How many vehicles?</label>
+          <div class="field-row"><input type="range" id="calc-n" min="1" max="250" value="40"><output id="calc-n-out" for="calc-n">40</output></div>
+        </div>
+        <dl class="calc-out" aria-live="polite">
+          <div><dt>Per month</dt><dd id="calc-m">€360</dd></div>
+          <div><dt>Per year</dt><dd id="calc-y">€4,320</dd></div>
+          <div><dt>Trackers, once</dt><dd id="calc-t">€3,560</dd></div>
+        </dl>
+      </div>
+      <p class="plan-note">Tracker €89 per vehicle, or included free on a 3-year plan. Prices exclude VAT.</p>
+    </div>
+  </section>
+
+  <section id="faq" class="band grey center">
+    <div class="wrap">
+      <h2 class="h-lg">Questions? Answers.</h2>
+      <div class="faq">
+        <details open><summary>Do I need to buy trackers?</summary><p>Yes, one per vehicle. Each tracker is €89, or included on a 3-year plan. Fitting takes about 30 minutes, and our partners can do it at your depot.</p></details>
+        <details><summary>What happens in tunnels or without mobile signal?</summary><p>The tracker keeps recording. It stores up to 72 hours of driving and uploads it in order as soon as the signal returns, so there are no gaps in the history.</p></details>
+        <details><summary>Can drivers have privacy outside working hours?</summary><p>Yes. With privacy mode on, trips outside the hours you set are recorded as distance only, without location.</p></details>
+        <details><summary>Where is our data stored?</summary><p>In data centres inside the EU. It's encrypted in transit and at rest, and you choose how long it's kept.</p></details>
+        <details><summary>Can we try it before we commit?</summary><p>Yes. We send three trackers for a free 30-day trial. If it isn't right for you, send them back.</p></details>
+      </div>
+    </div>
+  </section>
+
+  <section id="demo" class="band center">
+    <div class="wrap">
+      <h2 class="h-lg">See it with<br>your own fleet.</h2>
+      <p class="sub" style="margin-top:1rem">Leave your email and we'll set up a free 30-day trial with three trackers.</p>
+      <form class="cta-form" id="cta-form" novalidate>
+        <label for="cta-email" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Work email</label>
+        <input id="cta-email" type="email" placeholder="Work email" autocomplete="email" required>
+        <button class="btn btn-blue" type="submit">Book a demo</button>
+      </form>
+      <p class="cta-msg" id="cta-msg" role="status"></p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-cols">
+      <div><h4>Product</h4><ul><li><a href="#features">Features</a></li><li><a href="#tracker">Tracker</a></li><li><a href="#app">Mobile app</a></li></ul></div>
+      <div><h4>Get started</h4><ul><li><a href="#how">How it works</a></li><li><a href="#pricing">Pricing</a></li><li><a href="#demo">Book a demo</a></li></ul></div>
+      <div><h4>Company</h4><ul><li><a href="#top">About Lodestar</a></li><li><a href="#demo">Contact</a></li></ul></div>
+      <div><h4>Office</h4><ul><li>Prishtina, Kosovo</li><li>Mon–Fri, 08:00–17:00</li></ul></div>
+    </div>
+    <div class="foot-base">
+      <span>© 2026 Lodestar GPS.</span>
+      <span>Lodestar is a fictional company. This page is a design demonstration and all vehicles and data on it are simulated.</span>
+      <span>Prishtina 42°39′N 21°10′E</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+(() => {
+  'use strict';
+  const $ = (s) => document.querySelector(s);
+  const $$ = (s) => document.querySelectorAll(s);
+  const TAU = Math.PI * 2;
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const hhmm = (d = new Date()) => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  const onView = (el, cb, threshold = 0.2) => {
+    if (!('IntersectionObserver' in window)) { cb(true); return; }
+    new IntersectionObserver(([en]) => cb(en.isIntersecting), { threshold }).observe(el);
+  };
+
+  /* ---------- Language: English / Albanian ---------- */
+  const SQ = {
+    'Features': 'Veçoritë', 'Tracker': 'Pajisja', 'App': 'Aplikacioni', 'How it works': 'Si funksionon', 'Pricing': 'Çmimet', 'FAQ': 'Pyetje',
+    'Book a demo': 'Rezervo një demo', 'Every vehicle.': 'Çdo automjet.', 'Every second.': 'Çdo sekondë.',
+    'Your whole fleet on one live map, accurate to a metre and a half. Set up in an afternoon.': 'Gjithë flota juaj në një hartë të drejtpërdrejtë, me saktësi deri në një metër e gjysmë. Gati brenda një pasditeje.',
+    'See how it works': 'Shiko si funksionon', 'Fleet': 'Flota', 'All': 'Të gjitha', 'Moving': 'Në lëvizje', 'Stopped': 'Të ndalura',
+    'No vehicles in this view.': 'Asnjë automjet në këtë pamje.', 'Live': 'Drejtpërdrejt', 'Show all vehicles': 'Shfaq të gjitha automjetet',
+    'Speed': 'Shpejtësia', 'Today': 'Sot', 'Fuel': 'Karburanti',
+    'Live demonstration with simulated vehicles. Select a vehicle on the map or in the list to follow it.': 'Demonstrim i drejtpërdrejtë me automjete të simuluara. Zgjidhni një automjet në hartë ose në listë për ta ndjekur.',
+    'Precise to the metre.': 'I saktë deri në metër.', 'Current to the second.': 'I përditësuar çdo sekondë.', 'sec': 'sek', 'h': 'orë',
+    'Typical accuracy, using two satellite frequencies at once.': 'Saktësi tipike, me dy frekuenca satelitore njëkohësisht.',
+    'Between position updates, all day and all night.': 'Ndërmjet përditësimeve të pozicionit, ditë e natë.',
+    "Of driving stored on the device when there's no signal.": 'Udhëtim i ruajtur në pajisje kur nuk ka sinjal.',
+    'Everything you need.': 'Gjithçka që ju nevojitet.', "Nothing you don't.": 'Asgjë më tepër.',
+    'Route replay.': 'Riprodhimi i rrugës.', 'Rewind any day and watch exactly where each vehicle went, and how fast.': 'Kthehuni te çdo ditë dhe shihni saktësisht ku shkoi secili automjet dhe me çfarë shpejtësie.',
+    'Alerts.': 'Njoftimet.', 'Only the ones that matter, the moment they happen.': 'Vetëm ato që kanë rëndësi, në çastin kur ndodhin.',
+    'Geofences.': 'Zonat gjeografike.', 'Draw a zone around any site. Know who arrives, leaves or lingers.': 'Vizatoni një zonë rreth çdo lokacioni. Dini kush mbërrin, kush largohet e kush vonohet.',
+    'Outside the zone': 'Jashtë zonës', 'Zone size': 'Madhësia e zonës',
+    'Driver scores.': 'Vlerësimi i shoferëve.', 'Fair, clear feedback every week.': 'Vlerësim i drejtë dhe i qartë çdo javë.', 'Score': 'Pikët',
+    'Smooth braking': 'Frenim i butë', 'Speed limits': 'Kufijtë e shpejtësisë', 'Low idling': 'Pak motor në punë pa lëvizur',
+    'Idle time.': 'Koha pa lëvizje.', 'See it drop once drivers can see it too.': 'Shihni si bie kur edhe shoferët e shohin.',
+    'Week 1': 'Java 1', 'Week 4': 'Java 4',
+    'Works with what you already use.': 'Punon me atë që tashmë përdorni.',
+    'Send trips, stops and alerts to your systems, or pull them in yourself. Pick one to see the data.': 'Dërgoni udhëtimet, ndalesat dhe njoftimet në sistemet tuaja, ose merrini vetë. Zgjidhni një për të parë të dhënat.',
+    'CSV export': 'Eksport CSV', 'Email reports': 'Raporte me email',
+    'Small enough to hide.': 'Aq i vogël sa të fshihet.', 'Tough enough to forget.': 'Aq i fortë sa ta harroni.',
+    "A sealed tracker that fits behind the dashboard, reads the vehicle's own data, and keeps working in heat, cold, dust and rain.": 'Një pajisje e mbyllur hermetikisht që vendoset pas panelit, lexon të dhënat e vetë automjetit dhe punon në vapë, të ftohtë, pluhur e shi.',
+    'and 24 mm deep': 'dhe 24 mm i trashë', 'lighter than a phone': 'më i lehtë se një telefon',
+    'dust-tight, waterproof to 1 m': 'i mbrojtur nga pluhuri dhe uji deri në 1 m', '−40 to 85 °C': '−40 deri 85 °C', 'operating range': 'temperatura e punës',
+    'dual-band GPS, Galileo, GLONASS, BeiDou': 'GPS me dy breza, Galileo, GLONASS, BeiDou', 'with automatic 2G fallback': 'me kalim automatik në 2G',
+    'Lodestar for iPhone and Android': 'Lodestar për iPhone dhe Android', 'Your fleet.': 'Flota juaj.', 'In your pocket.': 'Në xhepin tuaj.',
+    'Everything on the big screen, made for the small one. The list here is live: it shows the same six vehicles as the map above.': 'Gjithçka nga ekrani i madh, e përshtatur për të voglin. Lista këtu është e drejtpërdrejtë: tregon të njëjtat gjashtë automjete si harta më lart.',
+    'Push alerts for speeding, arrivals and idling': 'Njoftime për tejkalim shpejtësie, mbërritje dhe pritje me motor ndezur',
+    'Share a live ETA link with a customer': 'Ndani me klientin një link me kohën e mbërritjes',
+    'Drivers check in with a tap, no hardware keys': 'Shoferët identifikohen me një prekje, pa çelësa fizikë',
+    'Updated just now': 'Përditësuar tani', 'Up and running': 'Gati për punë', 'by this afternoon.': 'që këtë pasdite.',
+    'Plug it in.': 'Lidheni.', "The tracker fits behind the dashboard and connects to the vehicle's power and data. About 30 minutes per vehicle.": 'Pajisja vendoset pas panelit dhe lidhet me rrymën dhe të dhënat e automjetit. Rreth 30 minuta për automjet.',
+    'Switch it on.': 'Ndizeni.', 'It finds satellites in seconds and starts reporting over the built-in mobile connection. No SIM cards to buy.': 'Gjen satelitët brenda sekondave dhe fillon të raportojë përmes lidhjes mobile të integruar. Nuk ju duhen karta SIM.',
+    'Open the map.': 'Hapni hartën.', 'Sign in on any browser or phone. Your vehicles are already there, moving.': 'Hyni nga çdo shfletues ose telefon. Automjetet tuaja janë aty, në lëvizje.',
+    'Simple pricing.': 'Çmime të thjeshta.', 'One price per vehicle. No setup fees, no long contracts.': 'Një çmim për automjet. Pa tarifa instalimi, pa kontrata të gjata.',
+    'per vehicle / month': 'për automjet / muaj', 'Live map with 1-second updates': 'Hartë e drejtpërdrejtë, përditësim çdo sekondë',
+    '12 months of route replay': '12 muaj riprodhim i rrugëve', 'Geofences, alerts and driver scores': 'Zona gjeografike, njoftime dhe vlerësim i shoferëve',
+    'iPhone and Android apps': 'Aplikacione për iPhone dhe Android', 'Enterprise': 'Ndërmarrje', "Let's talk": 'Le të flasim',
+    'Everything in Fleet': 'Gjithçka nga plani Flota', 'API, webhooks and data export': 'API, webhooks dhe eksport të dhënash',
+    'Single sign-on and user roles': 'Hyrje e njëfishtë (SSO) dhe role përdoruesish', 'A dedicated account manager': 'Menaxher i dedikuar i llogarisë',
+    'Contact sales': 'Kontaktoni shitjet', 'How many vehicles?': 'Sa automjete keni?', 'Per month': 'Në muaj', 'Per year': 'Në vit', 'Trackers, once': 'Pajisjet, një herë',
+    'Tracker €89 per vehicle, or included free on a 3-year plan. Prices exclude VAT.': 'Pajisja €89 për automjet, ose falas me planin 3-vjeçar. Çmimet janë pa TVSH.',
+    'Questions? Answers.': 'Pyetje? Përgjigje.', 'Do I need to buy trackers?': 'A duhet të blej pajisje?',
+    'Yes, one per vehicle. Each tracker is €89, or included on a 3-year plan. Fitting takes about 30 minutes, and our partners can do it at your depot.': 'Po, një për automjet. Çdo pajisje kushton €89, ose përfshihet në planin 3-vjeçar. Montimi zgjat rreth 30 minuta dhe partnerët tanë mund ta bëjnë në depon tuaj.',
+    'What happens in tunnels or without mobile signal?': 'Çfarë ndodh në tunele ose pa sinjal mobil?',
+    'The tracker keeps recording. It stores up to 72 hours of driving and uploads it in order as soon as the signal returns, so there are no gaps in the history.': 'Pajisja vazhdon të regjistrojë. Ruan deri në 72 orë udhëtim dhe i ngarkon me radhë sapo kthehet sinjali, kështu që historiku nuk ka boshllëqe.',
+    'Can drivers have privacy outside working hours?': 'A kanë shoferët privatësi jashtë orarit të punës?',
+    'Yes. With privacy mode on, trips outside the hours you set are recorded as distance only, without location.': 'Po. Me modalitetin e privatësisë, udhëtimet jashtë orarit që caktoni regjistrohen vetëm si distancë, pa lokacion.',
+    'Where is our data stored?': 'Ku ruhen të dhënat tona?',
+    "In data centres inside the EU. It's encrypted in transit and at rest, and you choose how long it's kept.": 'Në qendra të dhënash brenda BE-së. Të dhënat enkriptohen gjatë transmetimit dhe në ruajtje, dhe ju zgjidhni sa kohë ruhen.',
+    'Can we try it before we commit?': 'A mund ta provojmë para se të vendosim?',
+    "Yes. We send three trackers for a free 30-day trial. If it isn't right for you, send them back.": 'Po. Ju dërgojmë tri pajisje për një provë falas 30-ditore. Nëse nuk ju përshtatet, na i ktheni.',
+    'See it with': 'Shiheni me', 'your own fleet.': 'flotën tuaj.',
+    "Leave your email and we'll set up a free 30-day trial with three trackers.": 'Lini emailin tuaj dhe ne do t’ju përgatisim një provë falas 30-ditore me tri pajisje.',
+    'Work email': 'Emaili i punës', 'Product': 'Produkti', 'Mobile app': 'Aplikacioni mobil', 'Get started': 'Fillimi', 'Company': 'Kompania',
+    'About Lodestar': 'Rreth Lodestar', 'Contact': 'Kontakti', 'Office': 'Zyra', 'Prishtina, Kosovo': 'Prishtinë, Kosovë', 'Mon–Fri, 08:00–17:00': 'E hënë–E premte, 08:00–17:00',
+    'Lodestar is a fictional company. This page is a design demonstration and all vehicles and data on it are simulated.': 'Lodestar është kompani fiktive. Kjo faqe është demonstrim dizajni dhe të gjitha automjetet e të dhënat në të janë të simuluara.',
+    'Prishtina 42°39′N 21°10′E': 'Prishtinë 42°39′V 21°10′L',
+    // labels for screen readers
+    'Lodestar home': 'Ballina e Lodestar', 'Main': 'Kryesore', 'Live map of six vehicles moving around Prishtina': 'Hartë e drejtpërdrejtë me gjashtë automjete që lëvizin nëpër Prishtinë',
+    'Fleet list': 'Lista e flotës', 'Filter vehicles': 'Filtro automjetet', 'Play replay': 'Luaj riprodhimin', 'Pause replay': 'Ndal riprodhimin', 'Replay time': 'Koha e riprodhimit',
+    'Choose a driver': 'Zgjidhni shoferin', 'Choose week': 'Zgjidhni javën', 'Integrations': 'Integrimet', 'Status light': 'Drita e statusit', 'Antenna': 'Antena',
+    'Connector': 'Lidhësi', 'Housing': 'Shtëpiza', 'Phone app showing the live fleet list': 'Aplikacioni në telefon me listën e flotës', 'Filter vehicles in app': 'Filtro automjetet në aplikacion',
+    'Language': 'Gjuha', 'Page route': 'Rruga nëpër faqe', 'Go to': 'Shko te', 'Start': 'Fillimi',
+    // dynamic
+    'Ring Road': 'Unaza', 'the Boulevard': 'Bulevardi', 'North Avenue': 'Rruga Veriore', 'Arbëria streets': 'rrugët e Arbërisë', 'Dardania streets': 'rrugët e Dardanisë',
+    'City Park': 'Parku i Qytetit', 'Gërmia Park': 'Parku i Gërmisë',
+  };
+  const DYN = {
+    en: {
+      kind: { Van: 'Van', Truck: 'Truck', Car: 'Car' },
+      stoppedIn: (d, n) => `Stopped in ${d} · ${n} min`, drivingOn: (r) => `Driving on ${r}`, stoppedShort: (d) => `Stopped · ${d}`,
+      count: (n, m) => `${n} vehicles · ${m} moving`,
+      arrived: (v) => `${v} arrived`, arrivedBody: (d, k) => `Stopped in ${d} after ${k} km today.`,
+      idling: (v) => `${v} is idling`, idlingBody: (d) => `Engine running in ${d} for over a minute.`,
+      moving: (v) => `${v} is on the move`, movingBody: (p, d, r) => `${p} left ${d} on ${r}.`,
+      speeding: (v) => `${v} is speeding`, speedingBody: '37 km/h in a 30 km/h school zone.',
+      depot: (v) => `${v} arrived at Depot`, depotBody: 'On schedule, 2 minutes early.',
+      idle10: (v) => `${v} has been idling`, idle10Body: 'Engine running for 10 minutes.',
+      now: 'now', sAgo: (s) => `${s}s ago`, mAgo: (m) => `${m}m ago`,
+      stop: (n) => `Stop ${n}`, gfIn: (v, t) => `${v} arrived at ${t}`, gfOut: (v, t) => `${v} left at ${t}`,
+      days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], dayShort: ['M', 'T', 'W', 'T', 'F', 'S', 'S'],
+      idleCap: (a) => `Average ${a} idle minutes per vehicle per day. Example data.`, idleAria: (d, v) => `${d}: ${v} idle minutes`,
+      emailErr: 'Enter a work email, like name@company.com.', emailOk: (e) => `Thanks. We'd reply to ${e} within a day. This is a demo page, so nothing was sent.`,
+      N: 'N', E: 'E',
+    },
+    sq: {
+      kind: { Van: 'Furgon', Truck: 'Kamion', Car: 'Veturë' },
+      stoppedIn: (d, n) => `Ndalur në ${d} · ${n} min`, drivingOn: (r) => `Duke lëvizur në ${r}`, stoppedShort: (d) => `Ndalur · ${d}`,
+      count: (n, m) => `${n} automjete · ${m} në lëvizje`,
+      arrived: (v) => `${v} mbërriti`, arrivedBody: (d, k) => `U ndal në ${d} pas ${k} km sot.`,
+      idling: (v) => `${v} pret me motor ndezur`, idlingBody: (d) => `Motori punon në ${d} për më shumë se një minutë.`,
+      moving: (v) => `${v} u nis`, movingBody: (p, d, r) => `${p} u largua nga ${d} në ${r}.`,
+      speeding: (v) => `${v} tejkalon shpejtësinë`, speedingBody: '37 km/h në zonë shkollore me kufi 30 km/h.',
+      depot: (v) => `${v} mbërriti në depo`, depotBody: 'Sipas orarit, 2 minuta më herët.',
+      idle10: (v) => `${v} pret me motor ndezur`, idle10Body: 'Motori punon për 10 minuta.',
+      now: 'tani', sAgo: (s) => `para ${s} s`, mAgo: (m) => `para ${m} min`,
+      stop: (n) => `Ndalesa ${n}`, gfIn: (v, t) => `${v} mbërriti në ${t}`, gfOut: (v, t) => `${v} doli në ${t}`,
+      days: ['E hënë', 'E martë', 'E mërkurë', 'E enjte', 'E premte', 'E shtunë', 'E diel'], dayShort: ['Hë', 'Ma', 'Më', 'En', 'Pr', 'Sh', 'Di'],
+      idleCap: (a) => `Mesatarisht ${a} minuta pa lëvizje për automjet në ditë. Të dhëna shembull.`, idleAria: (d, v) => `${d}: ${v} minuta pa lëvizje`,
+      emailErr: 'Shkruani emailin e punës, p.sh. emri@kompania.com.', emailOk: (e) => `Faleminderit. Do t’i përgjigjeshim ${e} brenda një dite. Kjo është faqe demo, prandaj asgjë nuk u dërgua.`,
+      N: 'V', E: 'L',
+    },
+  };
+  let lang = 'en';
+  try { const saved = localStorage.getItem('lodestar-lang'); lang = saved === 'sq' || saved === 'en' ? saved : ((navigator.language || '').toLowerCase().startsWith('sq') ? 'sq' : 'en'); } catch (e) { lang = (navigator.language || '').toLowerCase().startsWith('sq') ? 'sq' : 'en'; }
+  const T = (s) => (lang === 'sq' && SQ[s]) || s;
+  const D = () => DYN[lang];
+  // Remember the original English text of every translatable node and label.
+  const I18N_TEXT = [], I18N_ATTR = [];
+  (function collect() {
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+      acceptNode: (n) => (n.parentElement.closest('script, style, pre, svg, #vlist, #plist, #notes, #bars') ? NodeFilter.FILTER_REJECT : (SQ[n.nodeValue.trim()] ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP)),
+    });
+    while (walker.nextNode()) I18N_TEXT.push([walker.currentNode, walker.currentNode.nodeValue]);
+    $$('[aria-label], [placeholder]').forEach((el) => ['aria-label', 'placeholder'].forEach((a) => { const v = el.getAttribute(a); if (v && SQ[v]) I18N_ATTR.push([el, a, v]); }));
+  })();
+  const langHooks = [];
+  function setLang(l) {
+    lang = l;
+    document.documentElement.lang = l;
+    I18N_TEXT.forEach(([node, en]) => { node.nodeValue = l === 'sq' ? en.replace(en.trim(), SQ[en.trim()]) : en; });
+    I18N_ATTR.forEach(([el, a, en]) => el.setAttribute(a, T(en)));
+    $$('.lang button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.lang === l)));
+    try { localStorage.setItem('lodestar-lang', l); } catch (e) { /* storage unavailable */ }
+    langHooks.forEach((f) => f());
+  }
+  $$('.lang').forEach((g2) => g2.addEventListener('click', (e) => { const b = e.target.closest('button[data-lang]'); if (b && b.dataset.lang !== lang) setLang(b.dataset.lang); }));
+
+  /* ---------- Map palette (Apple Maps-like, single light look) ---------- */
+  const COL = {
+    land: '#F2F0EB', park: '#D3E9C6', parkLabel: '#4F8A3F', water: '#A9D2F2', minor: '#FFFFFF', minorEdge: '#E0DCD3',
+    major: '#FFFFFF', majorEdge: '#D7D2C7', ring: '#FDE49B', ringEdge: '#EBC567', label: '#8E8E93',
+    blue: '#0071E3', orange: '#FF9F0A', ink: '#1D1D1F', white: '#FFFFFF',
+  };
+
+  /* ---------- World: a 6.5 × 5.5 km window over Prishtina ---------- */
+  const KM_W = 0.08 * 111.32 * Math.cos(42.6629 * Math.PI / 180);
+  const KM_H = 0.05 * 110.57;
+  const TIME_SCALE = 10; // the demo runs 10× faster than real time
+  const km = (ax, ay, bx, by) => Math.hypot((ax - bx) * KM_W, (ay - by) * KM_H);
+  const DISTRICTS = [['Qendra', 0.47, 0.45], ['Ulpiana', 0.63, 0.73], ['Dardania', 0.29, 0.71], ['Arbëria', 0.66, 0.29],
+    ['Kodra e Diellit', 0.8, 0.6], ['Mati 1', 0.24, 0.5], ['Lakrishte', 0.4, 0.87], ['Velania', 0.6, 0.12]];
+  const districtAt = (x, y) => DISTRICTS.reduce((b, d) => (km(x, y, d[1], d[2]) < b[1] ? [d[0], km(x, y, d[1], d[2])] : b), ['', Infinity])[0];
+  const PARKS = [
+    { x: 0.9, y: 0.13, rx: 0.12, ry: 0.11, name: 'Gërmia Park' },
+    { x: 0.32, y: 0.31, rx: 0.05, ry: 0.045, name: 'City Park' },
+    { x: 0.71, y: 0.84, rx: 0.065, ry: 0.05, name: '' },
+    { x: 0.12, y: 0.86, rx: 0.07, ry: 0.06, name: '' },
+  ];
+
+  function smooth(pts, closed, n = 10) {
+    const P = closed ? pts.slice(0, -1) : pts, M = P.length;
+    const get = (i) => (closed ? P[((i % M) + M) % M] : P[Math.max(0, Math.min(M - 1, i))]);
+    const out = [];
+    for (let i = 0; i < (closed ? M : M - 1); i++) {
+      const p0 = get(i - 1), p1 = get(i), p2 = get(i + 1), p3 = get(i + 2);
+      for (let k = 0; k < n; k++) {
+        const t = k / n, t2 = t * t, t3 = t2 * t;
+        out.push([0, 1].map((d) => 0.5 * (2 * p1[d] + (-p0[d] + p2[d]) * t + (2 * p0[d] - 5 * p1[d] + 4 * p2[d] - p3[d]) * t2 + (-p0[d] + 3 * p1[d] - 3 * p2[d] + p3[d]) * t3)));
+      }
+    }
+    out.push(closed ? out[0].slice() : P[M - 1].slice());
+    return out;
+  }
+  function route(pts, closed, kind, name) {
+    const cum = [0];
+    for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + km(pts[i][0], pts[i][1], pts[i - 1][0], pts[i - 1][1]));
+    return { pts, cum, len: cum[cum.length - 1], closed, kind, name };
+  }
+  const ringPts = [];
+  for (let i = 0; i <= 64; i++) {
+    const t = i / 64 * TAU, w = 1 + 0.06 * Math.sin(3 * t) + 0.03 * Math.cos(5 * t);
+    ringPts.push([0.5 + 0.34 * w * Math.cos(t), 0.5 + 0.37 * w * Math.sin(t)]);
+  }
+  ringPts[64] = ringPts[0].slice();
+  const ROUTES = {
+    ring: route(ringPts, true, 'ring', 'Ring Road'),
+    ew: route(smooth([[-0.04, 0.67], [0.14, 0.63], [0.3, 0.57], [0.5, 0.5], [0.66, 0.44], [0.8, 0.41], [1.04, 0.35]], false), false, 'major', 'the Boulevard'),
+    ns: route(smooth([[0.39, -0.04], [0.43, 0.18], [0.47, 0.36], [0.5, 0.5], [0.53, 0.66], [0.55, 0.82], [0.6, 1.04]], false), false, 'major', 'North Avenue'),
+    ne: route(smooth([[0.62, 0.2], [0.78, 0.17], [0.84, 0.3], [0.8, 0.41], [0.66, 0.44], [0.6, 0.32], [0.62, 0.2]], true), true, 'minor', 'Arbëria streets'),
+    sw: route(smooth([[0.18, 0.74], [0.3, 0.57], [0.42, 0.63], [0.37, 0.82], [0.18, 0.74]], true), true, 'minor', 'Dardania streets'),
+  };
+  const RIVER = smooth([[-0.06, 0.24], [0.14, 0.3], [0.3, 0.41], [0.43, 0.46], [0.56, 0.58], [0.7, 0.63], [0.86, 0.76], [1.06, 0.8]], false, 12);
+  function pointAt(r, d) {
+    d = r.closed ? ((d % r.len) + r.len) % r.len : Math.max(0, Math.min(r.len, d));
+    let lo = 0, hi = r.cum.length - 1;
+    while (hi - lo > 1) { const m = (lo + hi) >> 1; if (r.cum[m] <= d) lo = m; else hi = m; }
+    const a = r.pts[lo], b = r.pts[hi], t = (d - r.cum[lo]) / ((r.cum[hi] - r.cum[lo]) || 1e-9);
+    return { x: a[0] + (b[0] - a[0]) * t, y: a[1] + (b[1] - a[1]) * t, dx: b[0] - a[0], dy: b[1] - a[1] };
+  }
+
+  /* ---------- Fleet (simulated) ---------- */
+  const rand = (a, b) => a + Math.random() * (b - a);
+  const ICONS = {
+    Van: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M2 7.5A1.5 1.5 0 0 1 3.5 6h11A1.5 1.5 0 0 1 16 7.5V9h2.6a1.5 1.5 0 0 1 1.2.6l2 2.7c.13.17.2.38.2.6V16a1 1 0 0 1-1 1h-1.1a2.5 2.5 0 0 1-4.8 0H9.9a2.5 2.5 0 0 1-4.8 0H3a1 1 0 0 1-1-1z"/></svg>',
+    Truck: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M1.5 5.5A1.5 1.5 0 0 1 3 4h10a1.5 1.5 0 0 1 1.5 1.5V8h3.3a1.5 1.5 0 0 1 1.3.75l2.2 3.8c.13.23.2.49.2.75V16a1 1 0 0 1-1 1h-1a2.5 2.5 0 0 1-5 0H9a2.5 2.5 0 0 1-5 0H2.5a1 1 0 0 1-1-1z"/></svg>',
+    Car: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5.6 6.6A2 2 0 0 1 7.5 5.3h9a2 2 0 0 1 1.9 1.3l1.4 3.9A2 2 0 0 1 21 12.3V16a1 1 0 0 1-1 1h-.6a2.4 2.4 0 0 1-4.8 0H9.4a2.4 2.4 0 0 1-4.8 0H4a1 1 0 0 1-1-1v-3.7a2 2 0 0 1 1.2-1.8z"/></svg>',
+  };
+  const FLEET = [
+    { id: 'Van 204', kind: 'Van', driver: 'Arta', route: 'ring', dir: 1, cruise: 46 },
+    { id: 'Truck 118', kind: 'Truck', driver: 'Blerim', route: 'ew', dir: 1, cruise: 42 },
+    { id: 'Van 311', kind: 'Van', driver: 'Drita', route: 'ns', dir: 1, cruise: 44 },
+    { id: 'Car 452', kind: 'Car', driver: 'Ilir', route: 'ne', dir: 1, cruise: 38 },
+    { id: 'Truck 097', kind: 'Truck', driver: 'Valon', route: 'ring', dir: -1, cruise: 40 },
+    { id: 'Car 560', kind: 'Car', driver: 'Era', route: 'sw', dir: -1, cruise: 36 },
+  ].map((v, i) => Object.assign(v, {
+    d: ROUTES[v.route].len * ((i * 0.23 + 0.1) % 1), speed: v.cruise * 0.8, state: 'moving', nextStop: rand(12, 40), stopTimer: 0, stoppedFor: 0, idleNoted: false,
+    x: 0.5, y: 0.5, heading: 0, wobble: rand(0, 100), trail: [], trailT: 0,
+    today: rand(38, 96), fuel: rand(45, 92), fuelRate: v.kind === 'Truck' ? 0.08 : 0.14,
+  }));
+  const vname = (v) => `${D().kind[v.kind]} ${v.id.split(' ')[1]}`;
+  let selected = FLEET[0];
+  let filter = 'all';
+  let warm = true; // suppress notifications while warming up
+  const visible = (v) => filter === 'all' || (filter === 'moving' ? v.state === 'moving' : v.state === 'stopped');
+
+  function step(v, dt) {
+    const r = ROUTES[v.route];
+    if (v.state === 'stopped') {
+      v.stopTimer -= dt; v.stoppedFor += dt * TIME_SCALE;
+      v.speed += (0 - v.speed) * Math.min(1, dt * 3);
+      if (!v.idleNoted && v.stoppedFor > 75) { v.idleNoted = true; const dd = districtAt(v.x, v.y); notify(() => [D().idling(vname(v)), D().idlingBody(dd)]); }
+      if (v.stopTimer <= 0) { v.state = 'moving'; v.nextStop = rand(18, 45); const dd = districtAt(v.x, v.y); notify(() => [D().moving(vname(v)), D().movingBody(v.driver, dd, T(ROUTES[v.route].name))]); }
+    } else {
+      v.wobble += dt * 0.6;
+      const target = v.cruise * (0.88 + 0.14 * Math.sin(v.wobble) + 0.06 * Math.sin(v.wobble * 2.7));
+      v.speed += (target - v.speed) * Math.min(1, dt * 1.2);
+      v.nextStop -= dt;
+      if (v.nextStop <= 0) {
+        v.state = 'stopped'; v.stopTimer = rand(5, 11); v.stoppedFor = 0; v.idleNoted = false;
+        const dd = districtAt(v.x, v.y), kk = v.today.toFixed(0); notify(() => [D().arrived(vname(v)), D().arrivedBody(dd, kk)]);
+      }
+    }
+    const dk = v.speed * TIME_SCALE / 3600 * dt;
+    v.d += v.dir * dk; v.today += dk; v.fuel = Math.max(8, v.fuel - dk * v.fuelRate);
+    if (!r.closed) { if (v.d >= r.len) { v.d = r.len; v.dir = -1; } if (v.d <= 0) { v.d = 0; v.dir = 1; } }
+    const p = pointAt(r, v.d);
+    v.x = p.x; v.y = p.y;
+    const hx = p.dx * KM_W * v.dir, hy = p.dy * KM_H * v.dir;
+    if (hx || hy) v.heading = Math.atan2(hx, -hy);
+    v.trailT += dt;
+    if (v.trailT > 0.3) { v.trailT = 0; v.trail.push([v.x, v.y]); if (v.trail.length > 50) v.trail.shift(); }
+  }
+
+  /* ---------- Map with a camera that can follow one vehicle ---------- */
+  const canvas = $('#map'), ctx = canvas.getContext('2d');
+  let W = 1, H = 1, DPR = 1, S = 1, offX = 0;
+  const cam = { x: 0.5, y: 0.5, z: 1 };
+  let following = false;
+  const P = (x, y) => [W / 2 + offX + (x - cam.x) * KM_W * S * cam.z, H / 2 + (y - cam.y) * KM_H * S * cam.z];
+  function line(g, pts) { g.beginPath(); pts.forEach((p, i) => { const [a, b] = P(p[0], p[1]); i ? g.lineTo(a, b) : g.moveTo(a, b); }); }
+  function blob(g, pk) {
+    g.beginPath();
+    for (let i = 0; i <= 40; i++) {
+      const t = i / 40 * TAU, w = 1 + 0.08 * Math.sin(3 * t + pk.x * 9) + 0.05 * Math.cos(5 * t + pk.y * 7);
+      const [a, b] = P(pk.x + pk.rx * w * Math.cos(t), pk.y + pk.ry * w * Math.sin(t));
+      i ? g.lineTo(a, b) : g.moveTo(a, b);
+    }
+    g.closePath();
+  }
+  function drawBase(g) {
+    const Z = S * cam.z, zw = Math.min(1.7, Math.sqrt(cam.z));
+    g.fillStyle = COL.land; g.fillRect(0, 0, W, H);
+    g.fillStyle = COL.park; PARKS.forEach((pk) => { blob(g, pk); g.fill(); });
+    g.lineCap = 'round'; g.lineJoin = 'round';
+    line(g, RIVER); g.strokeStyle = COL.water; g.lineWidth = Math.max(10, 0.1 * Z); g.stroke();
+    g.save();
+    const [cx, cy] = P(0.5, 0.5);
+    g.beginPath(); g.ellipse(cx, cy, 0.3 * KM_W * Z, 0.32 * KM_H * Z, 0, 0, TAU); g.clip();
+    g.translate(cx, cy); g.rotate(-0.32);
+    const sp = 0.22 * Z, ext = 2.5 * Z;
+    for (const [col, w] of [[COL.minorEdge, 3.5 * zw], [COL.minor, 2 * zw]]) {
+      g.strokeStyle = col; g.lineWidth = w; g.beginPath();
+      for (let k = -14; k <= 14; k++) { g.moveTo(k * sp, -ext); g.lineTo(k * sp, ext); g.moveTo(-ext, k * sp * 1.25); g.lineTo(ext, k * sp * 1.25); }
+      g.stroke();
+    }
+    g.restore();
+    const style = { minor: [COL.minorEdge, COL.minor, 7], major: [COL.majorEdge, COL.major, 11], ring: [COL.ringEdge, COL.ring, 12] };
+    for (const kind of ['minor', 'major', 'ring']) for (const r of Object.values(ROUTES)) {
+      if (r.kind !== kind) continue;
+      const [edge, fill, w] = style[kind];
+      line(g, r.pts); g.strokeStyle = edge; g.lineWidth = w * zw; g.stroke();
+      line(g, r.pts); g.strokeStyle = fill; g.lineWidth = (w - 3) * zw; g.stroke();
+    }
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.font = '600 10.5px -apple-system, "Inter Tight", sans-serif';
+    if ('letterSpacing' in g) g.letterSpacing = '1.5px';
+    g.fillStyle = COL.label;
+    DISTRICTS.forEach(([n, x, y]) => { const [a, b] = P(x, y); g.fillText(n.toUpperCase(), a, b); });
+    if ('letterSpacing' in g) g.letterSpacing = '0px';
+    g.font = '600 11px -apple-system, "Inter Tight", sans-serif';
+    g.fillStyle = COL.parkLabel;
+    PARKS.forEach((pk) => { if (pk.name) { const [a, b] = P(pk.x - pk.rx * 0.25, pk.y + pk.ry * 0.45); g.fillText(T(pk.name), a, b); } });
+  }
+  function resize() {
+    const r = canvas.parentElement.getBoundingClientRect();
+    W = Math.max(1, r.width); H = Math.max(1, r.height); DPR = Math.min(2, window.devicePixelRatio || 1);
+    canvas.width = Math.round(W * DPR); canvas.height = Math.round(H * DPR);
+    canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+    const sideVisible = W > 700;
+    S = Math.max((W - (sideVisible ? 140 : 0)) / KM_W, H / KM_H);
+    offX = sideVisible ? 130 : 0;
+    draw(performance.now());
+  }
+  function pill(g, text, x, y, strong) {
+    g.font = `${strong ? 700 : 600} 11px -apple-system, "Inter Tight", sans-serif`;
+    const w = g.measureText(text).width + 14, h = 20;
+    g.save();
+    g.shadowColor = 'rgba(0,0,0,.18)'; g.shadowBlur = 6; g.shadowOffsetY = 1;
+    g.beginPath();
+    if (g.roundRect) g.roundRect(x - w / 2, y, w, h, 10); else g.rect(x - w / 2, y, w, h);
+    g.fillStyle = strong ? COL.ink : COL.white; g.fill();
+    g.restore();
+    g.fillStyle = strong ? COL.white : COL.ink; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText(text, x, y + h / 2 + 0.5);
+  }
+  function draw(now) {
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    drawBase(ctx);
+    const tr = selected.trail;
+    if (tr.length > 1) {
+      ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      for (let i = 1; i < tr.length; i++) {
+        const [a, b] = P(tr[i - 1][0], tr[i - 1][1]), [c, d] = P(tr[i][0], tr[i][1]);
+        ctx.globalAlpha = (i / tr.length) * 0.85; ctx.strokeStyle = COL.blue; ctx.lineWidth = 5;
+        ctx.beginPath(); ctx.moveTo(a, b); ctx.lineTo(c, d); ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    }
+    const order = FLEET.filter((v) => v !== selected).concat(selected);
+    for (const v of order) {
+      const [x, y] = P(v.x, v.y), sel = v === selected, col = v.state === 'stopped' ? COL.orange : COL.blue;
+      if (x < -60 || y < -60 || x > W + 60 || y > H + 60) continue;
+      ctx.globalAlpha = visible(v) ? 1 : 0.25;
+      if (sel) {
+        const t = reduceMotion ? 0.4 : (now % 2000) / 2000;
+        ctx.beginPath(); ctx.arc(x, y, 14 + t * 26, 0, TAU);
+        ctx.fillStyle = `rgba(0,113,227,${0.22 * (1 - t)})`; ctx.fill();
+      }
+      if (v.state === 'moving') {
+        const g = ctx.createRadialGradient(x, y, 0, x, y, 34);
+        g.addColorStop(0, 'rgba(0,113,227,.35)'); g.addColorStop(1, 'rgba(0,113,227,0)');
+        ctx.beginPath(); ctx.moveTo(x, y); ctx.arc(x, y, 34, v.heading - Math.PI / 2 - 0.45, v.heading - Math.PI / 2 + 0.45); ctx.closePath();
+        ctx.fillStyle = g; ctx.fill();
+      }
+      ctx.save();
+      ctx.shadowColor = 'rgba(0,0,0,.28)'; ctx.shadowBlur = 6; ctx.shadowOffsetY = 1;
+      ctx.beginPath(); ctx.arc(x, y, sel ? 10 : 8, 0, TAU); ctx.fillStyle = COL.white; ctx.fill();
+      ctx.restore();
+      ctx.beginPath(); ctx.arc(x, y, sel ? 7 : 5.5, 0, TAU); ctx.fillStyle = col; ctx.fill();
+      pill(ctx, vname(v), x, y + (sel ? 16 : 13), sel);
+      ctx.globalAlpha = 1;
+    }
+  }
+  function updateCamera(dt) {
+    const tx = following ? selected.x : 0.5, ty = following ? selected.y : 0.5, tz = following ? 2.3 : 1;
+    const k = reduceMotion ? 1 : 1 - Math.exp(-dt * 3.2);
+    cam.x += (tx - cam.x) * k; cam.y += (ty - cam.y) * k; cam.z += (tz - cam.z) * k;
+  }
+  function follow(on) {
+    following = on;
+    $('#show-all').hidden = !on;
+  }
+  canvas.addEventListener('click', (e) => {
+    const r = canvas.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
+    let best = null, bd = 28;
+    FLEET.forEach((v) => { const [x, y] = P(v.x, v.y), d = Math.hypot(x - mx, y - my); if (d < bd) { bd = d; best = v; } });
+    if (best) select(best, true); else if (following) follow(false);
+  });
+  canvas.addEventListener('mousemove', (e) => {
+    const r = canvas.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
+    canvas.style.cursor = FLEET.some((v) => { const [x, y] = P(v.x, v.y); return Math.hypot(x - mx, y - my) < 24; }) ? 'pointer' : 'default';
+  });
+  $('#show-all').addEventListener('click', () => follow(false));
+
+  /* ---------- Lists: display sidebar, card and phone app ---------- */
+  const status = (v) => (v.state === 'stopped'
+    ? D().stoppedIn(districtAt(v.x, v.y), Math.max(1, Math.round(v.stoppedFor / 60)))
+    : D().drivingOn(T(ROUTES[v.route].name)));
+  const short = (v) => (v.state === 'stopped' ? D().stoppedShort(districtAt(v.x, v.y)) : `${Math.round(v.speed)} km/h · ${districtAt(v.x, v.y)}`);
+  const vlist = $('#vlist'), plist = $('#plist');
+  vlist.innerHTML = FLEET.map((v, i) => `<li><button type="button" data-i="${i}"><span class="vicon">${ICONS[v.kind]}</span><span><span class="vname">${v.id}</span><span class="vsub"></span></span><span class="vmeta"></span></button></li>`).join('');
+  plist.innerHTML = FLEET.map((v, i) => `<li data-i="${i}" style="cursor:pointer"><span class="vicon">${ICONS[v.kind]}</span><span><span class="vname">${v.id}</span><span class="vsub"></span></span><span class="vmeta"></span></li>`).join('');
+  vlist.addEventListener('click', (e) => { const b = e.target.closest('button[data-i]'); if (b) select(FLEET[+b.dataset.i], true); });
+  plist.addEventListener('click', (e) => { const li = e.target.closest('li[data-i]'); if (li) select(FLEET[+li.dataset.i], true); });
+
+  function select(v, zoom) { selected = v; if (zoom) follow(true); renderLists(); draw(performance.now()); }
+
+  function renderLists() {
+    let shown = 0;
+    FLEET.forEach((v, i) => {
+      const ok = visible(v); if (ok) shown++;
+      for (const list of [vlist, plist]) {
+        const li = list.children[i];
+        li.hidden = !ok;
+        li.querySelector('.vname').textContent = vname(v);
+        li.querySelector('.vicon').classList.toggle('stopped', v.state === 'stopped');
+        li.querySelector('.vsub').textContent = list === vlist ? short(v) : `${v.driver} · ${short(v)}`;
+        li.querySelector('.vmeta').textContent = list === vlist ? '' : `${Math.round(v.today)} km`;
+      }
+      vlist.children[i].querySelector('button').setAttribute('aria-current', v === selected ? 'true' : 'false');
+      plist.children[i].style.background = v === selected ? 'rgba(0,113,227,.08)' : '';
+    });
+    $('#vempty').hidden = shown > 0;
+    const moving = FLEET.filter((v) => v.state === 'moving').length;
+    $('#side-count').textContent = D().count(FLEET.length, moving);
+    const v = selected;
+    $('#c-icon').innerHTML = ICONS[v.kind];
+    $('#c-icon').classList.toggle('stopped', v.state === 'stopped');
+    $('#c-name').textContent = `${vname(v)} · ${v.driver}`;
+    $('#c-status').textContent = status(v);
+    $('#c-speed').innerHTML = `${Math.round(v.state === 'stopped' ? 0 : v.speed)}<small> km/h</small>`;
+    $('#c-today').innerHTML = `${v.today.toFixed(1)}<small> km</small>`;
+    $('#c-fuel').innerHTML = `${Math.round(v.fuel)}<small> %</small>`;
+  }
+  $$('.screen .seg, .phone .seg').forEach((seg) => seg.addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-f]'); if (!b) return;
+    filter = b.dataset.f;
+    $$('.screen .seg button, .phone .seg button').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.f === filter)));
+    renderLists(); draw(performance.now());
+  }));
+
+  /* ---------- Alerts tile: live notifications from the fleet ---------- */
+  const NOTE_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="6.5" fill="none" stroke="#fff" stroke-width="1.6"/><circle cx="12" cy="12" r="2" fill="#FF9F0A"/></svg>';
+  const notes = [
+    { t: Date.now() - 4 * 60000, f: () => [D().speeding(vname(FLEET[2])), D().speedingBody] },
+    { t: Date.now() - 12 * 60000, f: () => [D().depot(vname(FLEET[1])), D().depotBody] },
+    { t: Date.now() - 19 * 60000, f: () => [D().idle10(vname(FLEET[3])), D().idle10Body] },
+  ];
+  let lastNote = 0, notesFresh = false;
+  const ago = (t) => { const s = (Date.now() - t) / 1000; return s < 10 ? D().now : s < 60 ? D().sAgo(Math.round(s)) : D().mAgo(Math.round(s / 60)); };
+  function renderNotes() {
+    $('#notes').innerHTML = notes.map((n, i) => { const [title, body] = n.f(); return `<div class="note${i === 0 && notesFresh ? ' new' : ''}"><span class="note-icon">${NOTE_ICON}</span><div><div class="note-top"><span>Lodestar</span><span>${ago(n.t)}</span></div><div class="note-title">${title}</div><div class="note-body">${body}</div></div></div>`; }).join('');
+    notesFresh = false;
+  }
+  function notify(f) {
+    if (warm) return;
+    const now = Date.now();
+    if (now - lastNote < 4500) return;
+    lastNote = now;
+    notes.unshift({ t: now, f }); notes.length = 3;
+    notesFresh = true; renderNotes();
+  }
+  renderNotes();
+
+  /* ---------- Route replay tile ---------- */
+  const rp = (() => {
+    const N = 80, SP = [];
+    const stopRanges = [[22, 31], [51, 58], [76, 79]];
+    const inStop = (i) => stopRanges.some(([a, b]) => i >= a && i <= b);
+    for (let i = 0; i < N; i++) SP.push(i === 0 || inStop(i) ? 0 : 36 + 9 * Math.sin(i * 0.55) + 5 * Math.sin(i * 1.7));
+    const SM = SP.map((v, i) => (inStop(i) || i === 0 ? 0 : (SP[Math.max(0, i - 1)] + v + SP[Math.min(N - 1, i + 1)]) / 3));
+    const DIST = [0]; for (let i = 1; i < N; i++) DIST.push(DIST[i - 1] + SM[i]);
+    const total = DIST[N - 1];
+    const routeEl = $('#rp-route'), len = routeEl.getTotalLength();
+    const X = (i) => 640 * i / (N - 1), Y = (v) => 260 - v * 70 / 60;
+    const linePts = SM.map((v, i) => `${X(i).toFixed(1)} ${Y(v).toFixed(1)}`);
+    $('#rp-line').setAttribute('d', 'M' + linePts.join(' L'));
+    $('#rp-area').setAttribute('d', `M0 260 L${linePts.join(' L')} L640 260 Z`);
+    $('#rp-bands').innerHTML = stopRanges.map(([a, b], n) => `<rect x="${X(a - 0.5)}" y="186" width="${X(b + 0.5) - X(a - 0.5)}" height="76" fill="#F5F5F7"/><text x="${Math.min(612, (X(a) + X(b)) / 2)}" y="200" text-anchor="middle" font-size="10" font-weight="600" fill="#86868B" font-family="-apple-system, 'Inter Tight', sans-serif" class="rp-bl" data-n="${n + 1}">${D().stop(n + 1)}</text>`).join('');
+    $('#rp-stops').innerHTML = stopRanges.map(([a], n) => { const p = routeEl.getPointAtLength(len * DIST[a] / total); return `<g data-s="${a}"><circle cx="${p.x}" cy="${p.y}" r="12" fill="#fff" stroke="#1D1D1F" stroke-width="2"/><text x="${p.x}" y="${p.y + 4}" fill="#1D1D1F">${n + 1}</text></g>`; }).join('');
+    const done = $('#rp-done'), dot = $('#rp-dot'), cur = $('#rp-cur'), cdot = $('#rp-cdot'), scrub = $('#rp-scrub'), read = $('#rp-read');
+    let t = 0.35, playing = false, seen = false, hold = 0;
+    function render() {
+      const f = t * (N - 1), i = Math.floor(f), j = Math.min(N - 1, i + 1), k = f - i;
+      const v = SM[i] + (SM[j] - SM[i]) * k, dist = (DIST[i] + (DIST[j] - DIST[i]) * k) / total;
+      done.setAttribute('stroke-dasharray', `${len * dist} ${len}`);
+      const p = routeEl.getPointAtLength(len * dist);
+      dot.setAttribute('transform', `translate(${p.x} ${p.y})`);
+      const x = 640 * t;
+      cur.setAttribute('x1', x); cur.setAttribute('x2', x);
+      cdot.setAttribute('cx', x); cdot.setAttribute('cy', Y(v));
+      $$('#rp-stops g').forEach((g) => {
+        const passed = f >= +g.dataset.s;
+        g.querySelector('circle').setAttribute('fill', passed ? '#1D1D1F' : '#fff');
+        g.querySelector('text').setAttribute('fill', passed ? '#fff' : '#1D1D1F');
+      });
+      const mins = Math.round(t * 62), d = new Date(2026, 9, 13, 7, 40 + mins);
+      const stopN = stopRanges.findIndex(([a, b]) => f >= a && f <= b);
+      read.innerHTML = `<b>${hhmm(d)}</b> · ${stopN >= 0 ? D().stop(stopN + 1) : `${Math.round(v)} km/h`}`;
+      scrub.value = Math.round(t * 1000);
+    }
+    function setPlay(on) { playing = on; $('#rp-icon').setAttribute('d', on ? 'M3 1.5h3v11H3zM8 1.5h3v11H8z' : 'M3 1.5v11l9-5.5z'); $('#rp-play').setAttribute('aria-label', on ? 'Pause replay' : 'Play replay'); }
+    $('#rp-play').addEventListener('click', () => { if (!playing && t >= 1) t = 0; setPlay(!playing); });
+    scrub.addEventListener('input', () => { t = scrub.value / 1000; setPlay(false); render(); });
+    let inView = false;
+    onView($('#rp-svg'), (v) => { inView = v; if (v && !seen && !reduceMotion) { seen = true; setPlay(true); } }, 0.4);
+    render();
+    langHooks.push(() => { $$('#rp-bands .rp-bl').forEach((x) => { x.textContent = D().stop(+x.dataset.n); }); render(); });
+    return {
+      frame(dt) {
+        if (!playing || !inView) return;
+        if (t >= 1) { hold += dt; if (hold > 1.6) { hold = 0; t = 0; } render(); return; }
+        t = Math.min(1, t + dt / 14); render();
+      },
+    };
+  })();
+
+  /* ---------- Geofence tile ---------- */
+  const gf = (() => {
+    const zone = $('#gf-zone'), car = $('#gf-car'), chip = $('#gf-chip'), chipText = chip.querySelector('span');
+    let x = 40, r = 62, inside = false, arrived = '', inView = false;
+    const size = $('#gf-size');
+    let evt = null;
+    const chipLabel = () => { chipText.textContent = evt ? (evt[0] === 'in' ? D().gfIn(vname(FLEET[0]), evt[1]) : D().gfOut(vname(FLEET[0]), evt[1])) : T('Outside the zone'); };
+    langHooks.push(chipLabel);
+    const meters = () => Math.round(r * 6.5 / 10) * 10;
+    size.addEventListener('input', () => { r = +size.value; zone.setAttribute('r', r); $('#gf-out').textContent = `${meters()} m`; });
+    onView(car.closest('svg'), (v) => { inView = v; });
+    function update() {
+      car.setAttribute('transform', `translate(${x.toFixed(1)} 130)`);
+      const now = Math.hypot(x - 190, 130 - 100) < r;
+      if (now !== inside) {
+        inside = now;
+        chip.classList.toggle('in', inside);
+        zone.setAttribute('fill', inside ? 'rgba(0,113,227,.18)' : 'rgba(0,113,227,.08)');
+        if (inside) { arrived = hhmm(); evt = ['in', arrived]; } else if (arrived) evt = ['out', hhmm()];
+        chipLabel();
+      }
+    }
+    update();
+    return { frame(dt) { if (!inView || reduceMotion) return; x += dt * 55; if (x > 330) x = -30; update(); } };
+  })();
+
+  /* ---------- Driver scores tile ---------- */
+  const DRIVERS = [[92, 88, 76], [81, 95, 68], [74, 79, 93]];
+  const CIRC = [66, 49, 32].map((r) => TAU * r);
+  function setDriver(i) {
+    const vals = DRIVERS[i];
+    vals.forEach((p, k) => {
+      $('#ring' + k).setAttribute('stroke-dasharray', `${(CIRC[k] * p / 100).toFixed(1)} ${CIRC[k].toFixed(1)}`);
+      $('#leg' + k).textContent = `${p}%`;
+    });
+    $('#ring-score').textContent = Math.round(vals.reduce((a, b) => a + b, 0) / 3);
+    $$('#drv-seg button').forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.d === i)));
+  }
+  $('#drv-seg').addEventListener('click', (e) => { const b = e.target.closest('button[data-d]'); if (b) setDriver(+b.dataset.d); });
+  setDriver(0);
+
+  /* ---------- Idle time tile ---------- */
+  const WEEKS = [[46, 44, 47, 43, 45, 28, 21], [24, 22, 21, 19, 20, 12, 9]];
+  const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  $('#bars').innerHTML = DAYS.map((d) => `<div tabindex="0"><b></b><i></i><span>${d[0]}</span></div>`).join('');
+  let curWeek = 1;
+  function setWeek(w) {
+    curWeek = w;
+    const vals = WEEKS[w];
+    [...$('#bars').children].forEach((el, i) => {
+      el.querySelector('b').textContent = vals[i];
+      el.querySelector('i').style.height = (vals[i] / 50 * 100) + '%';
+      el.setAttribute('aria-label', D().idleAria(D().days[i], vals[i]));
+      el.querySelector('span').textContent = D().dayShort[i];
+    });
+    const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+    $('#bar-cap').textContent = D().idleCap(avg.toFixed(0));
+    $$('#idle-seg button').forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.w === w)));
+  }
+  $('#idle-seg').addEventListener('click', (e) => { const b = e.target.closest('button[data-w]'); if (b) setWeek(+b.dataset.w); });
+  setWeek(1);
+  langHooks.push(() => setWeek(curWeek));
+
+  /* ---------- Integrations tile ---------- */
+  const SNIPS = {
+    rest: '<span class="c"># Latest position of one vehicle</span>\n<span class="k">GET</span> /v1/vehicles/van-204/position\n\n{ <span class="s">"vehicle"</span>: <span class="s">"Van 204"</span>, <span class="s">"lat"</span>: <span class="n">42.66291</span>, <span class="s">"lon"</span>: <span class="n">21.16552</span>,\n  <span class="s">"speed_kmh"</span>: <span class="n">41.2</span>, <span class="s">"heading"</span>: <span class="n">87</span>, <span class="s">"updated"</span>: <span class="s">"just now"</span> }',
+    hook: '<span class="c"># Sent to your URL the moment it happens</span>\n<span class="k">POST</span> https://your-system.example/lodestar\n\n{ <span class="s">"event"</span>: <span class="s">"zone.entered"</span>, <span class="s">"vehicle"</span>: <span class="s">"Truck 118"</span>,\n  <span class="s">"zone"</span>: <span class="s">"Depot"</span>, <span class="s">"at"</span>: <span class="s">"2026-10-14T08:42:10Z"</span> }',
+    csv: '<span class="c"># trips-2026-10-13.csv</span>\n<span class="k">vehicle,driver,start,end,km,stops,max_kmh</span>\nVan 204,Arta,07:40,11:52,<span class="n">63.4</span>,<span class="n">7</span>,<span class="n">54</span>\nTruck 118,Blerim,07:40,08:42,<span class="n">15.4</span>,<span class="n">3</span>,<span class="n">49</span>\nCar 452,Ilir,08:05,12:10,<span class="n">48.9</span>,<span class="n">5</span>,<span class="n">57</span>',
+    mqtt: '<span class="c"># Subscribe once, receive every update</span>\n<span class="k">topic</span>  fleet/prishtina/van-204/position\n<span class="k">qos</span>    1\n\n{ <span class="s">"lat"</span>: <span class="n">42.66291</span>, <span class="s">"lon"</span>: <span class="n">21.16552</span>, <span class="s">"speed_kmh"</span>: <span class="n">41.2</span> }',
+    nmea: '<span class="c"># Standard GPS sentences for existing dispatch software</span>\n<span class="k">$GNGGA</span>,084210.00,4239.77460,N,02109.93120,E,1,14,0.8,652.3,M,46.1,M,,*4F\n<span class="k">$GNRMC</span>,084210.00,A,4239.77460,N,02109.93120,E,22.25,87.0,141026,,,A*6B',
+    mail: '<span class="c"># Every Monday at 07:00</span>\n<span class="k">Subject</span>  Your fleet last week\n\n  Distance driven      2,184 km\n  Idle time            -38% vs. previous week\n  Speeding alerts      4  (down from 11)\n  Top driver           Blerim, score 92',
+  };
+  const SNIP_SQ = {
+    '# Latest position of one vehicle': '# Pozicioni i fundit i një automjeti', '# Sent to your URL the moment it happens': '# Dërgohet në URL-në tuaj në çastin që ndodh',
+    '# Subscribe once, receive every update': '# Abonohuni një herë, merrni çdo përditësim', '# Standard GPS sentences for existing dispatch software': '# Fjali standarde GPS për softuerin ekzistues të dispeçimit',
+  };
+  const MAIL_SQ = '<span class="c"># Çdo të hënë në 07:00</span>\n<span class="k">Subjekti</span>  Flota juaj javën e kaluar\n\n  Distanca e përshkuar   2,184 km\n  Koha pa lëvizje        -38% krahasuar me javën e kaluar\n  Tejkalime shpejtësie   4  (nga 11)\n  Shoferi më i mirë      Blerim, 92 pikë';
+  let curSnip = 'rest';
+  function setSnip(k) {
+    curSnip = k;
+    $('#snip').innerHTML = lang !== 'sq' ? SNIPS[k] : k === 'mail' ? MAIL_SQ : Object.entries(SNIP_SQ).reduce((h, [a, b]) => h.replace(a, b), SNIPS[k]);
+    $$('#pills button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.k === k)));
+  }
+  $('#pills').addEventListener('click', (e) => { const b = e.target.closest('button[data-k]'); if (b) setSnip(b.dataset.k); });
+  setSnip('rest');
+  langHooks.push(() => setSnip(curSnip));
+
+  /* ---------- Tracker hotspots ---------- */
+  const HOT = [
+    ['Status light.', 'Green when the tracker has a satellite fix and a network connection. Amber while it searches.'],
+    ['Dual-band antenna.', 'Receives GPS, Galileo, GLONASS and BeiDou on two frequencies, under a cover that radio passes straight through.'],
+    ['One sealed connector.', 'Power, two vehicle data buses and three inputs through a single waterproof plug.'],
+    ['Sealed housing.', 'Dust-tight and waterproof, from −40 to 85 °C, with a battery that keeps tracking for 8 hours if power is cut.'],
+  ];
+  const HOT_SQ = [
+    ['Drita e statusit.', 'E gjelbër kur pajisja ka sinjal satelitor dhe lidhje me rrjetin. E verdhë ndërsa kërkon.'],
+    ['Antenë me dy breza.', 'Merr GPS, Galileo, GLONASS dhe BeiDou në dy frekuenca, nën një kapak që sinjali e kalon pa pengesë.'],
+    ['Një lidhës i mbyllur.', 'Rryma, dy linja të dhënash të automjetit dhe tri hyrje, përmes një spine të vetme të papërshkueshme nga uji.'],
+    ['Shtëpizë e mbyllur hermetikisht.', 'E mbrojtur nga pluhuri dhe uji, nga −40 deri 85 °C, me bateri që vazhdon gjurmimin 8 orë nëse ndërpritet rryma.'],
+  ];
+  let curHot = 0;
+  const showHot = (i) => { curHot = i; const h = (lang === 'sq' ? HOT_SQ : HOT)[i]; $('#hot-cap').innerHTML = `<b>${h[0]}</b> ${h[1]}`; };
+  $$('.hotspot').forEach((b) => b.addEventListener('click', () => {
+    $$('.hotspot').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+    showHot(+b.dataset.h);
+  }));
+  langHooks.push(() => showHot(curHot));
+
+  /* ---------- Pricing calculator ---------- */
+  const eur = new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
+  function calc() {
+    const n = +$('#calc-n').value;
+    $('#calc-n-out').textContent = n;
+    $('#calc-m').textContent = eur.format(n * 9);
+    $('#calc-y').textContent = eur.format(n * 108);
+    $('#calc-t').textContent = eur.format(n * 89);
+  }
+  $('#calc-n').addEventListener('input', calc); calc();
+
+  /* ---------- Count-up numbers ---------- */
+  $$('.stat-num .n').forEach((el) => {
+    const to = +el.dataset.to, dec = +(el.dataset.dec || 0);
+    let done = false;
+    onView(el, (v) => {
+      if (!v || done || reduceMotion) return;
+      done = true;
+      const t0 = performance.now();
+      const tickN = (now) => {
+        const p = Math.min(1, (now - t0) / 1100), e = 1 - Math.pow(1 - p, 3);
+        el.textContent = (to * e).toFixed(dec);
+        if (p < 1) requestAnimationFrame(tickN);
+      };
+      requestAnimationFrame(tickN);
+    }, 0.6);
+  });
+
+  /* ---------- Gentle reveal and nav state ---------- */
+  if (!reduceMotion && 'IntersectionObserver' in window) {
+    const io = new IntersectionObserver((ens) => ens.forEach((en) => { if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); } }), { threshold: 0.12 });
+    $$('.tile, .step, .plan, .stats > div, .calc, .device, .phone').forEach((el) => {
+      if (el.getBoundingClientRect().top > innerHeight) { el.classList.add('reveal'); io.observe(el); }
+    });
+  }
+  const navLinks = [...$$('.nav-links a')];
+  if ('IntersectionObserver' in window) {
+    const nio = new IntersectionObserver((ens) => ens.forEach((en) => {
+      if (!en.isIntersecting) return;
+      navLinks.forEach((a) => a.setAttribute('aria-current', String(a.getAttribute('href') === '#' + en.target.id)));
+    }), { rootMargin: '-45% 0px -50% 0px' });
+    navLinks.forEach((a) => { const s = $(a.getAttribute('href')); if (s) nio.observe(s); });
+  }
+
+  /* ---------- Site-wide GPS layer: globes, satellites and pings that travel with the scroll ---------- */
+  (function gpsLayer() {
+    const cv = $('#gps-bg'), g = cv.getContext('2d');
+    const CITIES = [
+      ['Prishtina', 'Prishtinë', 42.66, 21.17], ['Tirana', 'Tiranë', 41.33, 19.82], ['Skopje', 'Shkup', 41.99, 21.43], ['Vienna', 'Vjenë', 48.21, 16.37],
+      ['Berlin', 'Berlin', 52.52, 13.40], ['Istanbul', 'Stamboll', 41.01, 28.98], ['Zürich', 'Cyrih', 47.38, 8.54], ['Milan', 'Milano', 45.46, 9.19],
+      ['Munich', 'Mynih', 48.14, 11.58], ['Athens', 'Athinë', 37.98, 23.73], ['Prizren', 'Prizren', 42.21, 20.74], ['Sofia', 'Sofje', 42.70, 23.32],
+    ];
+    const ROW = 900, PAR = 0.42; // globes sit every 900 px of parallax space and scroll at 42% of page speed
+    let W = 1, H = 1, DPR = 1, t = 0, pings = [], nextPing = 0, cityIdx = 0, scrollSpin = 0, lastY = scrollY;
+    const hash = (k, n) => { const v = Math.sin(k * 127.1 + n * 311.7) * 43758.5453; return v - Math.floor(v); };
+    function resize() {
+      W = innerWidth; H = innerHeight; DPR = Math.min(2, window.devicePixelRatio || 1);
+      cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
+      cv.style.width = W + 'px'; cv.style.height = H + 'px';
+    }
+    function globe(row, side) {
+      const narrow = W < 760, left = side === 0;
+      const R = Math.max(140, Math.min(W * 0.25, 360)) * (0.82 + 0.3 * hash(row, side + 1));
+      const x = left ? (narrow ? -R * 0.35 : W * 0.02) : (narrow ? W + R * 0.35 : W * 0.98);
+      const y = row * ROW + (left ? 340 : 200 + (row % 2) * 260) - scrollY * PAR;
+      return { key: row * 2 + side, x, y, R, spin: left ? 0.12 : -0.09, tilt: left ? -0.35 : 0.4 };
+    }
+    function visibleGlobes() {
+      const p = scrollY * PAR, out = [];
+      for (let row = Math.floor((p - 900) / ROW); row <= Math.ceil((p + H + 400) / ROW); row++) {
+        if (row < 0) continue;
+        for (const side of [0, 1]) { const gl = globe(row, side); if (gl.y + gl.R * 1.4 > 0 && gl.y - gl.R * 1.4 < H) out.push(gl); }
+      }
+      return out;
+    }
+    const sat = (gl, j) => {
+      const a = t * (0.16 + 0.05 * j) * (gl.key % 2 ? -1 : 1) + j * Math.PI + gl.key;
+      const rx = gl.R * (1.28 + 0.12 * j), ry = gl.R * (0.42 + 0.1 * j), rot = gl.tilt + j * 0.5;
+      const c = Math.cos(rot), s = Math.sin(rot), ex = rx * Math.cos(a), ey = ry * Math.sin(a);
+      return { x: gl.x + ex * c - ey * s, y: gl.y + ex * s + ey * c, rx, ry, rot, a };
+    };
+    // How much of the layer survives at a given x: the reading column in the middle stays clean.
+    const colHalf = () => Math.min(560, W * 0.36);
+    const keep = (x) => { const d = Math.abs(x - W / 2), c = colHalf(); return Math.max(0, Math.min(1, (d - c * 0.6) / (c * 0.45))); };
+    function spawnPing(globes) {
+      for (let tries = 0; tries < 12; tries++) {
+        const gl = globes[Math.floor(Math.random() * globes.length)];
+        if (!gl) return;
+        const ang = Math.random() * TAU, rr = Math.sqrt(Math.random()) * gl.R * 0.85;
+        const x = gl.x + Math.cos(ang) * rr, y = gl.y + Math.sin(ang) * rr;
+        if (x < 24 || x > W - 24 || y < 80 || y > H - 40 || keep(x) < 0.7) continue;
+        pings.push({ gk: gl.key, dx: x - gl.x, dy: y - gl.y, born: t, city: CITIES[cityIdx++ % CITIES.length], j: Math.random() < 0.5 ? 0 : 1 });
+        return;
+      }
+    }
+    function drawGlobe(gl) {
+      const spin = t * gl.spin + scrollSpin * (gl.key % 2 ? -1 : 1);
+      g.save();
+      g.lineWidth = 1;
+      g.strokeStyle = 'rgba(0,113,227,.22)';
+      g.beginPath(); g.arc(gl.x, gl.y, gl.R, 0, TAU); g.stroke();
+      g.beginPath(); g.arc(gl.x, gl.y, gl.R, 0, TAU); g.clip();
+      g.strokeStyle = 'rgba(0,113,227,.13)';
+      for (let k = -3; k <= 3; k++) {
+        const yy = gl.y + (k / 4) * gl.R, half = Math.sqrt(Math.max(0, gl.R * gl.R - (yy - gl.y) ** 2));
+        g.beginPath(); g.ellipse(gl.x, yy, half, half * 0.12, 0, 0, TAU); g.stroke();
+      }
+      for (let k = 0; k < 6; k++) {
+        const ph = (k / 6) * Math.PI + spin;
+        g.strokeStyle = `rgba(0,113,227,${0.07 + 0.12 * Math.abs(Math.sin(ph))})`;
+        g.beginPath(); g.ellipse(gl.x, gl.y, Math.max(0.5, Math.abs(Math.cos(ph)) * gl.R), gl.R, 0, 0, TAU); g.stroke();
+      }
+      g.fillStyle = 'rgba(0,113,227,.16)';
+      for (let yy = gl.y - gl.R; yy < gl.y + gl.R; yy += 16) for (let xx = gl.x - gl.R; xx < gl.x + gl.R; xx += 16) {
+        const dx = xx - gl.x, dy = yy - gl.y;
+        if (dx * dx + dy * dy < gl.R * gl.R * 0.92) g.fillRect(xx - 1, yy - 1, 2, 2);
+      }
+      g.restore();
+      for (const j of [0, 1]) {
+        const s = sat(gl, j);
+        g.save(); g.translate(gl.x, gl.y); g.rotate(s.rot);
+        g.setLineDash([3, 6]); g.strokeStyle = 'rgba(29,29,31,.18)'; g.lineWidth = 1;
+        g.beginPath(); g.ellipse(0, 0, s.rx, s.ry, 0, 0, TAU); g.stroke(); g.setLineDash([]);
+        g.restore();
+        g.save(); g.translate(s.x, s.y); g.rotate(s.rot + 0.6);
+        g.fillStyle = 'rgba(29,29,31,.8)'; g.fillRect(-3, -3, 6, 6);
+        g.fillStyle = 'rgba(0,113,227,.7)'; g.fillRect(-12, -2, 7, 4); g.fillRect(5, -2, 7, 4);
+        g.restore();
+      }
+    }
+    function frame(dt) {
+      t += dt;
+      const dy = scrollY - lastY; lastY = scrollY; scrollSpin += dy * 0.0025;
+      g.setTransform(DPR, 0, 0, DPR, 0, 0);
+      g.clearRect(0, 0, W, H);
+      const globes = visibleGlobes(), narrow = W < 760;
+      g.globalAlpha = narrow ? 0.65 : 1;
+      globes.forEach(drawGlobe);
+      if (t > nextPing) { spawnPing(globes); nextPing = t + 0.9 + Math.random() * 0.8; }
+      pings = pings.filter((p) => t - p.born < 4.2);
+      g.font = '600 10px -apple-system, "Inter Tight", sans-serif';
+      if ('letterSpacing' in g) g.letterSpacing = '1px';
+      const d = D();
+      pings.forEach((p) => {
+        const gl = globes.find((x) => x.key === p.gk);
+        if (!gl) return;
+        const x = gl.x + p.dx, y = gl.y + p.dy, age = t - p.born;
+        const fade = Math.min(1, age * 3) * Math.min(1, (4.2 - age) / 1.2);
+        if (age < 1.6) {
+          const s = sat(gl, p.j), a = Math.min(1, age * 2.5) * Math.max(0, 1 - age / 1.6);
+          g.setLineDash([2, 5]); g.strokeStyle = `rgba(0,113,227,${0.55 * a})`; g.lineWidth = 1;
+          g.beginPath(); g.moveTo(s.x, s.y); g.lineTo(x, y); g.stroke(); g.setLineDash([]);
+        }
+        for (let k = 0; k < 3; k++) {
+          const q = (age - k * 0.45) / 1.8;
+          if (q < 0 || q > 1) continue;
+          g.beginPath(); g.arc(x, y, 4 + q * 34, 0, TAU);
+          g.strokeStyle = `rgba(0,113,227,${0.6 * (1 - q) * fade})`; g.lineWidth = 1.5; g.stroke();
+        }
+        g.beginPath(); g.arc(x, y, 6, 0, TAU); g.fillStyle = `rgba(255,255,255,${fade})`; g.fill();
+        g.beginPath(); g.arc(x, y, 4, 0, TAU); g.fillStyle = `rgba(0,113,227,${fade})`; g.fill();
+        if (narrow) return;
+        const c = p.city, name = (lang === 'sq' ? c[1] : c[0]).toUpperCase();
+        g.fillStyle = `rgba(110,110,115,${fade})`;
+        g.textAlign = x > W / 2 ? 'right' : 'left';
+        g.fillText(`${name}  ${c[2].toFixed(2)}° ${d.N}  ${c[3].toFixed(2)}° ${d.E}`, x + (x > W / 2 ? -12 : 12), y - 10);
+      });
+      if ('letterSpacing' in g) g.letterSpacing = '0px';
+      g.globalAlpha = 1;
+      // Clear the reading column so text never sits on top of the pattern.
+      g.save();
+      g.globalCompositeOperation = 'destination-out';
+      const c = colHalf(), lg = g.createLinearGradient(W / 2 - c * 1.05, 0, W / 2 + c * 1.05, 0);
+      lg.addColorStop(0, 'rgba(0,0,0,0)'); lg.addColorStop(0.28, 'rgba(0,0,0,.92)'); lg.addColorStop(0.72, 'rgba(0,0,0,.92)'); lg.addColorStop(1, 'rgba(0,0,0,0)');
+      g.fillStyle = lg; g.fillRect(0, 0, W, H);
+      g.restore();
+    }
+    resize();
+    for (let i = 0; i < 4; i++) { t += 1.2; spawnPing(visibleGlobes()); }
+    t += 0.4; frame(0);
+    addEventListener('resize', () => { resize(); frame(0); });
+    if (reduceMotion) { addEventListener('scroll', () => frame(0), { passive: true }); return; }
+    let last = performance.now();
+    (function loop(now) {
+      const dt = Math.min(0.1, (now - last) / 1000); last = now;
+      frame(dt);
+      requestAnimationFrame(loop);
+    })(last);
+  })();
+
+  /* ---------- Route rail: your position on the page, as a vehicle on a route ---------- */
+  const rail = (() => {
+    const WPS = [['top', 'Start'], ['features', 'Features'], ['tracker', 'Tracker'], ['app', 'App'], ['how', 'How it works'], ['pricing', 'Pricing'], ['faq', 'FAQ'], ['demo', 'Book a demo']];
+    const el = $('#rail'), car = $('#rail-car'), done = $('#rail-done'), label = $('#rail-label');
+    el.insertAdjacentHTML('beforeend', WPS.map(([id], i) => `<button type="button" class="wp" data-id="${id}" data-i="${i}"></button>`).join(''));
+    const btns = [...el.querySelectorAll('.wp')];
+    let fr = WPS.map(() => 0);
+    const maxScroll = () => Math.max(1, document.documentElement.scrollHeight - innerHeight);
+    function measure() {
+      fr = WPS.map(([id], i) => (i === 0 ? 0 : Math.min(1, Math.max(0, ($('#' + id).getBoundingClientRect().top + scrollY - 60) / maxScroll()))));
+      btns.forEach((b, i) => { b.style.top = (fr[i] * 100) + '%'; });
+      update();
+    }
+    function update() {
+      const p = Math.min(1, Math.max(0, scrollY / maxScroll()));
+      car.style.top = (p * 100) + '%';
+      done.style.height = (p * 100) + '%';
+      let cur = 0;
+      btns.forEach((b, i) => { const passed = p >= fr[i] - 0.003; b.classList.toggle('passed', passed); if (passed) cur = i; });
+      btns.forEach((b, i) => {
+        b.dataset.label = T(WPS[i][1]);
+        b.setAttribute('aria-label', `${T('Go to')} ${T(WPS[i][1])}`);
+        b.setAttribute('aria-current', String(i === cur));
+      });
+      label.textContent = T(WPS[cur][1]);
+    }
+    el.addEventListener('click', (e) => { const b = e.target.closest('.wp'); if (b) $('#' + b.dataset.id).scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth' }); });
+    addEventListener('scroll', update, { passive: true });
+    addEventListener('resize', measure);
+    new ResizeObserver(measure).observe(document.body);
+    measure();
+    return { update };
+  })();
+
+  /* ---------- CTA form ---------- */
+  $('#cta-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const email = $('#cta-email').value.trim(), msg = $('#cta-msg');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { msg.className = 'cta-msg err'; msg.textContent = D().emailErr; $('#cta-email').focus(); return; }
+    msg.className = 'cta-msg ok';
+    msg.textContent = D().emailOk(email);
+  });
+
+  /* ---------- Loop ---------- */
+  const clockText = () => {
+    const d = new Date();
+    $('#clock').textContent = `${T('Live')} · ${hhmm(d)}`;
+    $('#p-time').textContent = `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
+  };
+  let last = performance.now(), acc = 0, noteAcc = 0, onScreen = true;
+  function tick(now) {
+    const dt = Math.min(0.1, (now - last) / 1000); last = now;
+    acc += dt; noteAcc += dt;
+    if (!reduceMotion) FLEET.forEach((v) => step(v, dt));
+    updateCamera(dt);
+    if (onScreen && !reduceMotion) draw(now);
+    rp.frame(dt); gf.frame(dt);
+    if (acc > 0.5) {
+      acc = 0;
+      if (reduceMotion) { FLEET.forEach((v) => step(v, 0.5)); draw(now); }
+      renderLists(); clockText();
+    }
+    if (noteAcc > 10) { noteAcc = 0; notesFresh = false; renderNotes(); }
+    requestAnimationFrame(tick);
+  }
+  for (let i = 0; i < 60; i++) FLEET.forEach((v) => step(v, 0.1));
+  warm = false;
+  new ResizeObserver(resize).observe(canvas.parentElement);
+  onView(canvas, (v) => { onScreen = v; }, 0);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => draw(performance.now()));
+  resize(); renderLists(); clockText();
+  langHooks.push(renderLists, renderNotes, clockText, rail.update, () => { $('#cta-msg').textContent = ''; draw(performance.now()); });
+  setLang(lang);
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>
