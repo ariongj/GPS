@@ -6,7 +6,7 @@ Demo website for a fictional fleet-tracking company, in a clean, minimal, Apple-
 
 ## Sections
 
-- **Hero:** "Every vehicle. Every second." The live map runs inside a studio-display mockup.
+- **Hero:** "Every vehicle. Every second." Behind the headline, two globes turn slowly while satellites orbit them and location pings pulse with city coordinates. The live map runs inside a studio-display mockup.
   - Six simulated vehicles drive around Prishtina on an Apple Maps-style map.
   - Select a vehicle and the camera zooms in to follow it. "Show all vehicles" zooms back out.
   - A frosted-glass fleet list with All / Moving / Stopped filters, and a card for the selected vehicle.

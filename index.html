@@ -32,6 +32,7 @@
   color-scheme: light;
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html { scroll-behavior: smooth; }
 body {
   margin: 0;
@@ -86,7 +87,9 @@ p { margin: 0; }
 @media (max-width: 760px) { .nav-links { display: none; } .nav .btn { margin-left: auto; } }
 
 /* ---------- Hero ---------- */
-.hero { padding-block: clamp(3.5rem, 8vw, 6rem) clamp(4rem, 8vw, 6rem); }
+.hero { position: relative; overflow: hidden; padding-block: clamp(3.5rem, 8vw, 6rem) clamp(4rem, 8vw, 6rem); }
+.hero > .wrap { position: relative; z-index: 1; }
+#hero-bg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
 .hero .sub { margin-top: 1.2rem; }
 
 .display { max-width: 1080px; margin: clamp(2.75rem, 6vw, 4.5rem) auto 0; }
@@ -367,6 +370,7 @@ footer { background: var(--grey-bg); border-top: 1px solid var(--line); padding-
 
 <main id="top">
   <section class="hero center">
+    <canvas id="hero-bg" aria-hidden="true"></canvas>
     <div class="wrap">
       <p class="eyebrow">Lodestar Fleet</p>
       <h1 class="h-xl">Every vehicle.<br>Every second.</h1>
@@ -1222,6 +1226,148 @@ footer { background: var(--grey-bg); border-top: 1px solid var(--line); padding-
     }), { rootMargin: '-45% 0px -50% 0px' });
     navLinks.forEach((a) => { const s = $(a.getAttribute('href')); if (s) nio.observe(s); });
   }
+
+  /* ---------- Hero background: spinning globes, orbiting satellites, location pings ---------- */
+  (function heroBackground() {
+    const cv = $('#hero-bg'), g = cv.getContext('2d'), hero = cv.parentElement;
+    const CITIES = [
+      ['Prishtina', 42.66, 21.17], ['Tirana', 41.33, 19.82], ['Skopje', 41.99, 21.43], ['Vienna', 48.21, 16.37],
+      ['Berlin', 52.52, 13.40], ['Istanbul', 41.01, 28.98], ['Zürich', 47.38, 8.54], ['Milan', 45.46, 9.19],
+      ['Munich', 48.14, 11.58], ['Athens', 37.98, 23.73], ['Belgrade', 44.79, 20.45], ['Sofia', 42.70, 23.32],
+    ];
+    let W = 1, H = 1, DPR = 1, globes = [], pings = [], sats = [], nextPing = 0, t = 0, onScreen = true, cityIdx = 0;
+    function layout() {
+      const r = hero.getBoundingClientRect();
+      W = Math.max(1, r.width); H = Math.max(1, r.height); DPR = Math.min(2, window.devicePixelRatio || 1);
+      cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
+      const R = Math.max(150, Math.min(W * 0.26, 380));
+      globes = [
+        { x: W < 760 ? -R * 0.35 : W * 0.02, y: Math.min(H * 0.32, 340), R, spin: 0.12, tilt: -0.35 },
+        { x: W < 760 ? W + R * 0.35 : W * 0.98, y: Math.min(H * 0.2, 230), R: R * 0.82, spin: -0.09, tilt: 0.4 },
+      ];
+      sats = [];
+      globes.forEach((gl, gi) => [0, 1].forEach((k) => sats.push({ gl, a: k * Math.PI + gi, speed: (0.16 + 0.05 * k) * (gi ? -1 : 1), rx: gl.R * (1.28 + 0.12 * k), ry: gl.R * (0.42 + 0.1 * k), rot: gl.tilt + k * 0.5 })));
+    }
+    // Fade the decoration away behind the headline so the copy stays clean.
+    function visibility(x, y) {
+      const dx = (x - W / 2) / (W * 0.36), dy = (y - H * 0.24) / (H * 0.3);
+      const d = Math.sqrt(dx * dx + dy * dy);
+      return Math.max(0, Math.min(1, (d - 0.7) / 0.4));
+    }
+    function satPos(s) {
+      const c = Math.cos(s.rot), sn = Math.sin(s.rot), ex = s.rx * Math.cos(s.a), ey = s.ry * Math.sin(s.a);
+      return [s.gl.x + ex * c - ey * sn, s.gl.y + ex * sn + ey * c];
+    }
+    function spawnPing() {
+      for (let tries = 0; tries < 12; tries++) {
+        const gl = globes[Math.random() < 0.55 ? 0 : 1];
+        const ang = Math.random() * TAU, rr = Math.sqrt(Math.random()) * gl.R * 0.85;
+        const x = gl.x + Math.cos(ang) * rr, y = gl.y + Math.sin(ang) * rr;
+        if (x < 24 || x > W - 24 || y < 70 || y > H - 40 || visibility(x, y) < 0.6) continue;
+        let best = null, bd = Infinity;
+        sats.forEach((s) => { const [sx, sy] = satPos(s), d = Math.hypot(sx - x, sy - y); if (d < bd) { bd = d; best = s; } });
+        const city = CITIES[cityIdx++ % CITIES.length];
+        pings.push({ x, y, born: t, sat: best, label: `${city[0].toUpperCase()}  ${city[1].toFixed(2)}° N  ${city[2].toFixed(2)}° E` });
+        return;
+      }
+    }
+    function drawGlobe(gl) {
+      g.save();
+      g.lineWidth = 1;
+      g.strokeStyle = 'rgba(0,113,227,.22)';
+      g.beginPath(); g.arc(gl.x, gl.y, gl.R, 0, TAU); g.stroke();
+      g.beginPath(); g.arc(gl.x, gl.y, gl.R, 0, TAU); g.clip();
+      // latitude lines
+      g.strokeStyle = 'rgba(0,113,227,.13)';
+      for (let k = -3; k <= 3; k++) {
+        const yy = gl.y + (k / 4) * gl.R, half = Math.sqrt(Math.max(0, gl.R * gl.R - (yy - gl.y) ** 2));
+        g.beginPath(); g.ellipse(gl.x, yy, half, half * 0.12, 0, 0, TAU); g.stroke();
+      }
+      // meridians, turning slowly
+      for (let k = 0; k < 6; k++) {
+        const ph = (k / 6) * Math.PI + t * gl.spin;
+        const rx = Math.abs(Math.cos(ph)) * gl.R;
+        g.strokeStyle = `rgba(0,113,227,${0.07 + 0.12 * Math.abs(Math.sin(ph))})`;
+        g.beginPath(); g.ellipse(gl.x, gl.y, Math.max(0.5, rx), gl.R, 0, 0, TAU); g.stroke();
+      }
+      // dot texture
+      g.fillStyle = 'rgba(0,113,227,.16)';
+      for (let yy = gl.y - gl.R; yy < gl.y + gl.R; yy += 16) for (let xx = gl.x - gl.R; xx < gl.x + gl.R; xx += 16) {
+        const dx = xx - gl.x, dy = yy - gl.y;
+        if (dx * dx + dy * dy < gl.R * gl.R * 0.92) { g.beginPath(); g.arc(xx, yy, 1.1, 0, TAU); g.fill(); }
+      }
+      g.restore();
+    }
+    function frame(dt) {
+      t += dt;
+      g.setTransform(DPR, 0, 0, DPR, 0, 0);
+      g.clearRect(0, 0, W, H);
+      globes.forEach(drawGlobe);
+      // orbits and satellites
+      sats.forEach((s) => {
+        s.a += s.speed * dt;
+        g.save(); g.translate(s.gl.x, s.gl.y); g.rotate(s.rot);
+        g.setLineDash([3, 6]); g.strokeStyle = 'rgba(29,29,31,.18)'; g.lineWidth = 1;
+        g.beginPath(); g.ellipse(0, 0, s.rx, s.ry, 0, 0, TAU); g.stroke(); g.setLineDash([]);
+        g.restore();
+        const [x, y] = satPos(s);
+        g.save(); g.translate(x, y); g.rotate(s.rot + 0.6);
+        g.fillStyle = 'rgba(29,29,31,.8)';
+        g.fillRect(-3, -3, 6, 6);
+        g.fillStyle = 'rgba(0,113,227,.7)';
+        g.fillRect(-12, -2, 7, 4); g.fillRect(5, -2, 7, 4);
+        g.restore();
+      });
+      // pings
+      if (t > nextPing) { spawnPing(); nextPing = t + 1.1 + Math.random() * 0.9; }
+      pings = pings.filter((p) => t - p.born < 4.2);
+      g.font = '600 10px -apple-system, "Inter Tight", sans-serif';
+      if ('letterSpacing' in g) g.letterSpacing = '1px';
+      pings.forEach((p) => {
+        const age = t - p.born, fade = Math.min(1, age * 3) * Math.min(1, (4.2 - age) / 1.2);
+        // signal line from the satellite, shortly after the ping
+        if (age < 1.6) {
+          const [sx, sy] = satPos(p.sat), a = Math.min(1, age * 2.5) * Math.max(0, 1 - age / 1.6);
+          g.setLineDash([2, 5]); g.strokeStyle = `rgba(0,113,227,${0.55 * a})`; g.lineWidth = 1;
+          g.beginPath(); g.moveTo(sx, sy); g.lineTo(p.x, p.y); g.stroke(); g.setLineDash([]);
+        }
+        // expanding rings (the "beep")
+        for (let k = 0; k < 3; k++) {
+          const q = ((age - k * 0.45) / 1.8);
+          if (q < 0 || q > 1) continue;
+          g.beginPath(); g.arc(p.x, p.y, 4 + q * 34, 0, TAU);
+          g.strokeStyle = `rgba(0,113,227,${0.6 * (1 - q) * fade})`; g.lineWidth = 1.5; g.stroke();
+        }
+        g.beginPath(); g.arc(p.x, p.y, 6, 0, TAU); g.fillStyle = `rgba(255,255,255,${fade})`; g.fill();
+        g.beginPath(); g.arc(p.x, p.y, 4, 0, TAU); g.fillStyle = `rgba(0,113,227,${fade})`; g.fill();
+        g.fillStyle = `rgba(110,110,115,${fade})`;
+        g.textAlign = p.x > W / 2 ? 'right' : 'left';
+        g.fillText(p.label, p.x + (p.x > W / 2 ? -12 : 12), p.y - 10);
+      });
+      if ('letterSpacing' in g) g.letterSpacing = '0px';
+      // keep the headline area clean
+      g.save();
+      g.globalCompositeOperation = 'destination-out';
+      g.translate(W / 2, H * 0.24); g.scale(W * 0.36, H * 0.3);
+      const m = g.createRadialGradient(0, 0, 0, 0, 0, 1.25);
+      m.addColorStop(0, 'rgba(0,0,0,1)'); m.addColorStop(0.55, 'rgba(0,0,0,.92)'); m.addColorStop(0.95, 'rgba(0,0,0,0)');
+      g.fillStyle = m; g.fillRect(-2, -2, 4, 4);
+      g.restore();
+    }
+    layout();
+    // A still frame with a few pings already showing, for reduced motion and first paint.
+    for (let i = 0; i < 4; i++) { t += 1.3; spawnPing(); }
+    t += 0.4; frame(0);
+    new ResizeObserver(() => { layout(); frame(0); }).observe(hero);
+    onView(hero, (v) => { onScreen = v; }, 0);
+    if (reduceMotion) return;
+    let last = performance.now();
+    (function loop(now) {
+      const dt = Math.min(0.1, (now - last) / 1000); last = now;
+      if (onScreen) frame(dt);
+      requestAnimationFrame(loop);
+    })(last);
+  })();
 
   /* ---------- CTA form ---------- */
   $('#cta-form').addEventListener('submit', (e) => {
