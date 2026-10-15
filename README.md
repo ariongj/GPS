@@ -4,9 +4,15 @@ Demo website for a fictional fleet-tracking company, in a clean, minimal, Apple-
 
 **Live site:** https://ariongj.github.io/GPS/ (deployed from `main` by GitHub Actions).
 
+## Languages
+
+English and Albanian (Shqip). Use the EN / SQ switch in the navigation. The choice is remembered, and Albanian is picked automatically for browsers set to Albanian. Live parts of the page are translated too: vehicle names and statuses, notifications, chart labels, integration samples and coordinates (V / L).
+
 ## Sections
 
-- **Hero:** "Every vehicle. Every second." Behind the headline, two globes turn slowly while satellites orbit them and location pings pulse with city coordinates. The live map runs inside a studio-display mockup.
+- **GPS layer and page route:** across the whole page, faint globes turn while satellites orbit and location pings pulse with city coordinates. The layer drifts as you scroll and keeps clear of the text column. On wide screens, a route on the right edge shows your position on the page as a moving vehicle, with a waypoint for each section that you can click to jump there.
+
+- **Hero:** "Every vehicle. Every second." The live map runs inside a studio-display mockup.
   - Six simulated vehicles drive around Prishtina on an Apple Maps-style map.
   - Select a vehicle and the camera zooms in to follow it. "Show all vehicles" zooms back out.
   - A frosted-glass fleet list with All / Moving / Stopped filters, and a card for the selected vehicle.

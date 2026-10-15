@@ -56,7 +56,7 @@ p { margin: 0; }
 }
 .center { text-align: center; }
 .band { padding-block: clamp(5rem, 11vw, 8.5rem); }
-.band.grey { background: var(--grey-bg); }
+.band.grey { background: rgba(245, 245, 247, .86); }
 .eyebrow { font-size: clamp(1.05rem, 1.6vw, 1.3rem); font-weight: 600; color: var(--muted); margin-bottom: .6rem; letter-spacing: -.01em; }
 .h-xl { font-size: clamp(3rem, 8.4vw, 6rem); line-height: 1.02; letter-spacing: -.045em; }
 .h-lg { font-size: clamp(2.4rem, 5.6vw, 4rem); line-height: 1.05; letter-spacing: -.04em; }
@@ -84,12 +84,33 @@ p { margin: 0; }
 .nav-links a { color: var(--ink); opacity: .82; }
 .nav-links a:hover { opacity: 1; text-decoration: none; }
 .nav .btn { padding: .45rem .95rem; font-size: .82rem; }
-@media (max-width: 760px) { .nav-links { display: none; } .nav .btn { margin-left: auto; } }
+@media (max-width: 760px) { .nav-links { display: none; } .lang { margin-left: auto; } .nav .wrap { gap: .6rem; } }
+.nav .btn { white-space: nowrap; }
+@media (max-width: 400px) { .nav .btn { padding: .45rem .7rem; font-size: .76rem; } .logo { font-size: .98rem; } }
+.lang { display: inline-grid; grid-template-columns: 1fr 1fr; background: rgba(118, 118, 128, .12); border-radius: 980px; padding: 2px; }
+.lang button { border: 0; background: transparent; border-radius: 980px; padding: .32rem .62rem; font: 600 .72rem/1 var(--font); letter-spacing: .02em; color: var(--muted); cursor: pointer; }
+.lang button[aria-pressed="true"] { background: #fff; color: var(--ink); box-shadow: 0 1px 3px rgba(0, 0, 0, .15); }
+#gps-bg { position: fixed; top: 0; left: 0; z-index: 0; pointer-events: none; }
+main, footer { position: relative; z-index: 1; }
+main[id], section[id] { scroll-margin-top: 56px; }
+.rail { position: fixed; right: max(20px, env(safe-area-inset-right, 0px)); top: 20vh; bottom: 20vh; width: 16px; z-index: 40; }
+.rail-line { position: absolute; left: 7px; top: 0; bottom: 0; width: 2px; background: repeating-linear-gradient(to bottom, rgba(0, 0, 0, .2) 0 4px, transparent 4px 9px); }
+.rail-done { position: absolute; left: 0; top: 0; width: 2px; height: 0; background: var(--blue); border-radius: 2px; }
+.rail .wp { position: absolute; left: 2px; width: 12px; height: 12px; margin-top: -6px; padding: 0; border-radius: 50%; background: #fff; border: 2px solid #C7C7CC; cursor: pointer; transition: border-color .3s, transform .2s; }
+.rail .wp:hover { transform: scale(1.25); }
+.rail .wp.passed { border-color: var(--blue); }
+.rail .wp::after { content: attr(data-label); position: absolute; right: 22px; top: 50%; transform: translateY(-50%); white-space: nowrap; font: 600 .72rem/1 var(--font); color: var(--ink); background: rgba(255, 255, 255, .94); padding: .35rem .6rem; border-radius: 980px; box-shadow: 0 2px 8px rgba(0, 0, 0, .14); opacity: 0; pointer-events: none; transition: opacity .2s; }
+.rail .wp:hover::after, .rail .wp:focus-visible::after { opacity: 1; }
+.rail-car { position: absolute; left: -2px; width: 20px; height: 20px; margin-top: -10px; border-radius: 50%; background: var(--blue); border: 3px solid #fff; box-shadow: 0 0 0 5px rgba(0, 113, 227, .18), 0 2px 8px rgba(0, 0, 0, .25); pointer-events: none; }
+.rail-car::before { content: ""; position: absolute; inset: -9px; border-radius: 50%; border: 2px solid rgba(0, 113, 227, .45); animation: railping 2s ease-out infinite; }
+@keyframes railping { from { transform: scale(.6); opacity: 1; } to { transform: scale(1.6); opacity: 0; } }
+.rail-car span { position: absolute; right: 30px; top: 50%; transform: translateY(-50%); white-space: nowrap; font: 600 .72rem/1 var(--font); color: #fff; background: var(--blue); padding: .38rem .7rem; border-radius: 980px; box-shadow: 0 2px 8px rgba(0, 0, 0, .2); }
+@media (max-width: 1180px) { .rail { display: none; } }
+@media (max-width: 1500px) { .rail-car span { display: none; } }
 
 /* ---------- Hero ---------- */
 .hero { position: relative; overflow: hidden; padding-block: clamp(3.5rem, 8vw, 6rem) clamp(4rem, 8vw, 6rem); }
 .hero > .wrap { position: relative; z-index: 1; }
-#hero-bg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
 .hero .sub { margin-top: 1.2rem; }
 
 .display { max-width: 1080px; margin: clamp(2.75rem, 6vw, 4.5rem) auto 0; }
@@ -349,6 +370,8 @@ footer { background: var(--grey-bg); border-top: 1px solid var(--line); padding-
 </style>
 </head>
 <body>
+<canvas id="gps-bg" aria-hidden="true"></canvas>
+<nav class="rail" id="rail" aria-label="Page route"><div class="rail-line"><div class="rail-done" id="rail-done"></div></div><div class="rail-car" id="rail-car"><span id="rail-label">Start</span></div></nav>
 
 <header class="nav">
   <div class="wrap">
@@ -364,13 +387,13 @@ footer { background: var(--grey-bg); border-top: 1px solid var(--line); padding-
       <a href="#pricing">Pricing</a>
       <a href="#faq">FAQ</a>
     </nav>
+    <div class="lang" role="group" aria-label="Language"><button type="button" data-lang="en" aria-pressed="true">EN</button><button type="button" data-lang="sq" aria-pressed="false" lang="sq">SQ</button></div>
     <a class="btn btn-blue" href="#demo">Book a demo</a>
   </div>
 </header>
 
 <main id="top">
   <section class="hero center">
-    <canvas id="hero-bg" aria-hidden="true"></canvas>
     <div class="wrap">
       <p class="eyebrow">Lodestar Fleet</p>
       <h1 class="h-xl">Every vehicle.<br>Every second.</h1>
@@ -732,6 +755,140 @@ footer { background: var(--grey-bg); border-top: 1px solid var(--line); padding-
     new IntersectionObserver(([en]) => cb(en.isIntersecting), { threshold }).observe(el);
   };
 
+  /* ---------- Language: English / Albanian ---------- */
+  const SQ = {
+    'Features': 'Veçoritë', 'Tracker': 'Pajisja', 'App': 'Aplikacioni', 'How it works': 'Si funksionon', 'Pricing': 'Çmimet', 'FAQ': 'Pyetje',
+    'Book a demo': 'Rezervo një demo', 'Every vehicle.': 'Çdo automjet.', 'Every second.': 'Çdo sekondë.',
+    'Your whole fleet on one live map, accurate to a metre and a half. Set up in an afternoon.': 'Gjithë flota juaj në një hartë të drejtpërdrejtë, me saktësi deri në një metër e gjysmë. Gati brenda një pasditeje.',
+    'See how it works': 'Shiko si funksionon', 'Fleet': 'Flota', 'All': 'Të gjitha', 'Moving': 'Në lëvizje', 'Stopped': 'Të ndalura',
+    'No vehicles in this view.': 'Asnjë automjet në këtë pamje.', 'Live': 'Drejtpërdrejt', 'Show all vehicles': 'Shfaq të gjitha automjetet',
+    'Speed': 'Shpejtësia', 'Today': 'Sot', 'Fuel': 'Karburanti',
+    'Live demonstration with simulated vehicles. Select a vehicle on the map or in the list to follow it.': 'Demonstrim i drejtpërdrejtë me automjete të simuluara. Zgjidhni një automjet në hartë ose në listë për ta ndjekur.',
+    'Precise to the metre.': 'I saktë deri në metër.', 'Current to the second.': 'I përditësuar çdo sekondë.', 'sec': 'sek', 'h': 'orë',
+    'Typical accuracy, using two satellite frequencies at once.': 'Saktësi tipike, me dy frekuenca satelitore njëkohësisht.',
+    'Between position updates, all day and all night.': 'Ndërmjet përditësimeve të pozicionit, ditë e natë.',
+    "Of driving stored on the device when there's no signal.": 'Udhëtim i ruajtur në pajisje kur nuk ka sinjal.',
+    'Everything you need.': 'Gjithçka që ju nevojitet.', "Nothing you don't.": 'Asgjë më tepër.',
+    'Route replay.': 'Riprodhimi i rrugës.', 'Rewind any day and watch exactly where each vehicle went, and how fast.': 'Kthehuni te çdo ditë dhe shihni saktësisht ku shkoi secili automjet dhe me çfarë shpejtësie.',
+    'Alerts.': 'Njoftimet.', 'Only the ones that matter, the moment they happen.': 'Vetëm ato që kanë rëndësi, në çastin kur ndodhin.',
+    'Geofences.': 'Zonat gjeografike.', 'Draw a zone around any site. Know who arrives, leaves or lingers.': 'Vizatoni një zonë rreth çdo lokacioni. Dini kush mbërrin, kush largohet e kush vonohet.',
+    'Outside the zone': 'Jashtë zonës', 'Zone size': 'Madhësia e zonës',
+    'Driver scores.': 'Vlerësimi i shoferëve.', 'Fair, clear feedback every week.': 'Vlerësim i drejtë dhe i qartë çdo javë.', 'Score': 'Pikët',
+    'Smooth braking': 'Frenim i butë', 'Speed limits': 'Kufijtë e shpejtësisë', 'Low idling': 'Pak motor në punë pa lëvizur',
+    'Idle time.': 'Koha pa lëvizje.', 'See it drop once drivers can see it too.': 'Shihni si bie kur edhe shoferët e shohin.',
+    'Week 1': 'Java 1', 'Week 4': 'Java 4',
+    'Works with what you already use.': 'Punon me atë që tashmë përdorni.',
+    'Send trips, stops and alerts to your systems, or pull them in yourself. Pick one to see the data.': 'Dërgoni udhëtimet, ndalesat dhe njoftimet në sistemet tuaja, ose merrini vetë. Zgjidhni një për të parë të dhënat.',
+    'CSV export': 'Eksport CSV', 'Email reports': 'Raporte me email',
+    'Small enough to hide.': 'Aq i vogël sa të fshihet.', 'Tough enough to forget.': 'Aq i fortë sa ta harroni.',
+    "A sealed tracker that fits behind the dashboard, reads the vehicle's own data, and keeps working in heat, cold, dust and rain.": 'Një pajisje e mbyllur hermetikisht që vendoset pas panelit, lexon të dhënat e vetë automjetit dhe punon në vapë, të ftohtë, pluhur e shi.',
+    'and 24 mm deep': 'dhe 24 mm i trashë', 'lighter than a phone': 'më i lehtë se një telefon',
+    'dust-tight, waterproof to 1 m': 'i mbrojtur nga pluhuri dhe uji deri në 1 m', '−40 to 85 °C': '−40 deri 85 °C', 'operating range': 'temperatura e punës',
+    'dual-band GPS, Galileo, GLONASS, BeiDou': 'GPS me dy breza, Galileo, GLONASS, BeiDou', 'with automatic 2G fallback': 'me kalim automatik në 2G',
+    'Lodestar for iPhone and Android': 'Lodestar për iPhone dhe Android', 'Your fleet.': 'Flota juaj.', 'In your pocket.': 'Në xhepin tuaj.',
+    'Everything on the big screen, made for the small one. The list here is live: it shows the same six vehicles as the map above.': 'Gjithçka nga ekrani i madh, e përshtatur për të voglin. Lista këtu është e drejtpërdrejtë: tregon të njëjtat gjashtë automjete si harta më lart.',
+    'Push alerts for speeding, arrivals and idling': 'Njoftime për tejkalim shpejtësie, mbërritje dhe pritje me motor ndezur',
+    'Share a live ETA link with a customer': 'Ndani me klientin një link me kohën e mbërritjes',
+    'Drivers check in with a tap, no hardware keys': 'Shoferët identifikohen me një prekje, pa çelësa fizikë',
+    'Updated just now': 'Përditësuar tani', 'Up and running': 'Gati për punë', 'by this afternoon.': 'që këtë pasdite.',
+    'Plug it in.': 'Lidheni.', "The tracker fits behind the dashboard and connects to the vehicle's power and data. About 30 minutes per vehicle.": 'Pajisja vendoset pas panelit dhe lidhet me rrymën dhe të dhënat e automjetit. Rreth 30 minuta për automjet.',
+    'Switch it on.': 'Ndizeni.', 'It finds satellites in seconds and starts reporting over the built-in mobile connection. No SIM cards to buy.': 'Gjen satelitët brenda sekondave dhe fillon të raportojë përmes lidhjes mobile të integruar. Nuk ju duhen karta SIM.',
+    'Open the map.': 'Hapni hartën.', 'Sign in on any browser or phone. Your vehicles are already there, moving.': 'Hyni nga çdo shfletues ose telefon. Automjetet tuaja janë aty, në lëvizje.',
+    'Simple pricing.': 'Çmime të thjeshta.', 'One price per vehicle. No setup fees, no long contracts.': 'Një çmim për automjet. Pa tarifa instalimi, pa kontrata të gjata.',
+    'per vehicle / month': 'për automjet / muaj', 'Live map with 1-second updates': 'Hartë e drejtpërdrejtë, përditësim çdo sekondë',
+    '12 months of route replay': '12 muaj riprodhim i rrugëve', 'Geofences, alerts and driver scores': 'Zona gjeografike, njoftime dhe vlerësim i shoferëve',
+    'iPhone and Android apps': 'Aplikacione për iPhone dhe Android', 'Enterprise': 'Ndërmarrje', "Let's talk": 'Le të flasim',
+    'Everything in Fleet': 'Gjithçka nga plani Flota', 'API, webhooks and data export': 'API, webhooks dhe eksport të dhënash',
+    'Single sign-on and user roles': 'Hyrje e njëfishtë (SSO) dhe role përdoruesish', 'A dedicated account manager': 'Menaxher i dedikuar i llogarisë',
+    'Contact sales': 'Kontaktoni shitjet', 'How many vehicles?': 'Sa automjete keni?', 'Per month': 'Në muaj', 'Per year': 'Në vit', 'Trackers, once': 'Pajisjet, një herë',
+    'Tracker €89 per vehicle, or included free on a 3-year plan. Prices exclude VAT.': 'Pajisja €89 për automjet, ose falas me planin 3-vjeçar. Çmimet janë pa TVSH.',
+    'Questions? Answers.': 'Pyetje? Përgjigje.', 'Do I need to buy trackers?': 'A duhet të blej pajisje?',
+    'Yes, one per vehicle. Each tracker is €89, or included on a 3-year plan. Fitting takes about 30 minutes, and our partners can do it at your depot.': 'Po, një për automjet. Çdo pajisje kushton €89, ose përfshihet në planin 3-vjeçar. Montimi zgjat rreth 30 minuta dhe partnerët tanë mund ta bëjnë në depon tuaj.',
+    'What happens in tunnels or without mobile signal?': 'Çfarë ndodh në tunele ose pa sinjal mobil?',
+    'The tracker keeps recording. It stores up to 72 hours of driving and uploads it in order as soon as the signal returns, so there are no gaps in the history.': 'Pajisja vazhdon të regjistrojë. Ruan deri në 72 orë udhëtim dhe i ngarkon me radhë sapo kthehet sinjali, kështu që historiku nuk ka boshllëqe.',
+    'Can drivers have privacy outside working hours?': 'A kanë shoferët privatësi jashtë orarit të punës?',
+    'Yes. With privacy mode on, trips outside the hours you set are recorded as distance only, without location.': 'Po. Me modalitetin e privatësisë, udhëtimet jashtë orarit që caktoni regjistrohen vetëm si distancë, pa lokacion.',
+    'Where is our data stored?': 'Ku ruhen të dhënat tona?',
+    "In data centres inside the EU. It's encrypted in transit and at rest, and you choose how long it's kept.": 'Në qendra të dhënash brenda BE-së. Të dhënat enkriptohen gjatë transmetimit dhe në ruajtje, dhe ju zgjidhni sa kohë ruhen.',
+    'Can we try it before we commit?': 'A mund ta provojmë para se të vendosim?',
+    "Yes. We send three trackers for a free 30-day trial. If it isn't right for you, send them back.": 'Po. Ju dërgojmë tri pajisje për një provë falas 30-ditore. Nëse nuk ju përshtatet, na i ktheni.',
+    'See it with': 'Shiheni me', 'your own fleet.': 'flotën tuaj.',
+    "Leave your email and we'll set up a free 30-day trial with three trackers.": 'Lini emailin tuaj dhe ne do t’ju përgatisim një provë falas 30-ditore me tri pajisje.',
+    'Work email': 'Emaili i punës', 'Product': 'Produkti', 'Mobile app': 'Aplikacioni mobil', 'Get started': 'Fillimi', 'Company': 'Kompania',
+    'About Lodestar': 'Rreth Lodestar', 'Contact': 'Kontakti', 'Office': 'Zyra', 'Prishtina, Kosovo': 'Prishtinë, Kosovë', 'Mon–Fri, 08:00–17:00': 'E hënë–E premte, 08:00–17:00',
+    'Lodestar is a fictional company. This page is a design demonstration and all vehicles and data on it are simulated.': 'Lodestar është kompani fiktive. Kjo faqe është demonstrim dizajni dhe të gjitha automjetet e të dhënat në të janë të simuluara.',
+    'Prishtina 42°39′N 21°10′E': 'Prishtinë 42°39′V 21°10′L',
+    // labels for screen readers
+    'Lodestar home': 'Ballina e Lodestar', 'Main': 'Kryesore', 'Live map of six vehicles moving around Prishtina': 'Hartë e drejtpërdrejtë me gjashtë automjete që lëvizin nëpër Prishtinë',
+    'Fleet list': 'Lista e flotës', 'Filter vehicles': 'Filtro automjetet', 'Play replay': 'Luaj riprodhimin', 'Pause replay': 'Ndal riprodhimin', 'Replay time': 'Koha e riprodhimit',
+    'Choose a driver': 'Zgjidhni shoferin', 'Choose week': 'Zgjidhni javën', 'Integrations': 'Integrimet', 'Status light': 'Drita e statusit', 'Antenna': 'Antena',
+    'Connector': 'Lidhësi', 'Housing': 'Shtëpiza', 'Phone app showing the live fleet list': 'Aplikacioni në telefon me listën e flotës', 'Filter vehicles in app': 'Filtro automjetet në aplikacion',
+    'Language': 'Gjuha', 'Page route': 'Rruga nëpër faqe', 'Go to': 'Shko te', 'Start': 'Fillimi',
+    // dynamic
+    'Ring Road': 'Unaza', 'the Boulevard': 'Bulevardi', 'North Avenue': 'Rruga Veriore', 'Arbëria streets': 'rrugët e Arbërisë', 'Dardania streets': 'rrugët e Dardanisë',
+    'City Park': 'Parku i Qytetit', 'Gërmia Park': 'Parku i Gërmisë',
+  };
+  const DYN = {
+    en: {
+      kind: { Van: 'Van', Truck: 'Truck', Car: 'Car' },
+      stoppedIn: (d, n) => `Stopped in ${d} · ${n} min`, drivingOn: (r) => `Driving on ${r}`, stoppedShort: (d) => `Stopped · ${d}`,
+      count: (n, m) => `${n} vehicles · ${m} moving`,
+      arrived: (v) => `${v} arrived`, arrivedBody: (d, k) => `Stopped in ${d} after ${k} km today.`,
+      idling: (v) => `${v} is idling`, idlingBody: (d) => `Engine running in ${d} for over a minute.`,
+      moving: (v) => `${v} is on the move`, movingBody: (p, d, r) => `${p} left ${d} on ${r}.`,
+      speeding: (v) => `${v} is speeding`, speedingBody: '37 km/h in a 30 km/h school zone.',
+      depot: (v) => `${v} arrived at Depot`, depotBody: 'On schedule, 2 minutes early.',
+      idle10: (v) => `${v} has been idling`, idle10Body: 'Engine running for 10 minutes.',
+      now: 'now', sAgo: (s) => `${s}s ago`, mAgo: (m) => `${m}m ago`,
+      stop: (n) => `Stop ${n}`, gfIn: (v, t) => `${v} arrived at ${t}`, gfOut: (v, t) => `${v} left at ${t}`,
+      days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], dayShort: ['M', 'T', 'W', 'T', 'F', 'S', 'S'],
+      idleCap: (a) => `Average ${a} idle minutes per vehicle per day. Example data.`, idleAria: (d, v) => `${d}: ${v} idle minutes`,
+      emailErr: 'Enter a work email, like name@company.com.', emailOk: (e) => `Thanks. We'd reply to ${e} within a day. This is a demo page, so nothing was sent.`,
+      N: 'N', E: 'E',
+    },
+    sq: {
+      kind: { Van: 'Furgon', Truck: 'Kamion', Car: 'Veturë' },
+      stoppedIn: (d, n) => `Ndalur në ${d} · ${n} min`, drivingOn: (r) => `Duke lëvizur në ${r}`, stoppedShort: (d) => `Ndalur · ${d}`,
+      count: (n, m) => `${n} automjete · ${m} në lëvizje`,
+      arrived: (v) => `${v} mbërriti`, arrivedBody: (d, k) => `U ndal në ${d} pas ${k} km sot.`,
+      idling: (v) => `${v} pret me motor ndezur`, idlingBody: (d) => `Motori punon në ${d} për më shumë se një minutë.`,
+      moving: (v) => `${v} u nis`, movingBody: (p, d, r) => `${p} u largua nga ${d} në ${r}.`,
+      speeding: (v) => `${v} tejkalon shpejtësinë`, speedingBody: '37 km/h në zonë shkollore me kufi 30 km/h.',
+      depot: (v) => `${v} mbërriti në depo`, depotBody: 'Sipas orarit, 2 minuta më herët.',
+      idle10: (v) => `${v} pret me motor ndezur`, idle10Body: 'Motori punon për 10 minuta.',
+      now: 'tani', sAgo: (s) => `para ${s} s`, mAgo: (m) => `para ${m} min`,
+      stop: (n) => `Ndalesa ${n}`, gfIn: (v, t) => `${v} mbërriti në ${t}`, gfOut: (v, t) => `${v} doli në ${t}`,
+      days: ['E hënë', 'E martë', 'E mërkurë', 'E enjte', 'E premte', 'E shtunë', 'E diel'], dayShort: ['Hë', 'Ma', 'Më', 'En', 'Pr', 'Sh', 'Di'],
+      idleCap: (a) => `Mesatarisht ${a} minuta pa lëvizje për automjet në ditë. Të dhëna shembull.`, idleAria: (d, v) => `${d}: ${v} minuta pa lëvizje`,
+      emailErr: 'Shkruani emailin e punës, p.sh. emri@kompania.com.', emailOk: (e) => `Faleminderit. Do t’i përgjigjeshim ${e} brenda një dite. Kjo është faqe demo, prandaj asgjë nuk u dërgua.`,
+      N: 'V', E: 'L',
+    },
+  };
+  let lang = 'en';
+  try { const saved = localStorage.getItem('lodestar-lang'); lang = saved === 'sq' || saved === 'en' ? saved : ((navigator.language || '').toLowerCase().startsWith('sq') ? 'sq' : 'en'); } catch (e) { lang = (navigator.language || '').toLowerCase().startsWith('sq') ? 'sq' : 'en'; }
+  const T = (s) => (lang === 'sq' && SQ[s]) || s;
+  const D = () => DYN[lang];
+  // Remember the original English text of every translatable node and label.
+  const I18N_TEXT = [], I18N_ATTR = [];
+  (function collect() {
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+      acceptNode: (n) => (n.parentElement.closest('script, style, pre, svg, #vlist, #plist, #notes, #bars') ? NodeFilter.FILTER_REJECT : (SQ[n.nodeValue.trim()] ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP)),
+    });
+    while (walker.nextNode()) I18N_TEXT.push([walker.currentNode, walker.currentNode.nodeValue]);
+    $$('[aria-label], [placeholder]').forEach((el) => ['aria-label', 'placeholder'].forEach((a) => { const v = el.getAttribute(a); if (v && SQ[v]) I18N_ATTR.push([el, a, v]); }));
+  })();
+  const langHooks = [];
+  function setLang(l) {
+    lang = l;
+    document.documentElement.lang = l;
+    I18N_TEXT.forEach(([node, en]) => { node.nodeValue = l === 'sq' ? en.replace(en.trim(), SQ[en.trim()]) : en; });
+    I18N_ATTR.forEach(([el, a, en]) => el.setAttribute(a, T(en)));
+    $$('.lang button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.lang === l)));
+    try { localStorage.setItem('lodestar-lang', l); } catch (e) { /* storage unavailable */ }
+    langHooks.forEach((f) => f());
+  }
+  $$('.lang').forEach((g2) => g2.addEventListener('click', (e) => { const b = e.target.closest('button[data-lang]'); if (b && b.dataset.lang !== lang) setLang(b.dataset.lang); }));
+
   /* ---------- Map palette (Apple Maps-like, single light look) ---------- */
   const COL = {
     land: '#F2F0EB', park: '#D3E9C6', parkLabel: '#4F8A3F', water: '#A9D2F2', minor: '#FFFFFF', minorEdge: '#E0DCD3',
@@ -814,6 +971,7 @@ footer { background: var(--grey-bg); border-top: 1px solid var(--line); padding-
     x: 0.5, y: 0.5, heading: 0, wobble: rand(0, 100), trail: [], trailT: 0,
     today: rand(38, 96), fuel: rand(45, 92), fuelRate: v.kind === 'Truck' ? 0.08 : 0.14,
   }));
+  const vname = (v) => `${D().kind[v.kind]} ${v.id.split(' ')[1]}`;
   let selected = FLEET[0];
   let filter = 'all';
   let warm = true; // suppress notifications while warming up
@@ -824,8 +982,8 @@ footer { background: var(--grey-bg); border-top: 1px solid var(--line); padding-
     if (v.state === 'stopped') {
       v.stopTimer -= dt; v.stoppedFor += dt * TIME_SCALE;
       v.speed += (0 - v.speed) * Math.min(1, dt * 3);
-      if (!v.idleNoted && v.stoppedFor > 75) { v.idleNoted = true; notify(`${v.id} is idling`, `Engine running in ${districtAt(v.x, v.y)} for over a minute.`); }
-      if (v.stopTimer <= 0) { v.state = 'moving'; v.nextStop = rand(18, 45); notify(`${v.id} is on the move`, `${v.driver} left ${districtAt(v.x, v.y)} on ${ROUTES[v.route].name}.`); }
+      if (!v.idleNoted && v.stoppedFor > 75) { v.idleNoted = true; const dd = districtAt(v.x, v.y); notify(() => [D().idling(vname(v)), D().idlingBody(dd)]); }
+      if (v.stopTimer <= 0) { v.state = 'moving'; v.nextStop = rand(18, 45); const dd = districtAt(v.x, v.y); notify(() => [D().moving(vname(v)), D().movingBody(v.driver, dd, T(ROUTES[v.route].name))]); }
     } else {
       v.wobble += dt * 0.6;
       const target = v.cruise * (0.88 + 0.14 * Math.sin(v.wobble) + 0.06 * Math.sin(v.wobble * 2.7));
@@ -833,7 +991,7 @@ footer { background: var(--grey-bg); border-top: 1px solid var(--line); padding-
       v.nextStop -= dt;
       if (v.nextStop <= 0) {
         v.state = 'stopped'; v.stopTimer = rand(5, 11); v.stoppedFor = 0; v.idleNoted = false;
-        notify(`${v.id} arrived`, `Stopped in ${districtAt(v.x, v.y)} after ${v.today.toFixed(0)} km today.`);
+        const dd = districtAt(v.x, v.y), kk = v.today.toFixed(0); notify(() => [D().arrived(vname(v)), D().arrivedBody(dd, kk)]);
       }
     }
     const dk = v.speed * TIME_SCALE / 3600 * dt;
@@ -895,7 +1053,7 @@ footer { background: var(--grey-bg); border-top: 1px solid var(--line); padding-
     if ('letterSpacing' in g) g.letterSpacing = '0px';
     g.font = '600 11px -apple-system, "Inter Tight", sans-serif';
     g.fillStyle = COL.parkLabel;
-    PARKS.forEach((pk) => { if (pk.name) { const [a, b] = P(pk.x - pk.rx * 0.25, pk.y + pk.ry * 0.45); g.fillText(pk.name, a, b); } });
+    PARKS.forEach((pk) => { if (pk.name) { const [a, b] = P(pk.x - pk.rx * 0.25, pk.y + pk.ry * 0.45); g.fillText(T(pk.name), a, b); } });
   }
   function resize() {
     const r = canvas.parentElement.getBoundingClientRect();
@@ -953,7 +1111,7 @@ footer { background: var(--grey-bg); border-top: 1px solid var(--line); padding-
       ctx.beginPath(); ctx.arc(x, y, sel ? 10 : 8, 0, TAU); ctx.fillStyle = COL.white; ctx.fill();
       ctx.restore();
       ctx.beginPath(); ctx.arc(x, y, sel ? 7 : 5.5, 0, TAU); ctx.fillStyle = col; ctx.fill();
-      pill(ctx, v.id, x, y + (sel ? 16 : 13), sel);
+      pill(ctx, vname(v), x, y + (sel ? 16 : 13), sel);
       ctx.globalAlpha = 1;
     }
   }
@@ -980,9 +1138,9 @@ footer { background: var(--grey-bg); border-top: 1px solid var(--line); padding-
 
   /* ---------- Lists: display sidebar, card and phone app ---------- */
   const status = (v) => (v.state === 'stopped'
-    ? `Stopped in ${districtAt(v.x, v.y)} · ${Math.max(1, Math.round(v.stoppedFor / 60))} min`
-    : `Driving on ${ROUTES[v.route].name}`);
-  const short = (v) => (v.state === 'stopped' ? `Stopped · ${districtAt(v.x, v.y)}` : `${Math.round(v.speed)} km/h · ${districtAt(v.x, v.y)}`);
+    ? D().stoppedIn(districtAt(v.x, v.y), Math.max(1, Math.round(v.stoppedFor / 60)))
+    : D().drivingOn(T(ROUTES[v.route].name)));
+  const short = (v) => (v.state === 'stopped' ? D().stoppedShort(districtAt(v.x, v.y)) : `${Math.round(v.speed)} km/h · ${districtAt(v.x, v.y)}`);
   const vlist = $('#vlist'), plist = $('#plist');
   vlist.innerHTML = FLEET.map((v, i) => `<li><button type="button" data-i="${i}"><span class="vicon">${ICONS[v.kind]}</span><span><span class="vname">${v.id}</span><span class="vsub"></span></span><span class="vmeta"></span></button></li>`).join('');
   plist.innerHTML = FLEET.map((v, i) => `<li data-i="${i}" style="cursor:pointer"><span class="vicon">${ICONS[v.kind]}</span><span><span class="vname">${v.id}</span><span class="vsub"></span></span><span class="vmeta"></span></li>`).join('');
@@ -998,6 +1156,7 @@ footer { background: var(--grey-bg); border-top: 1px solid var(--line); padding-
       for (const list of [vlist, plist]) {
         const li = list.children[i];
         li.hidden = !ok;
+        li.querySelector('.vname').textContent = vname(v);
         li.querySelector('.vicon').classList.toggle('stopped', v.state === 'stopped');
         li.querySelector('.vsub').textContent = list === vlist ? short(v) : `${v.driver} · ${short(v)}`;
         li.querySelector('.vmeta').textContent = list === vlist ? '' : `${Math.round(v.today)} km`;
@@ -1007,11 +1166,11 @@ footer { background: var(--grey-bg); border-top: 1px solid var(--line); padding-
     });
     $('#vempty').hidden = shown > 0;
     const moving = FLEET.filter((v) => v.state === 'moving').length;
-    $('#side-count').textContent = `${FLEET.length} vehicles · ${moving} moving`;
+    $('#side-count').textContent = D().count(FLEET.length, moving);
     const v = selected;
     $('#c-icon').innerHTML = ICONS[v.kind];
     $('#c-icon').classList.toggle('stopped', v.state === 'stopped');
-    $('#c-name').textContent = `${v.id} · ${v.driver}`;
+    $('#c-name').textContent = `${vname(v)} · ${v.driver}`;
     $('#c-status').textContent = status(v);
     $('#c-speed').innerHTML = `${Math.round(v.state === 'stopped' ? 0 : v.speed)}<small> km/h</small>`;
     $('#c-today').innerHTML = `${v.today.toFixed(1)}<small> km</small>`;
@@ -1027,22 +1186,22 @@ footer { background: var(--grey-bg); border-top: 1px solid var(--line); padding-
   /* ---------- Alerts tile: live notifications from the fleet ---------- */
   const NOTE_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="6.5" fill="none" stroke="#fff" stroke-width="1.6"/><circle cx="12" cy="12" r="2" fill="#FF9F0A"/></svg>';
   const notes = [
-    { t: Date.now() - 4 * 60000, title: 'Van 311 is speeding', body: '37 km/h in a 30 km/h school zone.' },
-    { t: Date.now() - 12 * 60000, title: 'Truck 118 arrived at Depot', body: 'On schedule, 2 minutes early.' },
-    { t: Date.now() - 19 * 60000, title: 'Car 452 has been idling', body: 'Engine running for 10 minutes.' },
+    { t: Date.now() - 4 * 60000, f: () => [D().speeding(vname(FLEET[2])), D().speedingBody] },
+    { t: Date.now() - 12 * 60000, f: () => [D().depot(vname(FLEET[1])), D().depotBody] },
+    { t: Date.now() - 19 * 60000, f: () => [D().idle10(vname(FLEET[3])), D().idle10Body] },
   ];
   let lastNote = 0, notesFresh = false;
-  const ago = (t) => { const s = (Date.now() - t) / 1000; return s < 10 ? 'now' : s < 60 ? `${Math.round(s)}s ago` : `${Math.round(s / 60)}m ago`; };
+  const ago = (t) => { const s = (Date.now() - t) / 1000; return s < 10 ? D().now : s < 60 ? D().sAgo(Math.round(s)) : D().mAgo(Math.round(s / 60)); };
   function renderNotes() {
-    $('#notes').innerHTML = notes.map((n, i) => `<div class="note${i === 0 && notesFresh ? ' new' : ''}"><span class="note-icon">${NOTE_ICON}</span><div><div class="note-top"><span>Lodestar</span><span>${ago(n.t)}</span></div><div class="note-title">${n.title}</div><div class="note-body">${n.body}</div></div></div>`).join('');
+    $('#notes').innerHTML = notes.map((n, i) => { const [title, body] = n.f(); return `<div class="note${i === 0 && notesFresh ? ' new' : ''}"><span class="note-icon">${NOTE_ICON}</span><div><div class="note-top"><span>Lodestar</span><span>${ago(n.t)}</span></div><div class="note-title">${title}</div><div class="note-body">${body}</div></div></div>`; }).join('');
     notesFresh = false;
   }
-  function notify(title, body) {
+  function notify(f) {
     if (warm) return;
     const now = Date.now();
     if (now - lastNote < 4500) return;
     lastNote = now;
-    notes.unshift({ t: now, title, body }); notes.length = 3;
+    notes.unshift({ t: now, f }); notes.length = 3;
     notesFresh = true; renderNotes();
   }
   renderNotes();
@@ -1054,20 +1213,20 @@ footer { background: var(--grey-bg); border-top: 1px solid var(--line); padding-
     const inStop = (i) => stopRanges.some(([a, b]) => i >= a && i <= b);
     for (let i = 0; i < N; i++) SP.push(i === 0 || inStop(i) ? 0 : 36 + 9 * Math.sin(i * 0.55) + 5 * Math.sin(i * 1.7));
     const SM = SP.map((v, i) => (inStop(i) || i === 0 ? 0 : (SP[Math.max(0, i - 1)] + v + SP[Math.min(N - 1, i + 1)]) / 3));
-    const D = [0]; for (let i = 1; i < N; i++) D.push(D[i - 1] + SM[i]);
-    const total = D[N - 1];
+    const DIST = [0]; for (let i = 1; i < N; i++) DIST.push(DIST[i - 1] + SM[i]);
+    const total = DIST[N - 1];
     const routeEl = $('#rp-route'), len = routeEl.getTotalLength();
     const X = (i) => 640 * i / (N - 1), Y = (v) => 260 - v * 70 / 60;
     const linePts = SM.map((v, i) => `${X(i).toFixed(1)} ${Y(v).toFixed(1)}`);
     $('#rp-line').setAttribute('d', 'M' + linePts.join(' L'));
     $('#rp-area').setAttribute('d', `M0 260 L${linePts.join(' L')} L640 260 Z`);
-    $('#rp-bands').innerHTML = stopRanges.map(([a, b], n) => `<rect x="${X(a - 0.5)}" y="186" width="${X(b + 0.5) - X(a - 0.5)}" height="76" fill="#F5F5F7"/><text x="${Math.min(612, (X(a) + X(b)) / 2)}" y="200" text-anchor="middle" font-size="10" font-weight="600" fill="#86868B" font-family="-apple-system, 'Inter Tight', sans-serif">Stop ${n + 1}</text>`).join('');
-    $('#rp-stops').innerHTML = stopRanges.map(([a], n) => { const p = routeEl.getPointAtLength(len * D[a] / total); return `<g data-s="${a}"><circle cx="${p.x}" cy="${p.y}" r="12" fill="#fff" stroke="#1D1D1F" stroke-width="2"/><text x="${p.x}" y="${p.y + 4}" fill="#1D1D1F">${n + 1}</text></g>`; }).join('');
+    $('#rp-bands').innerHTML = stopRanges.map(([a, b], n) => `<rect x="${X(a - 0.5)}" y="186" width="${X(b + 0.5) - X(a - 0.5)}" height="76" fill="#F5F5F7"/><text x="${Math.min(612, (X(a) + X(b)) / 2)}" y="200" text-anchor="middle" font-size="10" font-weight="600" fill="#86868B" font-family="-apple-system, 'Inter Tight', sans-serif" class="rp-bl" data-n="${n + 1}">${D().stop(n + 1)}</text>`).join('');
+    $('#rp-stops').innerHTML = stopRanges.map(([a], n) => { const p = routeEl.getPointAtLength(len * DIST[a] / total); return `<g data-s="${a}"><circle cx="${p.x}" cy="${p.y}" r="12" fill="#fff" stroke="#1D1D1F" stroke-width="2"/><text x="${p.x}" y="${p.y + 4}" fill="#1D1D1F">${n + 1}</text></g>`; }).join('');
     const done = $('#rp-done'), dot = $('#rp-dot'), cur = $('#rp-cur'), cdot = $('#rp-cdot'), scrub = $('#rp-scrub'), read = $('#rp-read');
     let t = 0.35, playing = false, seen = false, hold = 0;
     function render() {
       const f = t * (N - 1), i = Math.floor(f), j = Math.min(N - 1, i + 1), k = f - i;
-      const v = SM[i] + (SM[j] - SM[i]) * k, dist = (D[i] + (D[j] - D[i]) * k) / total;
+      const v = SM[i] + (SM[j] - SM[i]) * k, dist = (DIST[i] + (DIST[j] - DIST[i]) * k) / total;
       done.setAttribute('stroke-dasharray', `${len * dist} ${len}`);
       const p = routeEl.getPointAtLength(len * dist);
       dot.setAttribute('transform', `translate(${p.x} ${p.y})`);
@@ -1081,7 +1240,7 @@ footer { background: var(--grey-bg); border-top: 1px solid var(--line); padding-
       });
       const mins = Math.round(t * 62), d = new Date(2026, 9, 13, 7, 40 + mins);
       const stopN = stopRanges.findIndex(([a, b]) => f >= a && f <= b);
-      read.innerHTML = `<b>${hhmm(d)}</b> · ${stopN >= 0 ? `Stop ${stopN + 1}` : `${Math.round(v)} km/h`}`;
+      read.innerHTML = `<b>${hhmm(d)}</b> · ${stopN >= 0 ? D().stop(stopN + 1) : `${Math.round(v)} km/h`}`;
       scrub.value = Math.round(t * 1000);
     }
     function setPlay(on) { playing = on; $('#rp-icon').setAttribute('d', on ? 'M3 1.5h3v11H3zM8 1.5h3v11H8z' : 'M3 1.5v11l9-5.5z'); $('#rp-play').setAttribute('aria-label', on ? 'Pause replay' : 'Play replay'); }
@@ -1090,6 +1249,7 @@ footer { background: var(--grey-bg); border-top: 1px solid var(--line); padding-
     let inView = false;
     onView($('#rp-svg'), (v) => { inView = v; if (v && !seen && !reduceMotion) { seen = true; setPlay(true); } }, 0.4);
     render();
+    langHooks.push(() => { $$('#rp-bands .rp-bl').forEach((x) => { x.textContent = D().stop(+x.dataset.n); }); render(); });
     return {
       frame(dt) {
         if (!playing || !inView) return;
@@ -1104,6 +1264,9 @@ footer { background: var(--grey-bg); border-top: 1px solid var(--line); padding-
     const zone = $('#gf-zone'), car = $('#gf-car'), chip = $('#gf-chip'), chipText = chip.querySelector('span');
     let x = 40, r = 62, inside = false, arrived = '', inView = false;
     const size = $('#gf-size');
+    let evt = null;
+    const chipLabel = () => { chipText.textContent = evt ? (evt[0] === 'in' ? D().gfIn(vname(FLEET[0]), evt[1]) : D().gfOut(vname(FLEET[0]), evt[1])) : T('Outside the zone'); };
+    langHooks.push(chipLabel);
     const meters = () => Math.round(r * 6.5 / 10) * 10;
     size.addEventListener('input', () => { r = +size.value; zone.setAttribute('r', r); $('#gf-out').textContent = `${meters()} m`; });
     onView(car.closest('svg'), (v) => { inView = v; });
@@ -1114,7 +1277,8 @@ footer { background: var(--grey-bg); border-top: 1px solid var(--line); padding-
         inside = now;
         chip.classList.toggle('in', inside);
         zone.setAttribute('fill', inside ? 'rgba(0,113,227,.18)' : 'rgba(0,113,227,.08)');
-        if (inside) { arrived = hhmm(); chipText.textContent = `Van 204 arrived at ${arrived}`; } else if (arrived) chipText.textContent = `Van 204 left at ${hhmm()}`;
+        if (inside) { arrived = hhmm(); evt = ['in', arrived]; } else if (arrived) evt = ['out', hhmm()];
+        chipLabel();
       }
     }
     update();
@@ -1140,19 +1304,23 @@ footer { background: var(--grey-bg); border-top: 1px solid var(--line); padding-
   const WEEKS = [[46, 44, 47, 43, 45, 28, 21], [24, 22, 21, 19, 20, 12, 9]];
   const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   $('#bars').innerHTML = DAYS.map((d) => `<div tabindex="0"><b></b><i></i><span>${d[0]}</span></div>`).join('');
+  let curWeek = 1;
   function setWeek(w) {
+    curWeek = w;
     const vals = WEEKS[w];
     [...$('#bars').children].forEach((el, i) => {
       el.querySelector('b').textContent = vals[i];
       el.querySelector('i').style.height = (vals[i] / 50 * 100) + '%';
-      el.setAttribute('aria-label', `${DAYS[i]}: ${vals[i]} idle minutes`);
+      el.setAttribute('aria-label', D().idleAria(D().days[i], vals[i]));
+      el.querySelector('span').textContent = D().dayShort[i];
     });
     const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
-    $('#bar-cap').textContent = `Average ${avg.toFixed(0)} idle minutes per vehicle per day. Example data.`;
+    $('#bar-cap').textContent = D().idleCap(avg.toFixed(0));
     $$('#idle-seg button').forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.w === w)));
   }
   $('#idle-seg').addEventListener('click', (e) => { const b = e.target.closest('button[data-w]'); if (b) setWeek(+b.dataset.w); });
   setWeek(1);
+  langHooks.push(() => setWeek(curWeek));
 
   /* ---------- Integrations tile ---------- */
   const SNIPS = {
@@ -1163,12 +1331,20 @@ footer { background: var(--grey-bg); border-top: 1px solid var(--line); padding-
     nmea: '<span class="c"># Standard GPS sentences for existing dispatch software</span>\n<span class="k">$GNGGA</span>,084210.00,4239.77460,N,02109.93120,E,1,14,0.8,652.3,M,46.1,M,,*4F\n<span class="k">$GNRMC</span>,084210.00,A,4239.77460,N,02109.93120,E,22.25,87.0,141026,,,A*6B',
     mail: '<span class="c"># Every Monday at 07:00</span>\n<span class="k">Subject</span>  Your fleet last week\n\n  Distance driven      2,184 km\n  Idle time            -38% vs. previous week\n  Speeding alerts      4  (down from 11)\n  Top driver           Blerim, score 92',
   };
+  const SNIP_SQ = {
+    '# Latest position of one vehicle': '# Pozicioni i fundit i një automjeti', '# Sent to your URL the moment it happens': '# Dërgohet në URL-në tuaj në çastin që ndodh',
+    '# Subscribe once, receive every update': '# Abonohuni një herë, merrni çdo përditësim', '# Standard GPS sentences for existing dispatch software': '# Fjali standarde GPS për softuerin ekzistues të dispeçimit',
+  };
+  const MAIL_SQ = '<span class="c"># Çdo të hënë në 07:00</span>\n<span class="k">Subjekti</span>  Flota juaj javën e kaluar\n\n  Distanca e përshkuar   2,184 km\n  Koha pa lëvizje        -38% krahasuar me javën e kaluar\n  Tejkalime shpejtësie   4  (nga 11)\n  Shoferi më i mirë      Blerim, 92 pikë';
+  let curSnip = 'rest';
   function setSnip(k) {
-    $('#snip').innerHTML = SNIPS[k];
+    curSnip = k;
+    $('#snip').innerHTML = lang !== 'sq' ? SNIPS[k] : k === 'mail' ? MAIL_SQ : Object.entries(SNIP_SQ).reduce((h, [a, b]) => h.replace(a, b), SNIPS[k]);
     $$('#pills button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.k === k)));
   }
   $('#pills').addEventListener('click', (e) => { const b = e.target.closest('button[data-k]'); if (b) setSnip(b.dataset.k); });
   setSnip('rest');
+  langHooks.push(() => setSnip(curSnip));
 
   /* ---------- Tracker hotspots ---------- */
   const HOT = [
@@ -1177,11 +1353,19 @@ footer { background: var(--grey-bg); border-top: 1px solid var(--line); padding-
     ['One sealed connector.', 'Power, two vehicle data buses and three inputs through a single waterproof plug.'],
     ['Sealed housing.', 'Dust-tight and waterproof, from −40 to 85 °C, with a battery that keeps tracking for 8 hours if power is cut.'],
   ];
+  const HOT_SQ = [
+    ['Drita e statusit.', 'E gjelbër kur pajisja ka sinjal satelitor dhe lidhje me rrjetin. E verdhë ndërsa kërkon.'],
+    ['Antenë me dy breza.', 'Merr GPS, Galileo, GLONASS dhe BeiDou në dy frekuenca, nën një kapak që sinjali e kalon pa pengesë.'],
+    ['Një lidhës i mbyllur.', 'Rryma, dy linja të dhënash të automjetit dhe tri hyrje, përmes një spine të vetme të papërshkueshme nga uji.'],
+    ['Shtëpizë e mbyllur hermetikisht.', 'E mbrojtur nga pluhuri dhe uji, nga −40 deri 85 °C, me bateri që vazhdon gjurmimin 8 orë nëse ndërpritet rryma.'],
+  ];
+  let curHot = 0;
+  const showHot = (i) => { curHot = i; const h = (lang === 'sq' ? HOT_SQ : HOT)[i]; $('#hot-cap').innerHTML = `<b>${h[0]}</b> ${h[1]}`; };
   $$('.hotspot').forEach((b) => b.addEventListener('click', () => {
-    const i = +b.dataset.h;
     $$('.hotspot').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
-    $('#hot-cap').innerHTML = `<b>${HOT[i][0]}</b> ${HOT[i][1]}`;
+    showHot(+b.dataset.h);
   }));
+  langHooks.push(() => showHot(curHot));
 
   /* ---------- Pricing calculator ---------- */
   const eur = new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
@@ -1227,161 +1411,199 @@ footer { background: var(--grey-bg); border-top: 1px solid var(--line); padding-
     navLinks.forEach((a) => { const s = $(a.getAttribute('href')); if (s) nio.observe(s); });
   }
 
-  /* ---------- Hero background: spinning globes, orbiting satellites, location pings ---------- */
-  (function heroBackground() {
-    const cv = $('#hero-bg'), g = cv.getContext('2d'), hero = cv.parentElement;
+  /* ---------- Site-wide GPS layer: globes, satellites and pings that travel with the scroll ---------- */
+  (function gpsLayer() {
+    const cv = $('#gps-bg'), g = cv.getContext('2d');
     const CITIES = [
-      ['Prishtina', 42.66, 21.17], ['Tirana', 41.33, 19.82], ['Skopje', 41.99, 21.43], ['Vienna', 48.21, 16.37],
-      ['Berlin', 52.52, 13.40], ['Istanbul', 41.01, 28.98], ['Zürich', 47.38, 8.54], ['Milan', 45.46, 9.19],
-      ['Munich', 48.14, 11.58], ['Athens', 37.98, 23.73], ['Belgrade', 44.79, 20.45], ['Sofia', 42.70, 23.32],
+      ['Prishtina', 'Prishtinë', 42.66, 21.17], ['Tirana', 'Tiranë', 41.33, 19.82], ['Skopje', 'Shkup', 41.99, 21.43], ['Vienna', 'Vjenë', 48.21, 16.37],
+      ['Berlin', 'Berlin', 52.52, 13.40], ['Istanbul', 'Stamboll', 41.01, 28.98], ['Zürich', 'Cyrih', 47.38, 8.54], ['Milan', 'Milano', 45.46, 9.19],
+      ['Munich', 'Mynih', 48.14, 11.58], ['Athens', 'Athinë', 37.98, 23.73], ['Prizren', 'Prizren', 42.21, 20.74], ['Sofia', 'Sofje', 42.70, 23.32],
     ];
-    let W = 1, H = 1, DPR = 1, globes = [], pings = [], sats = [], nextPing = 0, t = 0, onScreen = true, cityIdx = 0;
-    function layout() {
-      const r = hero.getBoundingClientRect();
-      W = Math.max(1, r.width); H = Math.max(1, r.height); DPR = Math.min(2, window.devicePixelRatio || 1);
+    const ROW = 900, PAR = 0.42; // globes sit every 900 px of parallax space and scroll at 42% of page speed
+    let W = 1, H = 1, DPR = 1, t = 0, pings = [], nextPing = 0, cityIdx = 0, scrollSpin = 0, lastY = scrollY;
+    const hash = (k, n) => { const v = Math.sin(k * 127.1 + n * 311.7) * 43758.5453; return v - Math.floor(v); };
+    function resize() {
+      W = innerWidth; H = innerHeight; DPR = Math.min(2, window.devicePixelRatio || 1);
       cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
-      const R = Math.max(150, Math.min(W * 0.26, 380));
-      globes = [
-        { x: W < 760 ? -R * 0.35 : W * 0.02, y: Math.min(H * 0.32, 340), R, spin: 0.12, tilt: -0.35 },
-        { x: W < 760 ? W + R * 0.35 : W * 0.98, y: Math.min(H * 0.2, 230), R: R * 0.82, spin: -0.09, tilt: 0.4 },
-      ];
-      sats = [];
-      globes.forEach((gl, gi) => [0, 1].forEach((k) => sats.push({ gl, a: k * Math.PI + gi, speed: (0.16 + 0.05 * k) * (gi ? -1 : 1), rx: gl.R * (1.28 + 0.12 * k), ry: gl.R * (0.42 + 0.1 * k), rot: gl.tilt + k * 0.5 })));
+      cv.style.width = W + 'px'; cv.style.height = H + 'px';
     }
-    // Fade the decoration away behind the headline so the copy stays clean.
-    function visibility(x, y) {
-      const dx = (x - W / 2) / (W * 0.36), dy = (y - H * 0.24) / (H * 0.3);
-      const d = Math.sqrt(dx * dx + dy * dy);
-      return Math.max(0, Math.min(1, (d - 0.7) / 0.4));
+    function globe(row, side) {
+      const narrow = W < 760, left = side === 0;
+      const R = Math.max(140, Math.min(W * 0.25, 360)) * (0.82 + 0.3 * hash(row, side + 1));
+      const x = left ? (narrow ? -R * 0.35 : W * 0.02) : (narrow ? W + R * 0.35 : W * 0.98);
+      const y = row * ROW + (left ? 340 : 200 + (row % 2) * 260) - scrollY * PAR;
+      return { key: row * 2 + side, x, y, R, spin: left ? 0.12 : -0.09, tilt: left ? -0.35 : 0.4 };
     }
-    function satPos(s) {
-      const c = Math.cos(s.rot), sn = Math.sin(s.rot), ex = s.rx * Math.cos(s.a), ey = s.ry * Math.sin(s.a);
-      return [s.gl.x + ex * c - ey * sn, s.gl.y + ex * sn + ey * c];
+    function visibleGlobes() {
+      const p = scrollY * PAR, out = [];
+      for (let row = Math.floor((p - 900) / ROW); row <= Math.ceil((p + H + 400) / ROW); row++) {
+        if (row < 0) continue;
+        for (const side of [0, 1]) { const gl = globe(row, side); if (gl.y + gl.R * 1.4 > 0 && gl.y - gl.R * 1.4 < H) out.push(gl); }
+      }
+      return out;
     }
-    function spawnPing() {
+    const sat = (gl, j) => {
+      const a = t * (0.16 + 0.05 * j) * (gl.key % 2 ? -1 : 1) + j * Math.PI + gl.key;
+      const rx = gl.R * (1.28 + 0.12 * j), ry = gl.R * (0.42 + 0.1 * j), rot = gl.tilt + j * 0.5;
+      const c = Math.cos(rot), s = Math.sin(rot), ex = rx * Math.cos(a), ey = ry * Math.sin(a);
+      return { x: gl.x + ex * c - ey * s, y: gl.y + ex * s + ey * c, rx, ry, rot, a };
+    };
+    // How much of the layer survives at a given x: the reading column in the middle stays clean.
+    const colHalf = () => Math.min(560, W * 0.36);
+    const keep = (x) => { const d = Math.abs(x - W / 2), c = colHalf(); return Math.max(0, Math.min(1, (d - c * 0.6) / (c * 0.45))); };
+    function spawnPing(globes) {
       for (let tries = 0; tries < 12; tries++) {
-        const gl = globes[Math.random() < 0.55 ? 0 : 1];
+        const gl = globes[Math.floor(Math.random() * globes.length)];
+        if (!gl) return;
         const ang = Math.random() * TAU, rr = Math.sqrt(Math.random()) * gl.R * 0.85;
         const x = gl.x + Math.cos(ang) * rr, y = gl.y + Math.sin(ang) * rr;
-        if (x < 24 || x > W - 24 || y < 70 || y > H - 40 || visibility(x, y) < 0.6) continue;
-        let best = null, bd = Infinity;
-        sats.forEach((s) => { const [sx, sy] = satPos(s), d = Math.hypot(sx - x, sy - y); if (d < bd) { bd = d; best = s; } });
-        const city = CITIES[cityIdx++ % CITIES.length];
-        pings.push({ x, y, born: t, sat: best, label: `${city[0].toUpperCase()}  ${city[1].toFixed(2)}° N  ${city[2].toFixed(2)}° E` });
+        if (x < 24 || x > W - 24 || y < 80 || y > H - 40 || keep(x) < 0.7) continue;
+        pings.push({ gk: gl.key, dx: x - gl.x, dy: y - gl.y, born: t, city: CITIES[cityIdx++ % CITIES.length], j: Math.random() < 0.5 ? 0 : 1 });
         return;
       }
     }
     function drawGlobe(gl) {
+      const spin = t * gl.spin + scrollSpin * (gl.key % 2 ? -1 : 1);
       g.save();
       g.lineWidth = 1;
       g.strokeStyle = 'rgba(0,113,227,.22)';
       g.beginPath(); g.arc(gl.x, gl.y, gl.R, 0, TAU); g.stroke();
       g.beginPath(); g.arc(gl.x, gl.y, gl.R, 0, TAU); g.clip();
-      // latitude lines
       g.strokeStyle = 'rgba(0,113,227,.13)';
       for (let k = -3; k <= 3; k++) {
         const yy = gl.y + (k / 4) * gl.R, half = Math.sqrt(Math.max(0, gl.R * gl.R - (yy - gl.y) ** 2));
         g.beginPath(); g.ellipse(gl.x, yy, half, half * 0.12, 0, 0, TAU); g.stroke();
       }
-      // meridians, turning slowly
       for (let k = 0; k < 6; k++) {
-        const ph = (k / 6) * Math.PI + t * gl.spin;
-        const rx = Math.abs(Math.cos(ph)) * gl.R;
+        const ph = (k / 6) * Math.PI + spin;
         g.strokeStyle = `rgba(0,113,227,${0.07 + 0.12 * Math.abs(Math.sin(ph))})`;
-        g.beginPath(); g.ellipse(gl.x, gl.y, Math.max(0.5, rx), gl.R, 0, 0, TAU); g.stroke();
+        g.beginPath(); g.ellipse(gl.x, gl.y, Math.max(0.5, Math.abs(Math.cos(ph)) * gl.R), gl.R, 0, 0, TAU); g.stroke();
       }
-      // dot texture
       g.fillStyle = 'rgba(0,113,227,.16)';
       for (let yy = gl.y - gl.R; yy < gl.y + gl.R; yy += 16) for (let xx = gl.x - gl.R; xx < gl.x + gl.R; xx += 16) {
         const dx = xx - gl.x, dy = yy - gl.y;
-        if (dx * dx + dy * dy < gl.R * gl.R * 0.92) { g.beginPath(); g.arc(xx, yy, 1.1, 0, TAU); g.fill(); }
+        if (dx * dx + dy * dy < gl.R * gl.R * 0.92) g.fillRect(xx - 1, yy - 1, 2, 2);
       }
       g.restore();
-    }
-    function frame(dt) {
-      t += dt;
-      g.setTransform(DPR, 0, 0, DPR, 0, 0);
-      g.clearRect(0, 0, W, H);
-      globes.forEach(drawGlobe);
-      // orbits and satellites
-      sats.forEach((s) => {
-        s.a += s.speed * dt;
-        g.save(); g.translate(s.gl.x, s.gl.y); g.rotate(s.rot);
+      for (const j of [0, 1]) {
+        const s = sat(gl, j);
+        g.save(); g.translate(gl.x, gl.y); g.rotate(s.rot);
         g.setLineDash([3, 6]); g.strokeStyle = 'rgba(29,29,31,.18)'; g.lineWidth = 1;
         g.beginPath(); g.ellipse(0, 0, s.rx, s.ry, 0, 0, TAU); g.stroke(); g.setLineDash([]);
         g.restore();
-        const [x, y] = satPos(s);
-        g.save(); g.translate(x, y); g.rotate(s.rot + 0.6);
-        g.fillStyle = 'rgba(29,29,31,.8)';
-        g.fillRect(-3, -3, 6, 6);
-        g.fillStyle = 'rgba(0,113,227,.7)';
-        g.fillRect(-12, -2, 7, 4); g.fillRect(5, -2, 7, 4);
+        g.save(); g.translate(s.x, s.y); g.rotate(s.rot + 0.6);
+        g.fillStyle = 'rgba(29,29,31,.8)'; g.fillRect(-3, -3, 6, 6);
+        g.fillStyle = 'rgba(0,113,227,.7)'; g.fillRect(-12, -2, 7, 4); g.fillRect(5, -2, 7, 4);
         g.restore();
-      });
-      // pings
-      if (t > nextPing) { spawnPing(); nextPing = t + 1.1 + Math.random() * 0.9; }
+      }
+    }
+    function frame(dt) {
+      t += dt;
+      const dy = scrollY - lastY; lastY = scrollY; scrollSpin += dy * 0.0025;
+      g.setTransform(DPR, 0, 0, DPR, 0, 0);
+      g.clearRect(0, 0, W, H);
+      const globes = visibleGlobes(), narrow = W < 760;
+      g.globalAlpha = narrow ? 0.65 : 1;
+      globes.forEach(drawGlobe);
+      if (t > nextPing) { spawnPing(globes); nextPing = t + 0.9 + Math.random() * 0.8; }
       pings = pings.filter((p) => t - p.born < 4.2);
       g.font = '600 10px -apple-system, "Inter Tight", sans-serif';
       if ('letterSpacing' in g) g.letterSpacing = '1px';
+      const d = D();
       pings.forEach((p) => {
-        const age = t - p.born, fade = Math.min(1, age * 3) * Math.min(1, (4.2 - age) / 1.2);
-        // signal line from the satellite, shortly after the ping
+        const gl = globes.find((x) => x.key === p.gk);
+        if (!gl) return;
+        const x = gl.x + p.dx, y = gl.y + p.dy, age = t - p.born;
+        const fade = Math.min(1, age * 3) * Math.min(1, (4.2 - age) / 1.2);
         if (age < 1.6) {
-          const [sx, sy] = satPos(p.sat), a = Math.min(1, age * 2.5) * Math.max(0, 1 - age / 1.6);
+          const s = sat(gl, p.j), a = Math.min(1, age * 2.5) * Math.max(0, 1 - age / 1.6);
           g.setLineDash([2, 5]); g.strokeStyle = `rgba(0,113,227,${0.55 * a})`; g.lineWidth = 1;
-          g.beginPath(); g.moveTo(sx, sy); g.lineTo(p.x, p.y); g.stroke(); g.setLineDash([]);
+          g.beginPath(); g.moveTo(s.x, s.y); g.lineTo(x, y); g.stroke(); g.setLineDash([]);
         }
-        // expanding rings (the "beep")
         for (let k = 0; k < 3; k++) {
-          const q = ((age - k * 0.45) / 1.8);
+          const q = (age - k * 0.45) / 1.8;
           if (q < 0 || q > 1) continue;
-          g.beginPath(); g.arc(p.x, p.y, 4 + q * 34, 0, TAU);
+          g.beginPath(); g.arc(x, y, 4 + q * 34, 0, TAU);
           g.strokeStyle = `rgba(0,113,227,${0.6 * (1 - q) * fade})`; g.lineWidth = 1.5; g.stroke();
         }
-        g.beginPath(); g.arc(p.x, p.y, 6, 0, TAU); g.fillStyle = `rgba(255,255,255,${fade})`; g.fill();
-        g.beginPath(); g.arc(p.x, p.y, 4, 0, TAU); g.fillStyle = `rgba(0,113,227,${fade})`; g.fill();
+        g.beginPath(); g.arc(x, y, 6, 0, TAU); g.fillStyle = `rgba(255,255,255,${fade})`; g.fill();
+        g.beginPath(); g.arc(x, y, 4, 0, TAU); g.fillStyle = `rgba(0,113,227,${fade})`; g.fill();
+        if (narrow) return;
+        const c = p.city, name = (lang === 'sq' ? c[1] : c[0]).toUpperCase();
         g.fillStyle = `rgba(110,110,115,${fade})`;
-        g.textAlign = p.x > W / 2 ? 'right' : 'left';
-        g.fillText(p.label, p.x + (p.x > W / 2 ? -12 : 12), p.y - 10);
+        g.textAlign = x > W / 2 ? 'right' : 'left';
+        g.fillText(`${name}  ${c[2].toFixed(2)}° ${d.N}  ${c[3].toFixed(2)}° ${d.E}`, x + (x > W / 2 ? -12 : 12), y - 10);
       });
       if ('letterSpacing' in g) g.letterSpacing = '0px';
-      // keep the headline area clean
+      g.globalAlpha = 1;
+      // Clear the reading column so text never sits on top of the pattern.
       g.save();
       g.globalCompositeOperation = 'destination-out';
-      g.translate(W / 2, H * 0.24); g.scale(W * 0.36, H * 0.3);
-      const m = g.createRadialGradient(0, 0, 0, 0, 0, 1.25);
-      m.addColorStop(0, 'rgba(0,0,0,1)'); m.addColorStop(0.55, 'rgba(0,0,0,.92)'); m.addColorStop(0.95, 'rgba(0,0,0,0)');
-      g.fillStyle = m; g.fillRect(-2, -2, 4, 4);
+      const c = colHalf(), lg = g.createLinearGradient(W / 2 - c * 1.05, 0, W / 2 + c * 1.05, 0);
+      lg.addColorStop(0, 'rgba(0,0,0,0)'); lg.addColorStop(0.28, 'rgba(0,0,0,.92)'); lg.addColorStop(0.72, 'rgba(0,0,0,.92)'); lg.addColorStop(1, 'rgba(0,0,0,0)');
+      g.fillStyle = lg; g.fillRect(0, 0, W, H);
       g.restore();
     }
-    layout();
-    // A still frame with a few pings already showing, for reduced motion and first paint.
-    for (let i = 0; i < 4; i++) { t += 1.3; spawnPing(); }
+    resize();
+    for (let i = 0; i < 4; i++) { t += 1.2; spawnPing(visibleGlobes()); }
     t += 0.4; frame(0);
-    new ResizeObserver(() => { layout(); frame(0); }).observe(hero);
-    onView(hero, (v) => { onScreen = v; }, 0);
-    if (reduceMotion) return;
+    addEventListener('resize', () => { resize(); frame(0); });
+    if (reduceMotion) { addEventListener('scroll', () => frame(0), { passive: true }); return; }
     let last = performance.now();
     (function loop(now) {
       const dt = Math.min(0.1, (now - last) / 1000); last = now;
-      if (onScreen) frame(dt);
+      frame(dt);
       requestAnimationFrame(loop);
     })(last);
+  })();
+
+  /* ---------- Route rail: your position on the page, as a vehicle on a route ---------- */
+  const rail = (() => {
+    const WPS = [['top', 'Start'], ['features', 'Features'], ['tracker', 'Tracker'], ['app', 'App'], ['how', 'How it works'], ['pricing', 'Pricing'], ['faq', 'FAQ'], ['demo', 'Book a demo']];
+    const el = $('#rail'), car = $('#rail-car'), done = $('#rail-done'), label = $('#rail-label');
+    el.insertAdjacentHTML('beforeend', WPS.map(([id], i) => `<button type="button" class="wp" data-id="${id}" data-i="${i}"></button>`).join(''));
+    const btns = [...el.querySelectorAll('.wp')];
+    let fr = WPS.map(() => 0);
+    const maxScroll = () => Math.max(1, document.documentElement.scrollHeight - innerHeight);
+    function measure() {
+      fr = WPS.map(([id], i) => (i === 0 ? 0 : Math.min(1, Math.max(0, ($('#' + id).getBoundingClientRect().top + scrollY - 60) / maxScroll()))));
+      btns.forEach((b, i) => { b.style.top = (fr[i] * 100) + '%'; });
+      update();
+    }
+    function update() {
+      const p = Math.min(1, Math.max(0, scrollY / maxScroll()));
+      car.style.top = (p * 100) + '%';
+      done.style.height = (p * 100) + '%';
+      let cur = 0;
+      btns.forEach((b, i) => { const passed = p >= fr[i] - 0.003; b.classList.toggle('passed', passed); if (passed) cur = i; });
+      btns.forEach((b, i) => {
+        b.dataset.label = T(WPS[i][1]);
+        b.setAttribute('aria-label', `${T('Go to')} ${T(WPS[i][1])}`);
+        b.setAttribute('aria-current', String(i === cur));
+      });
+      label.textContent = T(WPS[cur][1]);
+    }
+    el.addEventListener('click', (e) => { const b = e.target.closest('.wp'); if (b) $('#' + b.dataset.id).scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth' }); });
+    addEventListener('scroll', update, { passive: true });
+    addEventListener('resize', measure);
+    new ResizeObserver(measure).observe(document.body);
+    measure();
+    return { update };
   })();
 
   /* ---------- CTA form ---------- */
   $('#cta-form').addEventListener('submit', (e) => {
     e.preventDefault();
     const email = $('#cta-email').value.trim(), msg = $('#cta-msg');
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { msg.className = 'cta-msg err'; msg.textContent = 'Enter a work email, like name@company.com.'; $('#cta-email').focus(); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { msg.className = 'cta-msg err'; msg.textContent = D().emailErr; $('#cta-email').focus(); return; }
     msg.className = 'cta-msg ok';
-    msg.textContent = `Thanks. We'd reply to ${email} within a day. This is a demo page, so nothing was sent.`;
+    msg.textContent = D().emailOk(email);
   });
 
   /* ---------- Loop ---------- */
   const clockText = () => {
     const d = new Date();
-    $('#clock').textContent = `Live · ${hhmm(d)}`;
+    $('#clock').textContent = `${T('Live')} · ${hhmm(d)}`;
     $('#p-time').textContent = `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
   };
   let last = performance.now(), acc = 0, noteAcc = 0, onScreen = true;
@@ -1406,6 +1628,8 @@ footer { background: var(--grey-bg); border-top: 1px solid var(--line); padding-
   onView(canvas, (v) => { onScreen = v; }, 0);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => draw(performance.now()));
   resize(); renderLists(); clockText();
+  langHooks.push(renderLists, renderNotes, clockText, rail.update, () => { $('#cta-msg').textContent = ''; draw(performance.now()); });
+  setLang(lang);
   requestAnimationFrame(tick);
 })();
 </script>
